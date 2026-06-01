@@ -1,0 +1,89 @@
+# 环境变量从同级 profile 文件加载：
+#   docker compose --env-file profile up -d
+# 也可 export 后再执行，如: source profile && docker compose up -d
+
+services:
+  etcd:
+    restart: always
+    image: quay.io/coreos/etcd:v3.5.15
+    container_name: personal-etcd
+    environment:
+      - ETCD_NAME=etcd
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
+      - ETCD_INITIAL_CLUSTER=etcd=http://etcd:2380
+      - ETCD_DATA_DIR=/etcd-data
+    volumes:
+      - ${DATA_HOME}/etcd/data:/etcd-data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 127.0.0.1:2379:2379
+      - 127.0.0.1:2380:2380
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  mysql:
+    restart: always
+    image: mysql:${mysql_version}
+    container_name: personal-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ${DATA_HOME}/mysql/data:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 127.0.0.1:3306:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    restart: always
+    image: redis:${redis_version}
+    container_name: personal-redis
+    volumes:
+      - ${DATA_HOME}/redis/data:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 127.0.0.1:6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  minio:
+    restart: always
+    image: minio/minio:${minio_version}
+    container_name: personal-minio
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - ${DATA_HOME}/minio/data:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 127.0.0.1:9000:9000
+      - 127.0.0.1:9001:9001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+networks:
+  default:
+    name: net-personal
+    external: true

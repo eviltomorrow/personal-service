@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package personal.auth;
+
+option go_package = "github.com/eviltomorrow/personal-service/apps/personal-auth/adapter/pb";
+
+enum AuthType {
+  AUTH_TYPE_UNSPECIFIED = 0;
+  AUTH_TYPE_EMAIL = 1;
+  AUTH_TYPE_USERNAME = 2;
+  AUTH_TYPE_PHONE = 3;
+}
+
+// Auth 服务提供账号注册、登录鉴权、令牌管理和账户安全等相关 RPC 接口。
+service Auth {
+  // Register 注册新账号，返回 access_token / refresh_token
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  // Login 使用凭证登录，返回 access_token / refresh_token
+  rpc Login(LoginRequest) returns (LoginResponse);
+  // UpdatePassword 修改登录密码，需要旧密码校验
+  rpc UpdatePassword(UpdatePasswordRequest) returns (UpdatePasswordResponse);
+  // ValidateToken 验证 access_token 有效性，返回账户信息
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  // DeleteAccount 注销账号，需要密码确认
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+  // RefreshToken 用 refresh_token 换取新的令牌对
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  // RevokeToken 撤销单个 refresh_token
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+  // RevokeAllTokens 撤销账号下所有 refresh_token
+  rpc RevokeAllTokens(RevokeAllTokensRequest) returns (RevokeAllTokensResponse);
+  // UpdateIdentifier 更换登录标识（邮箱/手机号/用户名）
+  rpc UpdateIdentifier(UpdateIdentifierRequest) returns (UpdateIdentifierResponse);
+}
+
+message UpdateIdentifierRequest {
+  string account_id = 1;
+  AuthType auth_type = 2;
+  string new_identifier = 3;
+}
+
+message UpdateIdentifierResponse {}
+
+message RegisterRequest {
+  AuthType auth_type = 1;
+  string identifier = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+}
+
+message LoginRequest {
+  AuthType auth_type = 1;
+  string identifier = 2;
+  string password = 3;
+  string ip_address = 4;
+  string user_agent = 5;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+}
+
+message RevokeTokenRequest {
+  string refresh_token = 1;
+}
+
+message RevokeTokenResponse {}
+
+message RevokeAllTokensRequest {
+  string access_token = 1;
+}
+
+message RevokeAllTokensResponse {}
+
+message UpdatePasswordRequest {
+  string account_id = 1;
+  string old_password = 2;
+  string new_password = 3;
+}
+
+message UpdatePasswordResponse {}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  string role = 1;
+  int64 expires_at = 2;
+}
+
+message DeleteAccountRequest {
+  string account_id = 1;
+  string password = 2;
+}
+
+message DeleteAccountResponse {}

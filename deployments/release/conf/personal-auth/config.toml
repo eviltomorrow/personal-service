@@ -1,0 +1,32 @@
+[log]
+level = "warn"
+
+[network]
+bind_ip = "0.0.0.0"
+bind_port = 50001
+access_ip = ""
+disable_tls = true
+
+[mysql]
+dsn = "root:root@tcp(mysql:3306)/personal_auth?charset=utf8mb4&parseTime=True&loc=Local"
+min_open = 5
+max_open = 20
+
+[redis]
+dsn = "redis://redis:6379/0"
+
+[etcd]
+endpoints = ["etcd:2379"]
+
+[opentrace]
+enable = false
+dsn = ""
+
+[auth]
+access_token_expire = "5m"
+refresh_token_expire = "30m"
+signing_key = "sk_c1d8df11cce60aa705ea95ce9310b99a4177d6a4"
+max_login_attempts = 5
+login_lock_duration = "2m"
+
+
