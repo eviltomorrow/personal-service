@@ -1,6 +1,9 @@
+"use client";
+import { useLocale } from "@/app/_components/locale-provider";
+
 const stats = [
   {
-    label: "Active sessions", value: "3", change: "+1", positive: true,
+    labelKey: "stat_sessions", value: "3", change: "+1", positive: true,
     icon: (
       <svg className="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
@@ -8,7 +11,7 @@ const stats = [
     ),
   },
   {
-    label: "Logged in as", value: "user@example.com",
+    labelKey: "stat_logged_in_as", value: "user@example.com",
     icon: (
       <svg className="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
@@ -16,7 +19,7 @@ const stats = [
     ),
   },
   {
-    label: "Account age", value: "14 days",
+    labelKey: "stat_account_age", value: "14 days",
     icon: (
       <svg className="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -24,7 +27,7 @@ const stats = [
     ),
   },
   {
-    label: "Last login", value: "2 hours ago",
+    labelKey: "stat_last_login", value: "2 hours ago",
     icon: (
       <svg className="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
@@ -59,23 +62,24 @@ const activityIcon = (type: string) => {
 };
 
 const quickActions = [
-  { label: "New API Key", icon: "🔑" },
-  { label: "Invite user", icon: "👤" },
-  { label: "Export data", icon: "📥" },
-  { label: "View logs", icon: "📋" },
+  { labelKey: "action_new_api_key", icon: "🔑" },
+  { labelKey: "action_invite_user", icon: "👤" },
+  { labelKey: "action_export_data", icon: "📥" },
+  { labelKey: "action_view_logs", icon: "📋" },
 ];
 
 export default function DashboardPage() {
+  const { t } = useLocale();
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">Dashboard</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-white/35">Overview of your account activity and status.</p>
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">{t.dashboard_heading}</h1>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-white/35">{t.dashboard_desc}</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s, i) => (
-          <div key={s.label} className="animate-fade-in rounded-xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-300 hover:shadow-sm dark:border-white/[0.06] dark:bg-white/[0.03] dark:backdrop-blur-xl dark:hover:border-white/[0.1] dark:hover:bg-white/[0.05]" style={{ animationDelay: `${i * 60}ms` }}>
+          <div key={s.labelKey} className="animate-fade-in rounded-xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-300 hover:shadow-sm dark:border-white/[0.06] dark:bg-white/[0.03] dark:backdrop-blur-xl dark:hover:border-white/[0.1] dark:hover:bg-white/[0.05]" style={{ animationDelay: `${i * 60}ms` }}>
             <div className="flex items-center justify-between">
               <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 dark:bg-white/[0.06] dark:text-white/40">{s.icon}</div>
               {"change" in s && (
@@ -83,7 +87,7 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="mt-3 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white/90">{s.value}</div>
-            <div className="mt-0.5 text-xs text-zinc-500 dark:text-white/30">{s.label}</div>
+            <div className="mt-0.5 text-xs text-zinc-500 dark:text-white/30">{t[s.labelKey as keyof typeof t]}</div>
           </div>
         ))}
       </div>
@@ -91,8 +95,8 @@ export default function DashboardPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="animate-fade-in-delayed rounded-xl border border-zinc-200 bg-white p-5 dark:border-white/[0.06] dark:bg-white/[0.03] dark:backdrop-blur-xl lg:col-span-2">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-medium text-zinc-800 dark:text-white/80">Recent activity</h2>
-            <a href="/dashboard/activity" className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors dark:text-indigo-400 dark:hover:text-indigo-300">View all</a>
+            <h2 className="text-sm font-medium text-zinc-800 dark:text-white/80">{t.recent_activity}</h2>
+            <a href="/dashboard/activity" className="text-xs text-indigo-600 hover:text-indigo-700 transition-colors dark:text-indigo-400 dark:hover:text-indigo-300">{t.view_all_link}</a>
           </div>
           <div className="space-y-4">
             {recentActivity.map((item) => (
@@ -108,21 +112,21 @@ export default function DashboardPage() {
         </div>
 
         <div className="animate-fade-in-delayed rounded-xl border border-zinc-200 bg-white p-5 dark:border-white/[0.06] dark:bg-white/[0.03] dark:backdrop-blur-xl">
-          <h2 className="text-sm font-medium text-zinc-800 mb-4 dark:text-white/80">Quick actions</h2>
+          <h2 className="text-sm font-medium text-zinc-800 mb-4 dark:text-white/80">{t.quick_actions}</h2>
           <div className="space-y-2">
             {quickActions.map((a) => (
-              <button key={a.label} className="flex w-full items-center gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-500 transition-all hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-700 dark:border-white/[0.06] dark:bg-white/[0.02] dark:text-white/60 dark:hover:border-white/[0.1] dark:hover:bg-white/[0.04] dark:hover:text-white/80">
+              <button key={a.labelKey} className="flex w-full items-center gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-500 transition-all hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-700 dark:border-white/[0.06] dark:bg-white/[0.02] dark:text-white/60 dark:hover:border-white/[0.1] dark:hover:bg-white/[0.04] dark:hover:text-white/80">
                 <span className="text-base">{a.icon}</span>
-                {a.label}
+                {t[a.labelKey as keyof typeof t]}
               </button>
             ))}
           </div>
           <div className="mt-5 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 p-4 dark:from-indigo-500/[0.08] dark:to-purple-500/[0.04] dark:border-indigo-500/10">
             <div className="flex items-center gap-2">
               <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse-glow" />
-              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400/80">All systems operational</span>
+              <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400/80">{t.systems_operational}</span>
             </div>
-            <p className="mt-2 text-[11px] text-zinc-400 leading-relaxed dark:text-white/30">Static preview — no backend calls are being made.</p>
+            <p className="mt-2 text-[11px] text-zinc-400 leading-relaxed dark:text-white/30">{t.static_preview}</p>
           </div>
         </div>
       </div>
