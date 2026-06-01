@@ -82,3 +82,4 @@ services:
 networks:
   default:
     name: net-personal
+    external: true
