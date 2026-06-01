@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"database/sql"
 
 	dbmysql "github.com/eviltomorrow/personal-service/lib/db/mysql"
 	"github.com/eviltomorrow/personal-service/lib/sqlutil"
@@ -30,15 +29,6 @@ type AccountAuth struct {
 	DeletedAt  int64
 	CreatedAt  int64
 	UpdatedAt  int64
-}
-
-func scanAccountAuth(row *sql.Row) (*AccountAuth, error) {
-	a := &AccountAuth{}
-	err := row.Scan(&a.AccountID, &a.AuthType, &a.Identifier, &a.Status, &a.Verified, &a.DeletedAt, &a.CreatedAt, &a.UpdatedAt)
-	if err != nil {
-		return nil, err
-	}
-	return a, nil
 }
 
 func InsertAccountAuth(ctx context.Context, exec dbmysql.Exec, a *AccountAuth) (int64, error) {

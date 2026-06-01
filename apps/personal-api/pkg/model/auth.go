@@ -68,8 +68,6 @@ type DeleteAccountRequest struct {
 	Password  string `json:"password"`
 }
 
-type DeleteAccountResponse struct{}
-
 type UpdatePasswordRequest struct {
 	AccountID   string `json:"account_id"`
 	OldPassword string `json:"old_password"`
@@ -89,7 +87,7 @@ type AuthClient interface {
 	ValidateToken(ctx context.Context, req *ValidateTokenRequest) (*ValidateTokenResponse, error)
 	RevokeToken(ctx context.Context, req *RevokeTokenRequest) error
 	RevokeAllTokens(ctx context.Context, req *RevokeAllTokensRequest) error
-	DeleteAccount(ctx context.Context, req *DeleteAccountRequest) (*DeleteAccountResponse, error)
+	DeleteAccount(ctx context.Context, req *DeleteAccountRequest) error
 	UpdatePassword(ctx context.Context, req *UpdatePasswordRequest) error
 	UpdateIdentifier(ctx context.Context, req *UpdateIdentifierRequest) error
 }

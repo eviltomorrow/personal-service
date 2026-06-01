@@ -115,15 +115,12 @@ func (s *AuthService) RevokeAllTokens(ctx context.Context, req *model.RevokeAllT
 	return err
 }
 
-func (s *AuthService) DeleteAccount(ctx context.Context, req *model.DeleteAccountRequest) (*model.DeleteAccountResponse, error) {
+func (s *AuthService) DeleteAccount(ctx context.Context, req *model.DeleteAccountRequest) error {
 	_, err := s.client.DeleteAccount(ctx, &pb.DeleteAccountRequest{
 		AccountId: req.AccountID,
 		Password:  req.Password,
 	})
-	if err != nil {
-		return nil, err
-	}
-	return &model.DeleteAccountResponse{}, nil
+	return err
 }
 
 func (s *AuthService) UpdatePassword(ctx context.Context, req *model.UpdatePasswordRequest) error {

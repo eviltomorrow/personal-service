@@ -145,7 +145,7 @@ func (h *AuthHandler) DeleteAccount(c echo.Context) error {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
 
-	_, err := h.client.DeleteAccount(c.Request().Context(), &req)
+	err := h.client.DeleteAccount(c.Request().Context(), &req)
 	if err != nil {
 		zlog.Error("auth delete account failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)

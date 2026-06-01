@@ -23,7 +23,7 @@ type mockAuthClient struct {
 	refreshTokenFunc     func(context.Context, *model.RefreshTokenRequest) (*model.RefreshTokenResponse, error)
 	revokeTokenFunc      func(context.Context, *model.RevokeTokenRequest) error
 	revokeAllTokensFunc  func(context.Context, *model.RevokeAllTokensRequest) error
-	deleteAccountFunc    func(context.Context, *model.DeleteAccountRequest) (*model.DeleteAccountResponse, error)
+	deleteAccountFunc    func(context.Context, *model.DeleteAccountRequest) error
 	updatePasswordFunc   func(context.Context, *model.UpdatePasswordRequest) error
 	updateIdentifierFunc func(context.Context, *model.UpdateIdentifierRequest) error
 	validateTokenFunc    func(context.Context, *model.ValidateTokenRequest) (*model.ValidateTokenResponse, error)
@@ -64,11 +64,11 @@ func (m *mockAuthClient) RevokeAllTokens(ctx context.Context, req *model.RevokeA
 	return status.Error(codes.Unimplemented, "mock not implemented")
 }
 
-func (m *mockAuthClient) DeleteAccount(ctx context.Context, req *model.DeleteAccountRequest) (*model.DeleteAccountResponse, error) {
+func (m *mockAuthClient) DeleteAccount(ctx context.Context, req *model.DeleteAccountRequest) error {
 	if m.deleteAccountFunc != nil {
 		return m.deleteAccountFunc(ctx, req)
 	}
-	return nil, status.Error(codes.Unimplemented, "mock not implemented")
+	return status.Error(codes.Unimplemented, "mock not implemented")
 }
 
 func (m *mockAuthClient) UpdatePassword(ctx context.Context, req *model.UpdatePasswordRequest) error {
@@ -316,10 +316,10 @@ func TestRevokeToken_ResourceExhausted(t *testing.T) {
 func TestDeleteAccount_Success(t *testing.T) {
 	e := setupEcho()
 	mock := &mockAuthClient{
-		deleteAccountFunc: func(ctx context.Context, req *model.DeleteAccountRequest) (*model.DeleteAccountResponse, error) {
+		deleteAccountFunc: func(ctx context.Context, req *model.DeleteAccountRequest) error {
 			assert.Equal(t, "acc_123", req.AccountID)
 			assert.Equal(t, "pwd123", req.Password)
-			return &model.DeleteAccountResponse{}, nil
+			return nil
 		},
 	}
 	handler := AuthHandler{client: mock}
@@ -347,8 +347,8 @@ func TestDeleteAccount_InvalidBody(t *testing.T) {
 func TestDeleteAccount_InvalidPassword(t *testing.T) {
 	e := setupEcho()
 	mock := &mockAuthClient{
-		deleteAccountFunc: func(ctx context.Context, req *model.DeleteAccountRequest) (*model.DeleteAccountResponse, error) {
-			return nil, status.Error(codes.Unauthenticated, "invalid password")
+		deleteAccountFunc: func(ctx context.Context, req *model.DeleteAccountRequest) error {
+			return status.Error(codes.Unauthenticated, "invalid password")
 		},
 	}
 	handler := AuthHandler{client: mock}

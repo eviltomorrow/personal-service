@@ -248,7 +248,7 @@ func (s *Auth) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRespon
 	}
 
 	if encrypt.Key(account.Salt, req.Password) != account.PasswordHash {
-		if err := s.recordFailedAttempt(ctx, authType, identifier); err != nil {
+		if err := s.recordFailedAttempt(ctx, identifier); err != nil {
 			zlog.Error("record failed login attempt failure", zap.Error(err))
 		}
 		if ipAddr != "" {
@@ -319,7 +319,7 @@ func (s *Auth) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRespon
 	}, nil
 }
 
-func (s *Auth) recordFailedAttempt(ctx context.Context, _ string, identity string) error {
+func (s *Auth) recordFailedAttempt(ctx context.Context, identity string) error {
 	attemptKey := fmt.Sprintf("login_attempt:%s", identity)
 	attempts, err := redisIncr(ctx, attemptKey)
 	if err != nil {

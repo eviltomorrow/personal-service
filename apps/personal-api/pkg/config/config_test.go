@@ -119,10 +119,8 @@ func TestReadConfigFromFile_InvalidToml(t *testing.T) {
 }
 
 func TestDefaultConfigImmutability(t *testing.T) {
-	origPort := DefaultConfig.Network.BindPort
 	cfg := DefaultConfig
 	cfg.Network.BindPort = 9999
 	assert.Equal(t, 8080, DefaultConfig.Network.BindPort)
 	assert.Equal(t, 9999, cfg.Network.BindPort)
-	_ = origPort
 }
