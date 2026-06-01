@@ -36,7 +36,7 @@ message SayHelloResponse {
 
 - `.proto` 编译后生成的 Go 代码（`*_grpc.pb.go` + `*.pb.go`）输出在 `adapter/pb/`
 - **不要手动编辑** pb/ 下的任何文件
-- 编译命令：`make compile`（调用 `scripts/protobuf_compile.sh`）
+- 编译命令：`make compile`（调用 `third-party/protoc/<platform>/bin/protoc`）
 
 ## 目录结构
 
@@ -44,12 +44,62 @@ message SayHelloResponse {
 apps/<name>/
 └── adapter/
     ├── hello.proto          # service × 1 或按业务划分多个 proto
-    ├── world.proto
     └── pb/                  # protoc 自动生成，git 提交
         ├── hello.pb.go
-        ├── hello_grpc.pb.go
-        ├── world.pb.go
-        └── world_grpc.pb.go
+        └── hello_grpc.pb.go
+```
+
+## 消息定义规范
+
+- **请求消息**: 以 `Request` 结尾，包含输入参数
+- **响应消息**: 以 `Response` 结尾，包含返回数据
+- **枚举**: 以 `UNSPECIFIED = 0` 开头作为默认值
+- **字段编号**: 按顺序递增，为新接口预留尾部编号
+
+## 完整示例（personal-auth 的 auth.proto）
+
+```protobuf
+syntax = "proto3";
+package personal.auth;
+option go_package = "github.com/eviltomorrow/personal-service/apps/personal-auth/adapter/pb";
+
+enum AuthType {
+  AUTH_TYPE_UNSPECIFIED = 0;
+  AUTH_TYPE_EMAIL = 1;
+  AUTH_TYPE_USERNAME = 2;
+  AUTH_TYPE_PHONE = 3;
+}
+
+service Auth {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc UpdatePassword(UpdatePasswordRequest) returns (UpdatePasswordResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+  rpc RevokeAllTokens(RevokeAllTokensRequest) returns (RevokeAllTokensResponse);
+  rpc UpdateIdentifier(UpdateIdentifierRequest) returns (UpdateIdentifierResponse);
+}
+
+message RegisterRequest { AuthType auth_type = 1; string identifier = 2; string password = 3; }
+message RegisterResponse { string access_token = 1; string refresh_token = 2; int64 expires_in = 3; }
+message LoginRequest { AuthType auth_type = 1; string identifier = 2; string password = 3; string ip_address = 4; string user_agent = 5; }
+message LoginResponse { string access_token = 1; string refresh_token = 2; int64 expires_in = 3; }
+message RefreshTokenRequest { string refresh_token = 1; }
+message RefreshTokenResponse { string access_token = 1; string refresh_token = 2; int64 expires_in = 3; }
+message RevokeTokenRequest { string refresh_token = 1; }
+message RevokeTokenResponse {}
+message RevokeAllTokensRequest { string access_token = 1; }
+message RevokeAllTokensResponse {}
+message UpdatePasswordRequest { string account_id = 1; string old_password = 2; string new_password = 3; }
+message UpdatePasswordResponse {}
+message ValidateTokenRequest { string access_token = 1; }
+message ValidateTokenResponse { string role = 1; int64 expires_at = 2; }
+message DeleteAccountRequest { string account_id = 1; string password = 2; }
+message DeleteAccountResponse {}
+message UpdateIdentifierRequest { string account_id = 1; AuthType auth_type = 2; string new_identifier = 3; }
+message UpdateIdentifierResponse {}
 ```
 
 ## 约定

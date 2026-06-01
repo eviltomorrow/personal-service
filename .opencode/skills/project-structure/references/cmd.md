@@ -24,7 +24,6 @@ import (
 
 	appconfig "github.com/eviltomorrow/personal-service/apps/<name>/pkg/config"
 	appserver "github.com/eviltomorrow/personal-service/apps/<name>/pkg/server"
-	"github.com/eviltomorrow/personal-service/apps/<name>/scripts"
 )
 
 func Run() error {
@@ -85,34 +84,28 @@ func Run() error {
 
 	zlog.Info("app is preparing to launch, initializing environment...")
 
-	// 7. 可选：读取嵌入式 schema
-	schemaData, err := scripts.SchemaFS.ReadFile("schema.sql")
+	// 7. 创建 server（schema 迁移在 server.New 内部处理）
+	srv, err := appserver.New(cfg)
 	if err != nil {
-		return fmt.Errorf("read embedded schema failure: %w", err)
+		return fmt.Errorf("create server failure: %w", err)
 	}
 
-	// 8. 创建 server
-	srv, err := appserver.New(cfg, string(schemaData))
-	if err != nil {
-		return fmt.Errorf("create grpc server failure: %w", err)
-	}
-
-	// 9. 启动 server
+	// 8. 启动 server
 	if err := srv.Serve(); err != nil {
-		return fmt.Errorf("start grpc server failure: %w", err)
+		return fmt.Errorf("start server failure: %w", err)
 	}
 	finalizer.RegisterCleanupFuncs(srv.Stop)
 
-	// 10. 打印启动信息
+	// 9. 打印启动信息
 	zlog.Info("system info", zap.String("detail", system.String()))
 	zlog.Info("config info", zap.String("detail", cfg.String()))
 	zlog.Info("app start success", zap.String("version", buildinfo.MainVersion), zap.String("commited-id", buildinfo.GitSha))
 
-	// 11. 等待退出信号
+	// 10. 等待退出信号
 	procutil.StopDaemon()
 	procutil.WaitForSigterm()
 
-	// 12. 退出日志
+	// 11. 退出日志
 	zlog.Info("app stop completed", zap.String("launched-time", system.LaunchTime()))
 	return nil
 }
@@ -133,10 +126,10 @@ import (
 )
 
 var (
-	AppName    = "personal-<name>"
+	AppName     = "personal-<name>"
 	MainVersion = ""
-	GitSha     = ""
-	BuildTime  = ""
+	GitSha      = ""
+	BuildTime   = ""
 )
 
 func main() {
@@ -160,11 +153,10 @@ func main() {
 | 4 | pprof | 可选性能分析 |
 | 5 | ReadConfigFromFile | 加载 TOML 配置 |
 | 6 | InitLogger | 初始化 data.log |
-| 7 | 读取 schema | 嵌入式 SQL（可选） |
-| 8 | New(cfg) | 创建 server |
-| 9 | Serve() | 启动服务 |
-| 10 | WaitForSigterm | 阻塞等待 SIGTERM |
-| 11 | 退出日志 | 打印启动耗时 |
+| 7 | New(cfg) | 创建 server（内含 schema 迁移） |
+| 8 | Serve() | 启动服务 |
+| 9 | WaitForSigterm | 阻塞等待 SIGTERM |
+| 10 | 退出日志 | 打印启动耗时 |
 
 ## 关键约束
 

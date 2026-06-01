@@ -1,4 +1,7 @@
+
 # model 模块中涉及数据库操作的代码模板
+
+## 模板代码
 
 ```go
 package model
@@ -89,6 +92,14 @@ func UpdateXxxField(ctx context.Context, exec dbmysql.Exec, col1 string, xxxFiel
         UpdateCtx(ctx)
 }
 
+// ── 硬删除（物理删除）──────────────────────────────────
+func DeleteXxxByCol1(ctx context.Context, exec dbmysql.Exec, col1 string) (int64, error) {
+    return sqlutil.NewDelete(exec).
+        Table(TableNameXxx).
+        Where(sqlutil.WithEq(FieldXxxCol1, col1)).
+        DeleteCtx(ctx)
+}
+
 // ── 跨表 JOIN（回退原生 SQL）───────────────────────────
 type XxxWithYyy struct {
     Col1 string
@@ -101,7 +112,7 @@ func SelectXxxWithYyy(ctx context.Context, exec dbmysql.Exec, authType, identifi
         `SELECT a.col1, a.col2
          FROM table_xxx a
          JOIN table_yyy y ON a.col1 = y.col1
-         WHERE y.auth_type = ? AND y.identifier = ? AND a.deleted_at = 0 AND y.deleted_at = 0`,
+         WHERE y.auth_type = ? AND y.identifier = ? AND a.deleted_at = 0 AND y.deleted_at = 0 AND y.status = 1`,
         authType, identifier)
     if err := row.Scan(&x.Col1, &x.Col2); err != nil {
         if errors.Is(err, sql.ErrNoRows) {
@@ -112,3 +123,16 @@ func SelectXxxWithYyy(ctx context.Context, exec dbmysql.Exec, authType, identifi
     return &x, nil
 }
 ```
+
+## 关键范式
+
+| 模式 | 说明 |
+|------|------|
+| `InsertCtx` | sqlutil 链式 INSERT |
+| `QueryOneCtx` + `scanXxx` | 单行查询，返回 `*Xxx, error` |
+| `Where(sqlutil.WithEq(...))` | 条件组装（支持 WithGt, WithLt, WithIn, WithBetween 等） |
+| `SoftDelete` → `UpdateCtx` | 软删除：设置 `deleted_at` + `status=0` |
+| `DeleteXxx` → `DeleteCtx` | 物理删除（用于关联表，如 account_auths） |
+| 原生 `QueryRowContext` + `row.Scan` | JOIN 查询时回退原生 SQL |
+| `sql.ErrNoRows` → `ErrNotFound` | 统一错误映射 |
+| `FieldXxxDeletedAt = "deleted_at"` | 所有表必须包含 `deleted_at` 字段支持软删除 |

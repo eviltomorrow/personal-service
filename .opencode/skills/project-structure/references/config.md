@@ -1,3 +1,4 @@
+
 # Config 配置模板
 
 基于 `apps/personal-auth/pkg/config/config.go` 提取。
@@ -34,20 +35,16 @@ type Config struct {
 	Opentrace opentrace.Config `json:"opentrace" toml:"opentrace" mapstructure:"opentrace"`
 	// 业务配置
 	Auth AuthConfig `json:"auth" toml:"auth" mapstructure:"auth"`
-	User UserConfig `json:"user" toml:"user" mapstructure:"user"`
 }
 
 type AuthConfig struct {
-	AccessTokenExpire   time.Duration `json:"access_token_expire" toml:"access_token_expire" mapstructure:"access_token_expire"`
-	RefreshTokenExpire  time.Duration `json:"refresh_token_expire" toml:"refresh_token_expire" mapstructure:"refresh_token_expire"`
-	SigningKey          string        `json:"signing_key" toml:"signing_key" mapstructure:"signing_key"`
-	MaxLoginAttempts    int           `json:"max_login_attempts" toml:"max_login_attempts" mapstructure:"max_login_attempts"`
-	LoginLockDuration   time.Duration `json:"login_lock_duration" toml:"login_lock_duration" mapstructure:"login_lock_duration"`
-}
-
-type UserConfig struct {
-	AvatarBucket    string        `json:"avatar_bucket" toml:"avatar_bucket" mapstructure:"avatar_bucket"`
-	AvatarURLExpiry time.Duration `json:"avatar_url_expiry" toml:"avatar_url_expiry" mapstructure:"avatar_url_expiry"`
+	AccessTokenExpire   time.Duration `json:"access_token_expire"   toml:"access_token_expire"   mapstructure:"access_token_expire"`
+	RefreshTokenExpire  time.Duration `json:"refresh_token_expire"  toml:"refresh_token_expire"  mapstructure:"refresh_token_expire"`
+	SigningKey          string        `json:"signing_key"           toml:"signing_key"           mapstructure:"signing_key"`
+	MaxLoginAttempts    int           `json:"max_login_attempts"    toml:"max_login_attempts"    mapstructure:"max_login_attempts"`
+	LoginLockDuration   time.Duration `json:"login_lock_duration"   toml:"login_lock_duration"   mapstructure:"login_lock_duration"`
+	MaxIPLoginAttempts  int           `json:"max_ip_login_attempts"  toml:"max_ip_login_attempts"  mapstructure:"max_ip_login_attempts"`
+	IPLoginLockDuration time.Duration `json:"ip_login_lock_duration" toml:"ip_login_lock_duration" mapstructure:"ip_login_lock_duration"`
 }
 
 var DefaultConfig = Config{
@@ -82,22 +79,34 @@ var DefaultConfig = Config{
 	},
 	Opentrace: opentrace.Config{
 		Enable:         false,
+		DSN:            "",
 		ConnectTimeout: 10 * time.Second,
 	},
 	Auth: AuthConfig{
-		AccessTokenExpire:  3600 * time.Second,
-		RefreshTokenExpire: 604800 * time.Second,
-		SigningKey:         "",
-		MaxLoginAttempts:   5,
-		LoginLockDuration:  2 * time.Minute,
-	},
-	User: UserConfig{
-		AvatarBucket:    "user-avatars",
-		AvatarURLExpiry: 2 * time.Hour,
+		AccessTokenExpire:   5 * time.Minute,
+		RefreshTokenExpire:  30 * time.Minute,
+		SigningKey:          "",
+		MaxLoginAttempts:    5,
+		LoginLockDuration:   2 * time.Minute,
+		MaxIPLoginAttempts:  20,
+		IPLoginLockDuration: 1 * time.Minute,
 	},
 }
 
-// String 序列化（脱敏，不输出敏感字段）
+func (c *AuthConfig) String() string {
+	data := map[string]interface{}{
+		"access_token_expire":    c.AccessTokenExpire.String(),
+		"refresh_token_expire":   c.RefreshTokenExpire.String(),
+		"signing_key":            c.SigningKey,
+		"max_login_attempts":     c.MaxLoginAttempts,
+		"login_lock_duration":    c.LoginLockDuration.String(),
+		"max_ip_login_attempts":  c.MaxIPLoginAttempts,
+		"ip_login_lock_duration": c.IPLoginLockDuration.String(),
+	}
+	buf, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(data)
+	return string(buf)
+}
+
 func (c *Config) String() string {
 	data := map[string]interface{}{
 		"network": c.Network,
@@ -129,37 +138,40 @@ func (c *Config) String() string {
 			"connect_timeout": c.Opentrace.ConnectTimeout.String(),
 		},
 		"auth": c.Auth,
-		"user": c.User,
 	}
 	buf, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(data)
 	return string(buf)
 }
 
-// ApplyOpts 用 CLI 选项覆盖配置
 func (c *Config) ApplyOpts(opts *flagsutil.Flags) {
 	c.Log.DisableStdlog = opts.DisableStdlog
 }
 
-// ResetSystem 将配置同步到 system 包全局变量
 func (c *Config) ResetSystem() {
-	if c.Network.BindIP != "0.0.0.0" && c.Network.BindIP != "" {
+	if c.Network.BindIP != "" {
 		system.Network.SetBindIP(c.Network.BindIP)
 	} else {
-		system.Network.SetBindIP(system.Network.BindIP())
+		system.Network.SetBindIP("0.0.0.0")
 	}
 	if c.Network.AccessIP != "" {
 		system.Network.SetAccessIP(c.Network.AccessIP)
+	} else if system.Network.BindIP() == "0.0.0.0" {
+		ip, err := netutil.GetInterfaceIPv4First()
+		if err != nil {
+			system.Network.SetAccessIP("0.0.0.0")
+		} else {
+			system.Network.SetAccessIP(ip)
+		}
 	} else {
 		system.Network.SetAccessIP(system.Network.BindIP())
 	}
 }
 
-// ReadConfigFromFile 读取 TOML 配置文件
 func ReadConfigFromFile(opts *flagsutil.Flags) (*Config, error) {
 	findConfigFile := func(path string) (string, error) {
 		for _, p := range []string{
 			path,
-			filepath.Join(system.Directory.ExecDir(), "config.toml"),
+			filepath.Join(system.Directory.EtcDir(), "config.toml"),
 		} {
 			fi, err := os.Stat(p)
 			if err == nil && !fi.IsDir() {
@@ -199,7 +211,7 @@ func ReadConfigFromFile(opts *flagsutil.Flags) (*Config, error) {
 1. **基础设施字段**使用 lib 层提供的 Config 类型（`netutil.Config`, `log.Config`, `mysql.Config` 等）
 2. **业务字段**使用自定义 struct，全部字段须同时标注 `json`、`toml`、`mapstructure` tag
 3. **`DefaultConfig`** 提供合理的默认值，作为 Viper Unmarshal 的初始值
-4. **`String()`** 序列化配置用于日志输出，可针对敏感字段做脱敏处理
+4. **`String()`** 序列化配置用于日志输出，可针对敏感字段做脱敏处理（如密码不输出）
 5. **`ApplyOpts()`** 将 CLI 选项覆盖到配置
-6. **`ResetSystem()`** 将配置写入 `system` 包全局变量（Network 相关）
-7. **`ReadConfigFromFile()`** 搜索顺序：CLI 指定路径 → `ExecDir()/config.toml`
+6. **`ResetSystem()`** 将配置写入 `system` 包全局变量（Network 相关，自动探测出口 IP）
+7. **`ReadConfigFromFile()`** 搜索顺序：CLI 指定路径 → `EtcDir()/config.toml`
