@@ -1,7 +1,3 @@
-# 环境变量从同级 profile 文件加载：
-#   docker compose --env-file profile up -d
-# 也可 export 后再执行，如: source profile && docker compose up -d
-
 services:
   etcd:
     restart: always
@@ -16,7 +12,7 @@ services:
       - ETCD_INITIAL_CLUSTER=etcd=http://etcd:2380
       - ETCD_DATA_DIR=/etcd-data
     volumes:
-      - ${DATA_HOME}/etcd/data:/etcd-data
+      - ${DATA_HOME:-./data}/etcd/data:/etcd-data
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 127.0.0.1:2379:2379
@@ -30,12 +26,12 @@ services:
 
   mysql:
     restart: always
-    image: mysql:${mysql_version}
+    image: mysql:${mysql_version:-8.0}
     container_name: personal-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
     volumes:
-      - ${DATA_HOME}/mysql/data:/var/lib/mysql
+      - ${DATA_HOME:-./data}/mysql/data:/var/lib/mysql
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 127.0.0.1:3306:3306
@@ -48,10 +44,10 @@ services:
 
   redis:
     restart: always
-    image: redis:${redis_version}
+    image: redis:${redis_version:-7}
     container_name: personal-redis
     volumes:
-      - ${DATA_HOME}/redis/data:/data
+      - ${DATA_HOME:-./data}/redis/data:/data
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 127.0.0.1:6379:6379
@@ -64,14 +60,14 @@ services:
 
   minio:
     restart: always
-    image: minio/minio:${minio_version}
+    image: minio/minio:${minio_version:-latest}
     container_name: personal-minio
     command: server /data --console-address :9001
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     volumes:
-      - ${DATA_HOME}/minio/data:/data
+      - ${DATA_HOME:-./data}/minio/data:/data
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 127.0.0.1:9000:9000
@@ -86,4 +82,3 @@ services:
 networks:
   default:
     name: net-personal
-    external: true

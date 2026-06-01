@@ -1,6 +1,7 @@
 [network]
 bind_ip = "0.0.0.0"
 bind_port = 8080
+access_ip = ""
 disable_tls = true
 
 [log]
@@ -8,6 +9,10 @@ level = "info"
 
 [etcd]
 endpoints = ["127.0.0.1:2379"]
+
+[opentrace]
+enable = false
+dsn = ""
 
 [service]
 auth_service_target = "etcd:///grpclb/personal-auth"

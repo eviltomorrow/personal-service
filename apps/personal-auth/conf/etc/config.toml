@@ -4,6 +4,7 @@ level = "info"
 [network]
 bind_ip = "0.0.0.0"
 bind_port = 50001
+access_ip = ""
 disable_tls = true
 
 [mysql]
