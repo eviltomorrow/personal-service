@@ -35,6 +35,10 @@ body {
   animation: fade-in 0.6s ease-out 0.15s both;
 }
 
+.animate-fade-in-slow {
+  animation: fade-in 0.6s ease-out 0.3s both;
+}
+
 .animate-pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
 }
