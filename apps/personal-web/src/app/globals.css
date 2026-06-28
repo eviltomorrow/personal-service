@@ -39,54 +39,42 @@ body {
   }
 }
 
-@keyframes animate-in-fade {
+@keyframes anim-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes animate-in-slide-up-4 {
+@keyframes anim-slide-up {
   from { opacity: 0; transform: translateY(1rem); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes animate-in-slide-up-8 {
+@keyframes anim-slide-up-lg {
   from { opacity: 0; transform: translateY(2rem); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes animate-in-slide-down-2 {
+@keyframes anim-slide-down {
   from { opacity: 0; transform: translateY(-0.5rem); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-in {
+.anim-in {
   animation-fill-mode: both;
 }
 
-.fade-in {
-  animation-name: animate-in-fade;
+.anim-fade {
+  animation-name: anim-fade-in;
 }
 
-.slide-in-from-bottom-4 {
-  animation-name: animate-in-slide-up-4;
+.anim-up {
+  animation-name: anim-slide-up;
 }
 
-.slide-in-from-bottom-8 {
-  animation-name: animate-in-slide-up-8;
+.anim-up-lg {
+  animation-name: anim-slide-up-lg;
 }
 
-.slide-in-from-top-2 {
-  animation-name: animate-in-slide-down-2;
-}
-
-.duration-200 {
-  animation-duration: 200ms;
-}
-
-.duration-700 {
-  animation-duration: 700ms;
-}
-
-.delay-150 {
-  animation-delay: 150ms;
+.anim-down {
+  animation-name: anim-slide-down;
 }
