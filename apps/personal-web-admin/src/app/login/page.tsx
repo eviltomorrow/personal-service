@@ -26,17 +26,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-indigo-50/50 p-3 sm:p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50/50 p-3 sm:p-4">
       {/* Decorative blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-48 -right-48 w-[36rem] h-[36rem] rounded-full bg-indigo-100/50 blur-3xl" />
-        <div className="absolute -bottom-48 -left-48 w-[36rem] h-[36rem] rounded-full bg-indigo-100/30 blur-3xl" />
+        <div className="absolute -top-48 -right-48 w-[36rem] h-[36rem] rounded-full bg-slate-100/50 blur-3xl" />
+        <div className="absolute -bottom-48 -left-48 w-[36rem] h-[36rem] rounded-full bg-slate-100/30 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-5xl anim-in anim-fade anim-up-lg" style={{ animationDuration: "700ms" }}>
-        <div className="grid grid-cols-1 lg:grid-cols-5 rounded-xl sm:rounded-2xl shadow-xl shadow-indigo-500/5 overflow-hidden border border-gray-200">
+        <div className="grid grid-cols-1 lg:grid-cols-5 rounded-xl sm:rounded-2xl shadow-xl shadow-slate-500/5 overflow-hidden border border-gray-200">
           {/* Brand panel */}
-          <div className="lg:col-span-2 relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 p-6 sm:p-8 lg:p-10 flex flex-col gap-6 sm:gap-8 lg:gap-0 lg:justify-between">
+          <div className="lg:col-span-2 relative bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 p-6 sm:p-8 lg:p-10 flex flex-col gap-6 sm:gap-8 lg:gap-0 lg:justify-between">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
             <div className="absolute top-0 right-0 w-32 sm:w-48 h-32 sm:h-48 bg-white/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-24 sm:w-32 h-24 sm:h-32 bg-white/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
@@ -53,7 +53,7 @@ export default function LoginPage() {
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
                   欢迎来到你的<br />个人中心
                 </h1>
-                <p className="mt-2 sm:mt-3 text-sm text-indigo-200/80 leading-relaxed max-w-xs">
+                <p className="mt-2 sm:mt-3 text-sm text-slate-200/80 leading-relaxed max-w-xs">
                   安全、快速、直观 — 轻松管理您的账户和资料。
                 </p>
               </div>
@@ -65,7 +65,7 @@ export default function LoginPage() {
                 { icon: Zap, label: "极速访问" },
                 { icon: Feather, label: "简单直观" },
               ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-3 text-sm text-indigo-200/60">
+                <div key={label} className="flex items-center gap-3 text-sm text-slate-200/60">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
                     <Icon className="h-3.5 w-3.5 text-white/70" />
                   </div>
@@ -78,7 +78,7 @@ export default function LoginPage() {
           {/* Form panel */}
           <div className="lg:col-span-3 bg-white px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12 flex flex-col justify-center">
             <div>
-              <div className="mx-auto lg:mx-0 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-lg shadow-indigo-500/20">
+              <div className="mx-auto lg:mx-0 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 shadow-lg shadow-slate-500/20">
                 <LogIn className="h-5 w-5 text-white" />
               </div>
               <h2 className="mt-5 text-xl font-semibold tracking-tight text-gray-900">
@@ -112,7 +112,7 @@ export default function LoginPage() {
                     className={`block w-full rounded-lg border bg-white py-2.5 pl-10 pr-3.5 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:outline-none transition-all ${
                       missingFields.includes("email")
                         ? "border-red-300 ring-2 ring-red-200/50"
-                        : "border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/60"
+                        : "border-gray-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60"
                     }`}
                   />
                 </div>
@@ -140,7 +140,7 @@ export default function LoginPage() {
                     className={`block w-full rounded-lg border bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:outline-none transition-all ${
                       missingFields.includes("password")
                         ? "border-red-300 ring-2 ring-red-200/50"
-                        : "border-gray-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/60"
+                        : "border-gray-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60"
                     }`}
                   />
                   <button
@@ -158,13 +158,13 @@ export default function LoginPage() {
                   <input
                     type="checkbox"
                     defaultChecked
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-all"
+                    className="h-4 w-4 rounded border-gray-300 text-slate-600 focus:ring-slate-500 cursor-pointer transition-all"
                   />
                   <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">记住我</span>
                 </label>
                 <button
                   type="button"
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors active:scale-95"
+                  className="text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95"
                 >
                   忘记密码？
                 </button>
@@ -173,7 +173,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="relative flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 hover:from-indigo-700 hover:to-indigo-800 focus:ring-2 focus:ring-indigo-400/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 transition-all active:scale-[0.98] overflow-hidden group"
+                className="relative flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-500/20 hover:shadow-xl hover:shadow-slate-500/30 hover:from-slate-700 hover:to-slate-800 focus:ring-2 focus:ring-slate-400/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 transition-all active:scale-[0.98] overflow-hidden group"
               >
                 <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors" />
                 {loading ? (
@@ -192,7 +192,7 @@ export default function LoginPage() {
 
             <p className="mt-6 text-center text-sm text-gray-500">
               还没有账户？{" "}
-              <button type="button" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors active:scale-95 inline-block">
+              <button type="button" className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block">
                 注册
               </button>
             </p>
