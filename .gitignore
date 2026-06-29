@@ -26,3 +26,6 @@
 /deployments/components/monitoring/data
 /tests/conf/ntfy.json
 *.pprof
+
+# OpenCode session continuation artifacts
+.omo/
