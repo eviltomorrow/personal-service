@@ -172,7 +172,7 @@ export default function ForgotPasswordPage() {
                   <button
                     type="button"
                     onClick={() => router.push("/login")}
-                    className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block"
+                    className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block cursor-pointer hover:underline hover:underline-offset-2"
                   >
                     返回登录
                   </button>
@@ -320,7 +320,7 @@ export default function ForgotPasswordPage() {
                   <button
                     type="button"
                     onClick={() => { setStep(1); setMissingFields([]); setPasswordMismatch(false); }}
-                    className="inline-flex items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors active:scale-95"
+                    className="inline-flex items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors active:scale-95 cursor-pointer hover:underline hover:underline-offset-2"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                     返回
@@ -329,7 +329,7 @@ export default function ForgotPasswordPage() {
                   <button
                     type="button"
                     onClick={() => router.push("/login")}
-                    className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block"
+                    className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block cursor-pointer hover:underline hover:underline-offset-2"
                   >
                     返回登录
                   </button>

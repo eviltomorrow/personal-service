@@ -192,7 +192,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/forgot-password")}
-                  className="text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95"
+                  className="text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 cursor-pointer hover:underline hover:underline-offset-2"
                 >
                   忘记密码？
                 </button>
@@ -223,7 +223,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => router.push("/register")}
-                className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block"
+                className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block cursor-pointer hover:underline hover:underline-offset-2"
               >
                 注册
               </button>

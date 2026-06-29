@@ -227,7 +227,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => router.push("/login")}
-                className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block"
+                className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block cursor-pointer hover:underline hover:underline-offset-2"
               >
                 去登录
               </button>
