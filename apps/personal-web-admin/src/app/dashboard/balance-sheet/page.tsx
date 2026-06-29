@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import {
   Wallet, Landmark, TrendingUp, ArrowUpRight, ArrowDownRight,
   AlertCircle, Plus, Pencil, Trash2, X, AlertTriangle,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 interface BalanceItem {
@@ -17,53 +18,67 @@ interface BalanceGroup {
   items: BalanceItem[];
 }
 
-const initialData: BalanceGroup[] = [
-  {
-    category: "流动资产",
-    items: [
-      { name: "现金及银行存款", amount: 285000 },
-      { name: "应收账款", amount: 128000 },
-      { name: "存货", amount: 96000 },
-      { name: "短期投资", amount: 50000 },
-    ],
-  },
-  {
-    category: "非流动资产",
-    items: [
-      { name: "固定资产", amount: 420000 },
-      { name: "长期投资", amount: 180000 },
-      { name: "无形资产", amount: 62500 },
-      { name: "长期待摊费用", amount: 65000 },
-    ],
-  },
-  {
-    category: "流动负债",
-    items: [
-      { name: "应付账款", amount: 156000 },
-      { name: "短期借款", amount: 100000 },
-      { name: "应付职工薪酬", amount: 38400 },
-    ],
-  },
-  {
-    category: "非流动负债",
-    items: [
-      { name: "长期借款", amount: 180000 },
-      { name: "应付债券", amount: 49000 },
-    ],
-  },
-  {
-    category: "净资产",
-    items: [
-      { name: "实收资本", amount: 500000 },
-      { name: "资本公积", amount: 120000 },
-      { name: "未分配利润", amount: 143100 },
-    ],
-  },
-];
-
 function formatCNY(amount: number) {
   return `¥ ${amount.toLocaleString("zh-CN")}.00`;
 }
+
+function getMonthKey(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+const MONTH_LABELS = ["", "1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+
+function createDefaultData(): BalanceGroup[] {
+  return [
+    {
+      category: "流动资产",
+      items: [
+        { name: "现金及银行存款", amount: 285000 },
+        { name: "应收账款", amount: 128000 },
+        { name: "存货", amount: 96000 },
+        { name: "短期投资", amount: 50000 },
+      ],
+    },
+    {
+      category: "固定资产",
+      items: [
+        { name: "房屋及建筑物", amount: 320000 },
+        { name: "机器设备", amount: 100000 },
+        { name: "长期投资", amount: 180000 },
+        { name: "无形资产", amount: 62500 },
+        { name: "长期待摊费用", amount: 65000 },
+      ],
+    },
+    {
+      category: "流动负债",
+      items: [
+        { name: "应付账款", amount: 156000 },
+        { name: "短期借款", amount: 100000 },
+        { name: "应付职工薪酬", amount: 38400 },
+      ],
+    },
+    {
+      category: "非流动负债",
+      items: [
+        { name: "长期借款", amount: 180000 },
+        { name: "应付债券", amount: 49000 },
+      ],
+    },
+    {
+      category: "净资产",
+      items: [
+        { name: "实收资本", amount: 500000 },
+        { name: "资本公积", amount: 120000 },
+        { name: "未分配利润", amount: 143100 },
+      ],
+    },
+  ];
+}
+
+const today = new Date();
+const todayYear = today.getFullYear();
+const todayMonth = today.getMonth() + 1;
+const initialKey = getMonthKey(todayYear, todayMonth);
 
 type ModalState =
   | { type: "add"; groupIndex: number }
@@ -72,14 +87,39 @@ type ModalState =
   | null;
 
 export default function BalanceSheetPage() {
-  const [data, setData] = useState<BalanceGroup[]>(initialData);
+  const [year, setYear] = useState(todayYear);
+  const [month, setMonth] = useState(todayMonth);
+  const [monthData, setMonthData] = useState<Record<string, BalanceGroup[]>>({
+    [initialKey]: createDefaultData(),
+  });
   const [modal, setModal] = useState<ModalState>(null);
   const [formName, setFormName] = useState("");
   const [formAmount, setFormAmount] = useState("");
 
+  const monthKey = getMonthKey(year, month);
+  const data = monthData[monthKey] ?? createDefaultData();
+
   const totalAssets = data.slice(0, 2).flatMap((g) => g.items).reduce((s, i) => s + i.amount, 0);
   const totalLiabilities = data.slice(2, 4).flatMap((g) => g.items).reduce((s, i) => s + i.amount, 0);
   const totalEquity = data.slice(4).flatMap((g) => g.items).reduce((s, i) => s + i.amount, 0);
+
+  function navigateMonth(delta: number) {
+    const newDate = new Date(year, month - 1 + delta, 1);
+    const newYear = newDate.getFullYear();
+    const newMonth = newDate.getMonth() + 1;
+    const newKey = getMonthKey(newYear, newMonth);
+    const curKey = monthKey;
+
+    setYear(newYear);
+    setMonth(newMonth);
+
+    if (!monthData[newKey]) {
+      setMonthData((prev) => ({
+        ...prev,
+        [newKey]: prev[curKey].map((g) => ({ ...g, items: [...g.items] })),
+      }));
+    }
+  }
 
   function openAdd(groupIndex: number) {
     setFormName("");
@@ -100,12 +140,12 @@ export default function BalanceSheetPage() {
     const amount = Number(formAmount);
     if (!name || isNaN(amount) || amount <= 0) return;
 
-    setData((prev) => {
-      const next = prev.map((g) => ({ ...g, items: [...g.items] }));
+    setMonthData((prev) => {
+      const next = { ...prev, [monthKey]: prev[monthKey].map((g) => ({ ...g, items: [...g.items] })) };
       if (modal.type === "add") {
-        next[modal.groupIndex].items.push({ name, amount });
+        next[monthKey][modal.groupIndex].items.push({ name, amount });
       } else if (modal.type === "edit") {
-        next[modal.groupIndex].items[modal.itemIndex] = { name, amount };
+        next[monthKey][modal.groupIndex].items[modal.itemIndex] = { name, amount };
       }
       return next;
     });
@@ -114,9 +154,9 @@ export default function BalanceSheetPage() {
 
   function handleDelete() {
     if (!modal || modal.type !== "delete") return;
-    setData((prev) => {
-      const next = prev.map((g) => ({ ...g, items: [...g.items] }));
-      next[modal.groupIndex].items.splice(modal.itemIndex, 1);
+    setMonthData((prev) => {
+      const next = { ...prev, [monthKey]: prev[monthKey].map((g) => ({ ...g, items: [...g.items] })) };
+      next[monthKey][modal.groupIndex].items.splice(modal.itemIndex, 1);
       return next;
     });
     setModal(null);
@@ -128,143 +168,214 @@ export default function BalanceSheetPage() {
     { label: "净资产", value: formatCNY(totalEquity), change: "+6.7%", trend: "up" as const, icon: TrendingUp },
   ];
 
+  function renderSection(group: BalanceGroup, gi: number) {
+    return (
+      <div key={group.category} className="rounded-lg border border-gray-100 bg-gray-50/30">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100">
+          <span className="text-sm font-semibold text-gray-800">{group.category}</span>
+          <button
+            type="button"
+            onClick={() => openAdd(gi)}
+            className="inline-flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-slate-600 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            添加
+          </button>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {group.items.length === 0 && (
+            <p className="px-4 py-3 text-xs text-gray-400">暂无数据</p>
+          )}
+          {group.items.map((item, ii) => (
+            <div
+              key={`${gi}-${ii}`}
+              className="group flex items-center justify-between px-4 py-2.5 hover:bg-white transition-colors"
+            >
+              <span className="text-sm text-gray-700">{item.name}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCNY(item.amount)}
+                </span>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(gi, ii)}
+                    className="rounded p-1 text-gray-300 hover:text-slate-500 transition-colors"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModal({ type: "delete", groupIndex: gi, itemIndex: ii })}
+                    className="rounded p-1 text-gray-300 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="资产负债表" description="个人资产负债总览" />
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        {summaryCards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
-          >
-            <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-slate-100 p-2.5">
-                <card.icon className="h-5 w-5 text-slate-600" />
-              </div>
-              <span
-                className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                  card.trend === "up"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-red-50 text-red-700"
-                }`}
+      {/* Sidebar + Detail grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+        {/* Left sidebar: month nav + summary cards */}
+        <div className="space-y-5">
+          {/* Month navigation */}
+          <div className="flex items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+            <button
+              type="button"
+              onClick={() => navigateMonth(-1)}
+              className="inline-flex items-center justify-center rounded-lg p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all active:scale-95"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-sm font-semibold text-gray-900 select-none">
+              {year}年{MONTH_LABELS[month]}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigateMonth(1)}
+              className="inline-flex items-center justify-center rounded-lg p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all active:scale-95"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Summary cards stacked */}
+          <div className="space-y-3">
+            {summaryCards.map((card) => (
+              <div
+                key={card.label}
+                className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
               >
-                {card.trend === "up" ? (
-                  <ArrowUpRight className="h-3 w-3" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3" />
-                )}
-                {card.change}
-              </span>
-            </div>
-            <p className="mt-4 text-2xl font-semibold text-gray-900">{card.value}</p>
-            <p className="mt-1 text-sm text-gray-500">{card.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Balance sheet table */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between p-6 pb-4">
-          <div>
-            <h3 className="text-base font-semibold text-gray-900">资产负债表明细</h3>
-            <p className="text-sm text-gray-500">点击项目可修改，支持新增和删除</p>
-          </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-            <AlertCircle className="h-3.5 w-3.5" />
-            数据仅供参考
-          </span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-t border-gray-100 bg-gray-50/50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">项目</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">金额</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {data.map((group, gi) => (
-                <tr key={group.category}>
-                  <td
-                    colSpan={3}
-                    className={`px-6 py-3 text-sm font-semibold ${
-                      group.category === "净资产"
-                        ? "text-emerald-700 bg-emerald-50/50"
-                        : group.category === "流动资产" || group.category === "非流动资产"
-                          ? "text-slate-700 bg-slate-50/50"
-                          : "text-amber-700 bg-amber-50/50"
+                <div className="flex items-center justify-between">
+                  <div className="rounded-lg bg-slate-100 p-2">
+                    <card.icon className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                      card.trend === "up"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-red-50 text-red-700"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span>{group.category}</span>
+                    {card.trend === "up" ? (
+                      <ArrowUpRight className="h-3 w-3" />
+                    ) : (
+                      <ArrowDownRight className="h-3 w-3" />
+                    )}
+                    {card.change}
+                  </span>
+                </div>
+                <p className="mt-3 text-xl font-semibold text-gray-900">{card.value}</p>
+                <p className="mt-0.5 text-xs text-gray-500">{card.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Legend hint */}
+          <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-4 text-center">
+            <p className="text-xs text-gray-400">点击项目可修改，支持新增和删除</p>
+          </div>
+        </div>
+
+        {/* Right: detail panel */}
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 className="text-base font-semibold text-gray-900">资产负债表明细</h3>
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+              <AlertCircle className="h-3.5 w-3.5" />
+              数据仅供参考
+            </span>
+          </div>
+          <div className="p-5 space-y-4">
+            {data.map((group, gi) => (
+              <div key={group.category}>
+                {group.category === "净资产" ? (
+                  <div className="rounded-lg border border-emerald-100 bg-emerald-50/30">
+                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-emerald-100">
+                      <span className="text-sm font-semibold text-emerald-800">{group.category}</span>
                       <button
                         type="button"
                         onClick={() => openAdd(gi)}
-                        className="inline-flex items-center gap-1 text-xs font-medium opacity-60 hover:opacity-100 transition-opacity"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-emerald-500 hover:text-emerald-700 transition-colors"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         添加
                       </button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-              {data.map((group, gi) =>
-                group.items.map((item, ii) => (
-                  <tr key={`${gi}-${ii}`} className="group hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3.5 pl-14 text-sm text-gray-700">{item.name}</td>
-                    <td className="px-6 py-3.5 text-right text-sm font-medium text-gray-900 tabular-nums">
-                      {formatCNY(item.amount)}
-                    </td>
-                    <td className="px-6 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(gi, ii)}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                    <div className="divide-y divide-emerald-50">
+                      {group.items.length === 0 && (
+                        <p className="px-4 py-3 text-xs text-gray-400">暂无数据</p>
+                      )}
+                      {group.items.map((item, ii) => (
+                        <div
+                          key={`${gi}-${ii}`}
+                          className="group flex items-center justify-between px-4 py-2.5 hover:bg-white/60 transition-colors"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setModal({ type: "delete", groupIndex: gi, itemIndex: ii })}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-              {/* Totals */}
-              <tr className="border-t-2 border-gray-200 bg-gray-50/80">
-                <td className="px-6 py-3.5 text-sm font-semibold text-gray-800">资产合计</td>
-                <td className="px-6 py-3.5 text-right text-sm font-semibold text-gray-900 tabular-nums">
-                  {formatCNY(totalAssets)}
-                </td>
-                <td />
-              </tr>
-              <tr className="bg-gray-50/80">
-                <td className="px-6 py-3.5 text-sm font-semibold text-gray-800">负债合计</td>
-                <td className="px-6 py-3.5 text-right text-sm font-semibold text-gray-900 tabular-nums">
-                  {formatCNY(totalLiabilities)}
-                </td>
-                <td />
-              </tr>
-              <tr className="bg-gray-50/80 border-t-2 border-emerald-200">
-                <td className="px-6 py-3.5 text-sm font-semibold text-emerald-800">净资产合计</td>
-                <td className="px-6 py-3.5 text-right text-sm font-semibold text-emerald-700 tabular-nums">
-                  {formatCNY(totalEquity)}
-                </td>
-                <td />
-              </tr>
-            </tbody>
-          </table>
+                          <span className="text-sm text-gray-700">{item.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-emerald-700 tabular-nums">
+                              {formatCNY(item.amount)}
+                            </span>
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={() => openEdit(gi, ii)}
+                                className="rounded p-1 text-gray-300 hover:text-slate-500 transition-colors"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setModal({ type: "delete", groupIndex: gi, itemIndex: ii })}
+                                className="rounded p-1 text-gray-300 hover:text-red-400 transition-colors"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  renderSection(group, gi)
+                )}
+                {/* Totals between groups */}
+                {gi === 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-gray-50/80 border border-gray-100">
+                    <span className="text-sm font-semibold text-gray-800">资产合计</span>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                      {formatCNY(totalAssets)}
+                    </span>
+                  </div>
+                )}
+                {gi === 3 && (
+                  <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-gray-50/80 border border-gray-100">
+                    <span className="text-sm font-semibold text-gray-800">负债合计</span>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                      {formatCNY(totalLiabilities)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="border-t-2 border-emerald-200 px-6 py-3.5 flex items-center justify-between bg-emerald-50/50">
+            <span className="text-sm font-semibold text-emerald-800">净资产合计</span>
+            <span className="text-sm font-semibold text-emerald-700 tabular-nums">
+              {formatCNY(totalEquity)}
+            </span>
+          </div>
         </div>
       </div>
 
