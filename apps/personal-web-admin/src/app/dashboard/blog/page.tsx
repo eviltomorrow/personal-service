@@ -3,72 +3,71 @@ import { Calendar, Clock, ArrowRight, Hash, User } from "lucide-react";
 
 const posts = [
   {
-    title: "Introducing Real-Time Analytics Dashboard",
-    excerpt: "We are excited to announce our new real-time analytics dashboard that gives you instant insights into your platform performance, user behavior, and revenue trends with zero latency.",
-    date: "Jun 15, 2026",
-    readTime: "5 min read",
+    title: "实时数据分析面板正式上线",
+    excerpt: "我们激动地宣布全新的实时数据分析面板，为您提供零延迟的平台性能、用户行为和收入趋势洞察。",
+    date: "2026年6月15日",
+    readTime: "5分钟阅读",
     author: "John Doe",
-    tags: ["Product", "Feature"],
+    tags: ["产品", "功能"],
   },
   {
-    title: "Security Enhancements: Two-Factor Authentication Now Available",
-    excerpt: "Protect your account with an extra layer of security. Our new two-factor authentication system supports authenticator apps, SMS codes, and hardware security keys.",
-    date: "Jun 10, 2026",
-    readTime: "4 min read",
+    title: "安全升级：双因素认证现已可用",
+    excerpt: "为您的账户增加一层额外的安全保障。全新的双因素认证系统支持认证器应用、短信验证码和硬件安全密钥。",
+    date: "2026年6月10日",
+    readTime: "4分钟阅读",
     author: "Sarah Chen",
-    tags: ["Security", "Update"],
+    tags: ["安全", "更新"],
   },
   {
-    title: "How We Reduced API Latency by 40%",
-    excerpt: "A deep dive into our infrastructure optimization journey — from connection pooling and query optimization to edge caching, here is how we made your API calls faster.",
-    date: "Jun 3, 2026",
-    readTime: "8 min read",
+    title: "我们如何将 API 延迟降低 40%",
+    excerpt: "深入解析我们的基础设施优化之旅——从连接池管理和查询优化到边缘缓存，了解我们如何让您的 API 调用更快速。",
+    date: "2026年6月3日",
+    readTime: "8分钟阅读",
     author: "Mike Johnson",
-    tags: ["Engineering", "Performance"],
+    tags: ["工程", "性能"],
   },
   {
-    title: "Q2 2026 Platform Report: Growth & Milestones",
-    excerpt: "Our quarterly report highlights a 32% increase in active users, 28% revenue growth, and the launch of 12 new features. See what we achieved together this quarter.",
-    date: "May 28, 2026",
-    readTime: "6 min read",
+    title: "2026年第二季度平台报告：增长与里程碑",
+    excerpt: "我们的季度报告显示活跃用户增长 32%，收入增长 28%，并发布了 12 项新功能。看看本季度我们共同取得的成就。",
+    date: "2026年5月28日",
+    readTime: "6分钟阅读",
     author: "John Doe",
-    tags: ["Company", "Report"],
+    tags: ["公司", "报告"],
   },
   {
-    title: "Building Accessible Interfaces: Our Design Principles",
-    excerpt: "Accessibility is not an afterthought — it is a core principle. Learn about our design system and the practices we follow to make our platform usable for everyone.",
-    date: "May 20, 2026",
-    readTime: "7 min read",
+    title: "构建无障碍界面：我们的设计原则",
+    excerpt: "无障碍不是事后考虑——它是核心原则。了解我们的设计系统以及我们如何让平台适用于所有用户。",
+    date: "2026年5月20日",
+    readTime: "7分钟阅读",
     author: "Emily Davis",
-    tags: ["Design", "Engineering"],
+    tags: ["设计", "工程"],
   },
   {
-    title: "Getting Started with the Personal API",
-    excerpt: "A comprehensive guide to integrating with our REST and GraphQL APIs. Includes authentication, rate limits, code examples, and best practices for a smooth integration.",
-    date: "May 12, 2026",
-    readTime: "10 min read",
+    title: "Personal API 快速入门指南",
+    excerpt: "全面的 REST 和 GraphQL API 集成指南，包括认证、速率限制、代码示例以及最佳实践。",
+    date: "2026年5月12日",
+    readTime: "10分钟阅读",
     author: "Alex Rivera",
-    tags: ["API", "Guide"],
+    tags: ["API", "指南"],
   },
 ];
 
 export default function BlogPage() {
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
-      <PageHeader title="Blog" description="Latest updates, guides, and stories from the team." />
+      <PageHeader title="博客" description="来自团队的最新更新、指南和故事。" />
 
       {/* Timeline */}
       <div className="relative">
         {/* Timeline line */}
-        <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-indigo-200 via-indigo-300/50 to-indigo-200 hidden md:block" />
+        <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-slate-200 via-slate-300/50 to-slate-200 hidden md:block" />
 
         <div className="space-y-8">
           {posts.map((post, i) => (
             <div key={i} className="relative md:pl-14 group">
-              {/* Timeline dot: hover dot */}
-              <div className="absolute left-[11px] top-7 w-[18px] h-[18px] rounded-full bg-white border-2 border-indigo-300 hidden md:hidden md:group-hover:block md:group-hover:border-indigo-500 group-hover:bg-indigo-50 transition-colors z-10" />
-              {/* Timeline dot: default dot */}
-              <div className="absolute left-[15px] top-[30px] w-[10px] h-[10px] rounded-full bg-indigo-500 hidden md:block md:group-hover:hidden" />
+              {/* Timeline dot */}
+              <div className="absolute left-[15px] top-[30px] w-[10px] h-[10px] rounded-full bg-slate-400 hidden md:block group-hover:hidden" />
+              <div className="absolute left-[11px] top-[26px] w-[18px] h-[18px] rounded-full bg-white border-2 border-slate-400 hidden group-hover:block group-hover:border-slate-500 group-hover:bg-slate-50 transition-colors z-10" />
 
               {/* Card */}
               <div className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all">
@@ -90,7 +89,7 @@ export default function BlogPage() {
                   </div>
 
                   {/* Title */}
-                  <h2 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                  <h2 className="text-lg font-semibold text-gray-900 group-hover:text-slate-600 transition-colors">
                     {post.title}
                   </h2>
 
@@ -105,15 +104,15 @@ export default function BlogPage() {
                       {post.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-600/10"
+                          className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-slate-600/10"
                         >
                           <Hash className="h-3 w-3" />
                           {tag}
                         </span>
                       ))}
                     </div>
-                    <span className="flex items-center gap-1 text-sm font-medium text-indigo-600 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
-                      Read more
+                    <span className="flex items-center gap-1 text-sm font-medium text-slate-600 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+                      阅读更多
                       <ArrowRight className="h-4 w-4" />
                     </span>
                   </div>

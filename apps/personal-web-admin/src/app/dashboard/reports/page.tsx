@@ -2,36 +2,38 @@ import { PageHeader } from "@/components/page-header";
 import { FileText, Download, FileBarChart, FileSpreadsheet, FilePieChart } from "lucide-react";
 
 const reports = [
-  { name: "Monthly Revenue Report", date: "Jun 1, 2026", type: "PDF", size: "2.4 MB", icon: FileBarChart },
-  { name: "User Growth Analytics", date: "May 30, 2026", type: "CSV", size: "1.8 MB", icon: FileSpreadsheet },
-  { name: "Conversion Funnel", date: "May 28, 2026", type: "PDF", size: "3.1 MB", icon: FilePieChart },
-  { name: "Quarterly Summary Q2", date: "May 25, 2026", type: "PDF", size: "4.2 MB", icon: FileText },
-  { name: "Security Audit Log", date: "May 20, 2026", type: "CSV", size: "0.9 MB", icon: FileBarChart },
-  { name: "Customer Satisfaction", date: "May 15, 2026", type: "PDF", size: "1.5 MB", icon: FileSpreadsheet },
+  { name: "月度收入报表", date: "2026年6月1日", type: "PDF", size: "2.4 MB", icon: FileBarChart },
+  { name: "用户增长分析", date: "2026年5月30日", type: "CSV", size: "1.8 MB", icon: FileSpreadsheet },
+  { name: "转化漏斗分析", date: "2026年5月28日", type: "PDF", size: "3.1 MB", icon: FilePieChart },
+  { name: "第二季度总结", date: "2026年5月25日", type: "PDF", size: "4.2 MB", icon: FileText },
+  { name: "安全审计日志", date: "2026年5月20日", type: "CSV", size: "0.9 MB", icon: FileBarChart },
+  { name: "客户满意度报告", date: "2026年5月15日", type: "PDF", size: "1.5 MB", icon: FileSpreadsheet },
 ];
 
 export default function ReportsPage() {
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
-      <PageHeader title="Reports" description="Download and manage your platform reports." />
+      <PageHeader
+        title="报表"
+        description="下载和管理平台报表。"
+        actions={
+          <button className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors">
+            <FileText className="h-4 w-4" />
+            生成报表
+          </button>
+        }
+      />
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between p-6 pb-4">
-          <h3 className="text-base font-semibold text-gray-900">Available Reports</h3>
-          <button className="flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition-colors">
-            <FileText className="h-4 w-4" />
-            Generate
-          </button>
-        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-t border-gray-100">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Size</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+              <tr className="border-b border-gray-100 bg-gray-50/50">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名称</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">日期</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">大小</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">类型</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -51,9 +53,9 @@ export default function ReportsPage() {
                     <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">{r.type}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+                    <button className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors">
                       <Download className="h-4 w-4" />
-                      Download
+                      下载
                     </button>
                   </td>
                 </tr>

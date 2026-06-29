@@ -15,10 +15,10 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {metrics.map((m) => (
-          <div key={m.label} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all">
+          <div key={m.label} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
             <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-indigo-50 p-2.5">
-                <m.icon className="h-5 w-5 text-indigo-600" />
+              <div className="rounded-lg bg-slate-100 p-2.5">
+                <m.icon className="h-5 w-5 text-slate-600" />
               </div>
               <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
                 <ArrowUpRight className="h-3 w-3" />
@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">分析概览</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-4">访问趋势（24小时）</h3>
         <div className="h-64 flex items-end justify-between gap-2">
           {Array.from({ length: 24 }, (_, i) => ({
             label: `${String(i).padStart(2, "0")}:00`,
@@ -41,7 +41,7 @@ export default function AnalyticsPage() {
             <div key={h.label} className="flex flex-col items-center gap-2 flex-1">
               <div className="w-full bg-gray-100 rounded-full relative" style={{ height: "200px" }}>
                 <div
-                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-indigo-500 to-indigo-400/60 rounded-full transition-all duration-500"
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-500 to-slate-400/60 rounded-full transition-all duration-500"
                   style={{ height: `${h.value}%` }}
                 />
               </div>

@@ -4,28 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Users,
-  Settings,
-  Shield,
-  Bell,
-  Search,
-  Menu,
-  X,
-  ChevronDown,
-  Activity,
-  BarChart3,
-  FileText,
-  HelpCircle,
-  Sparkles,
-  User,
-  CreditCard,
-  LogOut,
-  Clock,
-  ShoppingCart,
-  MessageCircle,
-  Feather,
-  BookOpen,
+  LayoutDashboard, Users, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
+  Activity, BarChart3, FileText, HelpCircle, Sparkles, User, CreditCard, LogOut,
+  Clock, ShoppingCart, MessageCircle, Feather, BookOpen, Plus, UserPlus,
 } from "lucide-react";
 
 const navItems = [
@@ -44,22 +25,30 @@ const bottomNavItems = [
   { label: "安全设置", href: "/dashboard/security", icon: Shield },
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const quickActions = [
+  { label: "新建用户", icon: UserPlus, href: "/dashboard/users" },
+  { label: "生成报表", icon: FileText, href: "/dashboard/reports" },
+  { label: "发布博客", icon: Feather, href: "/dashboard/blog" },
+];
+
+const hour = new Date().getHours();
+const greeting = hour < 12 ? "上午好" : hour < 18 ? "下午好" : "晚上好";
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [quickActionOpen, setQuickActionOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const quickActionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+      if (quickActionRef.current && !quickActionRef.current.contains(e.target as Node)) setQuickActionOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -67,19 +56,25 @@ export default function DashboardLayout({
 
   const notifications = [
     { icon: ShoppingCart, text: "订单 #3821 已完成", time: "2分钟前", color: "text-emerald-600" },
-    { icon: User, text: "新用户 Emma 已注册", time: "15分钟前", color: "text-indigo-600" },
+    { icon: User, text: "新用户 Emma 已注册", time: "15分钟前", color: "text-slate-600" },
     { icon: MessageCircle, text: "新的工单已提交", time: "1小时前", color: "text-amber-600" },
     { icon: Clock, text: "会话超时警告", time: "2小时前", color: "text-red-600" },
   ];
 
-  const userMenuItems: { label: string; icon: any; href?: string; danger?: boolean }[] = [
+  const userMenuItems = [
     { label: "个人信息", icon: User, href: "/dashboard/settings" },
     { label: "账单管理", icon: CreditCard, href: "/dashboard/settings" },
     { label: "退出登录", icon: LogOut, danger: true },
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50/50">
+      {/* Decorative blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-24 -right-24 w-[30rem] h-[30rem] rounded-full bg-slate-100/50 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-[30rem] h-[30rem] rounded-full bg-slate-100/30 blur-3xl" />
+      </div>
+
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -90,19 +85,17 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white border-r border-gray-200 transition-transform duration-300 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white/90 backdrop-blur-xl border-r border-gray-200 transition-transform duration-300 lg:static lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Sidebar header */}
         <div className="flex h-16 items-center justify-between px-6 border-b border-gray-100">
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-slate-500 to-slate-700 shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-slate-500 to-slate-700 shadow-sm shadow-slate-500/10">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
-            <span className="text-base font-semibold text-gray-900">
-              Nicell.me
-            </span>
+            <span className="text-base font-semibold text-gray-900">Nicell.me</span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -158,9 +151,9 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="relative flex flex-1 flex-col z-10">
         {/* Top header */}
-        <header className="flex h-16 shrink-0 items-center gap-4 border-b border-gray-200 bg-white px-4 lg:px-6">
+        <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 lg:px-6">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
@@ -174,16 +167,42 @@ export default function DashboardLayout({
             <input
               type="text"
               placeholder="搜索..."
-              className="block w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-10 pr-3.5 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none focus:bg-white transition-colors"
+              className="block w-full rounded-lg border border-gray-200 bg-gray-50/80 py-2 pl-10 pr-3.5 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none focus:bg-white transition-all"
             />
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1 ml-auto">
+            {/* Quick action */}
+            <div className="relative" ref={quickActionRef}>
+              <button
+                onClick={() => { setQuickActionOpen(!quickActionOpen); setNotifOpen(false); setUserMenuOpen(false); }}
+                className="rounded-lg p-2 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+
+              {quickActionOpen && (
+                <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden z-[60] anim-in anim-fade anim-down" style={{ animationDuration: "200ms" }}>
+                  {quickActions.map((action) => (
+                    <Link
+                      key={action.label}
+                      href={action.href}
+                      onClick={() => setQuickActionOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-50 hover:text-gray-900 transition-colors"
+                    >
+                      <action.icon className="h-4 w-4 text-slate-500" />
+                      {action.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Notification dropdown */}
             <div className="relative" ref={notifRef}>
               <button
-                onClick={() => { setNotifOpen(!notifOpen); setUserMenuOpen(false); }}
-                className="relative rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                onClick={() => { setNotifOpen(!notifOpen); setUserMenuOpen(false); setQuickActionOpen(false); }}
+                className="relative rounded-lg p-2 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95"
               >
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
@@ -217,10 +236,10 @@ export default function DashboardLayout({
             {/* User menu dropdown */}
             <div className="relative" ref={userMenuRef}>
               <button
-                onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }}
+                onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); setQuickActionOpen(false); }}
                 className="flex items-center gap-2 pl-2 border-l border-gray-200 cursor-pointer group"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-400 to-slate-600 text-xs font-semibold text-white shadow-xs">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-400 to-slate-600 text-xs font-semibold text-white shadow-xs shadow-slate-400/20">
                   管
                 </div>
                 <div className="hidden sm:block">
@@ -243,7 +262,7 @@ export default function DashboardLayout({
                         className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                           item.danger
                             ? "text-red-600 hover:bg-red-50"
-                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                            : "text-gray-700 hover:bg-slate-50 hover:text-gray-900"
                         }`}
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
@@ -256,7 +275,7 @@ export default function DashboardLayout({
                         className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                           item.danger
                             ? "text-red-600 hover:bg-red-50"
-                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                            : "text-gray-700 hover:bg-slate-50 hover:text-gray-900"
                         }`}
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
@@ -271,7 +290,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+        <main className="relative flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

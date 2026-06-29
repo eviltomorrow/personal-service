@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/page-header";
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, ShoppingCart, Home, Car, Utensils, Shirt, BookOpen, Plus } from "lucide-react";
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, ShoppingCart, Home, Car, Utensils, Shirt, BookOpen, Plus, UserPlus, FileText, Feather } from "lucide-react";
 
 const summaryCards = [
   {
@@ -25,8 +25,14 @@ const summaryCards = [
   },
 ];
 
+const quickActionCards = [
+  { label: "新建用户", icon: UserPlus, href: "/dashboard/users", color: "from-slate-500 to-slate-600" },
+  { label: "生成报表", icon: FileText, href: "/dashboard/reports", color: "from-slate-400 to-slate-500" },
+  { label: "发布博客", icon: Feather, href: "/dashboard/blog", color: "from-slate-600 to-slate-700" },
+];
+
 const monthlyBudget = [
-  { category: "住房", budget: 5000, spent: 4800, icon: Home, color: "text-indigo-600" },
+  { category: "住房", budget: 5000, spent: 4800, icon: Home, color: "text-slate-600" },
   { category: "交通", budget: 2000, spent: 1650, icon: Car, color: "text-amber-600" },
   { category: "餐饮", budget: 3000, spent: 2850, icon: Utensils, color: "text-emerald-600" },
   { category: "购物", budget: 2500, spent: 1900, icon: Shirt, color: "text-rose-600" },
@@ -57,11 +63,30 @@ export default function DashboardPage() {
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="仪表盘" description="欢迎回来，这是本月的财务概况。" />
 
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {quickActionCards.map((action) => (
+          <a
+            key={action.label}
+            href={action.href}
+            className="group flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+          >
+            <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${action.color} shadow-sm transition-all group-hover:shadow-md group-hover:scale-105`}>
+              <action.icon className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+              {action.label}
+            </span>
+          </a>
+        ))}
+      </div>
+
+      {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {summaryCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all"
+            className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
           >
             <div className="flex items-center justify-between">
               <div className="rounded-lg bg-slate-100 p-2.5">
@@ -110,8 +135,6 @@ export default function DashboardPage() {
               <tbody className="divide-y divide-gray-100">
                 {monthlyBudget.map((item) => {
                   const pct = Math.round((item.spent / item.budget) * 100);
-                  const barColor =
-                    pct > 90 ? "bg-red-500" : pct > 75 ? "bg-amber-500" : "bg-slate-500";
                   return (
                     <tr key={item.category} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
@@ -130,9 +153,11 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <div className="w-20 bg-gray-100 rounded-full h-2">
+                          <div className="w-20 bg-gray-100 rounded-full h-2 overflow-hidden">
                             <div
-                              className={`h-2 rounded-full transition-all ${barColor}`}
+                              className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${
+                                pct > 90 ? "from-red-400 to-red-500" : pct > 75 ? "from-amber-400 to-amber-500" : "from-slate-400 to-slate-500"
+                              }`}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
