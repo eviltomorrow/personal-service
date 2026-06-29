@@ -1,41 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Eye, EyeOff, Loader2, LogIn, Mail, Lock, Sparkles, Shield, X, Zap, Feather } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, Sparkles, Shield, Zap, Feather, UserPlus } from "lucide-react";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
-  const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    const search = window.location.search;
-    if (search.includes("registered=true")) {
-      setToast("注册成功，请登录");
-    } else if (search.includes("reset=true")) {
-      setToast("密码重置成功，请登录");
-    }
-    if (search.includes("registered=true") || search.includes("reset=true")) {
-      window.history.replaceState({}, "", "/login");
-    }
-  }, []);
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const empty: string[] = [];
     if (!email) empty.push("email");
     if (!password) empty.push("password");
+    if (!confirmPassword) empty.push("confirmPassword");
     setMissingFields(empty);
     if (empty.length > 0) return;
+
+    if (password !== confirmPassword) {
+      setPasswordMismatch(true);
+      return;
+    }
+    setPasswordMismatch(false);
+
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1200));
     setLoading(false);
-    router.push("/dashboard");
+    router.push("/login?registered=true");
   };
 
   return (
@@ -92,29 +90,15 @@ export default function LoginPage() {
           <div className="lg:col-span-3 bg-white px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12 flex flex-col justify-center">
             <div>
               <div className="mx-auto lg:mx-0 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 shadow-lg shadow-slate-500/20">
-                <LogIn className="h-5 w-5 text-white" />
+                <UserPlus className="h-5 w-5 text-white" />
               </div>
               <h2 className="mt-5 text-xl font-semibold tracking-tight text-gray-900">
-                登录
+                注册
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                请输入您的凭据以访问账户。
+                创建您的账户以开始使用。
               </p>
             </div>
-
-            {toast && (
-              <div className="mt-5 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 anim-in anim-fade anim-down">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                <span className="flex-1">{toast}</span>
-                <button
-                  type="button"
-                  onClick={() => setToast(null)}
-                  className="text-emerald-400 hover:text-emerald-600 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
               <div className="group">
@@ -162,8 +146,8 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={(e) => { setPassword(e.target.value); setMissingFields((p) => p.filter((f) => f !== "password")); }}
-                    placeholder="请输入密码"
+                    onChange={(e) => { setPassword(e.target.value); setMissingFields((p) => p.filter((f) => f !== "password")); setPasswordMismatch(false); }}
+                    placeholder="请设置密码"
                     className={`block w-full rounded-lg border bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:outline-none transition-all ${
                       missingFields.includes("password")
                         ? "border-red-300 ring-2 ring-red-200/50"
@@ -180,22 +164,42 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer group">
+              <div className="group">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    确认密码
+                  </label>
+                  {missingFields.includes("confirmPassword") && (
+                    <span className="text-xs text-red-500 mb-1.5">必填</span>
+                  )}
+                </div>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                    <Lock className={`h-4 w-4 transition-colors ${missingFields.includes("confirmPassword") || passwordMismatch ? "text-red-400" : "text-gray-400"}`} />
+                  </div>
                   <input
-                    type="checkbox"
-                    defaultChecked
-                    className="h-4 w-4 rounded border-gray-300 text-slate-600 focus:ring-slate-500 cursor-pointer transition-all"
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => { setConfirmPassword(e.target.value); setMissingFields((p) => p.filter((f) => f !== "confirmPassword")); setPasswordMismatch(false); }}
+                    placeholder="请再次输入密码"
+                    className={`block w-full rounded-lg border bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:outline-none transition-all ${
+                      missingFields.includes("confirmPassword") || passwordMismatch
+                        ? "border-red-300 ring-2 ring-red-200/50"
+                        : "border-gray-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60"
+                    }`}
                   />
-                  <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">记住我</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => router.push("/forgot-password")}
-                  className="text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95"
-                >
-                  忘记密码？
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 transition-all active:scale-95"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {passwordMismatch && (
+                  <p className="mt-1.5 text-xs text-red-500">密码不一致</p>
+                )}
               </div>
 
               <button
@@ -207,25 +211,25 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    登录中...
+                    注册中...
                   </>
                 ) : (
                   <>
-                    <LogIn className="h-4 w-4" />
-                    登录
+                    <UserPlus className="h-4 w-4" />
+                    注册
                   </>
                 )}
               </button>
             </form>
 
             <p className="mt-6 text-center text-sm text-gray-500">
-              还没有账户？{" "}
+              已有账户？{" "}
               <button
                 type="button"
-                onClick={() => router.push("/register")}
+                onClick={() => router.push("/login")}
                 className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block"
               >
-                注册
+                去登录
               </button>
             </p>
           </div>
