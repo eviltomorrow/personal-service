@@ -46,25 +46,24 @@ export default function LoginPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20">
                   <Sparkles className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-lg font-semibold text-white">Personal Service</span>
+                <span className="text-lg font-semibold text-white">Nicell.me</span>
               </div>
 
               <div className="mt-6 sm:mt-8 lg:mt-10">
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">
-                  Welcome to your<br />personal hub
+                  欢迎来到你的<br />个人中心
                 </h1>
                 <p className="mt-2 sm:mt-3 text-sm text-indigo-200/80 leading-relaxed max-w-xs">
-                  Secure, fast, and intuitive — manage your account and profile
-                  with confidence.
+                  安全、快速、直观 — 轻松管理您的账户和资料。
                 </p>
               </div>
             </div>
 
             <div className="flex flex-row lg:flex-col gap-4 lg:gap-3 flex-wrap">
               {[
-                { icon: Shield, label: "Enterprise-grade security" },
-                { icon: Zap, label: "Lightning-fast access" },
-                { icon: Feather, label: "Simple & intuitive" },
+                { icon: Shield, label: "企业级安全" },
+                { icon: Zap, label: "极速访问" },
+                { icon: Feather, label: "简单直观" },
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-3 text-sm text-indigo-200/60">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
@@ -83,10 +82,10 @@ export default function LoginPage() {
                 <LogIn className="h-5 w-5 text-white" />
               </div>
               <h2 className="mt-5 text-xl font-semibold tracking-tight text-gray-900">
-                Sign in
+                登录
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Enter your credentials to access your account.
+                请输入您的凭据以访问账户。
               </p>
             </div>
 
@@ -94,10 +93,10 @@ export default function LoginPage() {
               <div className="group">
                 <div className="flex items-center justify-between">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Email
+                    邮箱
                   </label>
                   {missingFields.includes("email") && (
-                    <span className="text-xs text-red-500 mb-1.5">Required</span>
+                    <span className="text-xs text-red-500 mb-1.5">必填</span>
                   )}
                 </div>
                 <div className="relative">
@@ -122,10 +121,10 @@ export default function LoginPage() {
               <div className="group">
                 <div className="flex items-center justify-between">
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Password
+                    密码
                   </label>
                   {missingFields.includes("password") && (
-                    <span className="text-xs text-red-500 mb-1.5">Required</span>
+                    <span className="text-xs text-red-500 mb-1.5">必填</span>
                   )}
                 </div>
                 <div className="relative">
@@ -137,7 +136,7 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setMissingFields((p) => p.filter((f) => f !== "password")); }}
-                    placeholder="Enter your password"
+                    placeholder="请输入密码"
                     className={`block w-full rounded-lg border bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:outline-none transition-all ${
                       missingFields.includes("password")
                         ? "border-red-300 ring-2 ring-red-200/50"
@@ -161,13 +160,13 @@ export default function LoginPage() {
                     defaultChecked
                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-all"
                   />
-                  <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Remember me</span>
+                  <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">记住我</span>
                 </label>
                 <button
                   type="button"
                   className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors active:scale-95"
                 >
-                  Forgot password?
+                  忘记密码？
                 </button>
               </div>
 
@@ -180,21 +179,21 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Signing in...
+                    登录中...
                   </>
                 ) : (
                   <>
                     <LogIn className="h-4 w-4" />
-                    Sign in
+                    登录
                   </>
                 )}
               </button>
             </form>
 
             <p className="mt-6 text-center text-sm text-gray-500">
-              Don&apos;t have an account?{" "}
+              还没有账户？{" "}
               <button type="button" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors active:scale-95 inline-block">
-                Sign up
+                注册
               </button>
             </p>
           </div>

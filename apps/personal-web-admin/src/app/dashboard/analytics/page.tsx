@@ -2,16 +2,16 @@ import { PageHeader } from "@/components/page-header";
 import { TrendingUp, Users, Eye, Clock, ArrowUpRight } from "lucide-react";
 
 const metrics = [
-  { label: "Page Views", value: "142,832", change: "+18.2%", icon: Eye },
-  { label: "Avg. Session", value: "4m 32s", change: "+5.7%", icon: Clock },
-  { label: "Bounce Rate", value: "32.1%", change: "-2.4%", icon: TrendingUp },
-  { label: "Active Users", value: "3,421", change: "+11.3%", icon: Users },
+  { label: "页面浏览量", value: "142,832", change: "+18.2%", icon: Eye },
+  { label: "平均会话时长", value: "4分32秒", change: "+5.7%", icon: Clock },
+  { label: "跳出率", value: "32.1%", change: "-2.4%", icon: TrendingUp },
+  { label: "活跃用户", value: "3,421", change: "+11.3%", icon: Users },
 ];
 
 export default function AnalyticsPage() {
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
-      <PageHeader title="Analytics" description="Track your platform performance and user engagement." />
+      <PageHeader title="数据分析" description="跟踪平台性能与用户参与度。" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {metrics.map((m) => (
@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Analytics Overview</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-4">分析概览</h3>
         <div className="h-64 flex items-end justify-between gap-2">
           {Array.from({ length: 24 }, (_, i) => ({
             label: `${String(i).padStart(2, "0")}:00`,

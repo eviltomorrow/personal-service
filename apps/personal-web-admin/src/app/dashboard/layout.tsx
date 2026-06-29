@@ -25,21 +25,23 @@ import {
   ShoppingCart,
   MessageCircle,
   Feather,
+  BookOpen,
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { label: "Users", href: "/dashboard/users", icon: Users },
-  { label: "Activity", href: "/dashboard/activity", icon: Activity },
-  { label: "Blog", href: "/dashboard/blog", icon: Feather },
-  { label: "Reports", href: "/dashboard/reports", icon: FileText },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  { label: "仪表盘", href: "/dashboard", icon: LayoutDashboard },
+  { label: "数据分析", href: "/dashboard/analytics", icon: BarChart3 },
+  { label: "资产负债表", href: "/dashboard/balance-sheet", icon: BookOpen },
+  { label: "用户管理", href: "/dashboard/users", icon: Users },
+  { label: "活动记录", href: "/dashboard/activity", icon: Activity },
+  { label: "博客", href: "/dashboard/blog", icon: Feather },
+  { label: "报表", href: "/dashboard/reports", icon: FileText },
+  { label: "系统设置", href: "/dashboard/settings", icon: Settings },
 ];
 
 const bottomNavItems = [
-  { label: "Help Center", href: "/dashboard/help", icon: HelpCircle },
-  { label: "Security", href: "/dashboard/security", icon: Shield },
+  { label: "帮助中心", href: "/dashboard/help", icon: HelpCircle },
+  { label: "安全设置", href: "/dashboard/security", icon: Shield },
 ];
 
 export default function DashboardLayout({
@@ -64,16 +66,16 @@ export default function DashboardLayout({
   }, []);
 
   const notifications = [
-    { icon: ShoppingCart, text: "Order #3821 completed", time: "2 min ago", color: "text-emerald-600" },
-    { icon: User, text: "New user Emma registered", time: "15 min ago", color: "text-indigo-600" },
-    { icon: MessageCircle, text: "New support ticket opened", time: "1 hour ago", color: "text-amber-600" },
-    { icon: Clock, text: "Session timeout warning", time: "2 hours ago", color: "text-red-600" },
+    { icon: ShoppingCart, text: "订单 #3821 已完成", time: "2分钟前", color: "text-emerald-600" },
+    { icon: User, text: "新用户 Emma 已注册", time: "15分钟前", color: "text-indigo-600" },
+    { icon: MessageCircle, text: "新的工单已提交", time: "1小时前", color: "text-amber-600" },
+    { icon: Clock, text: "会话超时警告", time: "2小时前", color: "text-red-600" },
   ];
 
   const userMenuItems: { label: string; icon: any; href?: string; danger?: boolean }[] = [
-    { label: "Profile", icon: User, href: "/dashboard/settings" },
-    { label: "Billing", icon: CreditCard, href: "/dashboard/settings" },
-    { label: "Sign out", icon: LogOut, danger: true },
+    { label: "个人信息", icon: User, href: "/dashboard/settings" },
+    { label: "账单管理", icon: CreditCard, href: "/dashboard/settings" },
+    { label: "退出登录", icon: LogOut, danger: true },
   ];
 
   return (
@@ -99,7 +101,7 @@ export default function DashboardLayout({
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <span className="text-base font-semibold text-gray-900">
-              Personal
+              Nicell.me
             </span>
           </Link>
           <button
@@ -171,7 +173,7 @@ export default function DashboardLayout({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="搜索..."
               className="block w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-10 pr-3.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200/60 focus:outline-none focus:bg-white transition-colors"
             />
           </div>
@@ -190,7 +192,7 @@ export default function DashboardLayout({
               {notifOpen && (
                 <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden z-[60] anim-in anim-fade anim-down" style={{ animationDuration: "200ms" }}>
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-semibold text-gray-900">Notifications</p>
+                    <p className="text-sm font-semibold text-gray-900">通知</p>
                   </div>
                   <div className="max-h-72 overflow-y-auto">
                     {notifications.map((n, i) => (
@@ -219,13 +221,13 @@ export default function DashboardLayout({
                 className="flex items-center gap-2 pl-2 border-l border-gray-200 cursor-pointer group"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 text-xs font-semibold text-white shadow-xs">
-                  JD
+                  管
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-sm font-medium text-gray-700 leading-tight group-hover:text-gray-900 transition-colors">
-                    John Doe
+                    管理员
                   </p>
-                  <p className="text-xs text-gray-500">Admin</p>
+                  <p className="text-xs text-gray-500">管理员</p>
                 </div>
                 <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
               </button>

@@ -11,28 +11,28 @@ import {
 
 const stats = [
   {
-    label: "Total Revenue",
-    value: "$48,295",
+    label: "总收入",
+    value: "¥ 48,295",
     change: "+12.5%",
     trend: "up",
     icon: DollarSign,
   },
   {
-    label: "Active Users",
+    label: "活跃用户",
     value: "2,847",
     change: "+8.2%",
     trend: "up",
     icon: Users,
   },
   {
-    label: "Orders",
+    label: "订单数",
     value: "1,423",
     change: "-3.1%",
     trend: "down",
     icon: ShoppingCart,
   },
   {
-    label: "Conversion Rate",
+    label: "转化率",
     value: "3.24%",
     change: "+1.8%",
     trend: "up",
@@ -54,10 +54,16 @@ const statusStyles: Record<string, string> = {
   Processing: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
 };
 
+const statusLabels: Record<string, string> = {
+  Completed: "已完成",
+  Pending: "待处理",
+  Processing: "处理中",
+};
+
 export default function DashboardPage() {
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
-      <PageHeader title="Dashboard" description="Welcome back, John. Here&apos;s what&apos;s happening today." />
+      <PageHeader title="仪表盘" description="欢迎回来，这是今天的概况。" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {stats.map((stat) => (
@@ -97,8 +103,8 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Revenue Overview</h3>
-              <p className="text-sm text-gray-500">Monthly revenue for 2026</p>
+              <h3 className="text-base font-semibold text-gray-900">收入概览</h3>
+              <p className="text-sm text-gray-500">2026年月度收入</p>
             </div>
             <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
               <MoreHorizontal className="h-5 w-5" />
@@ -136,20 +142,20 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="flex items-center justify-between p-6 pb-4">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Recent Orders</h3>
-              <p className="text-sm text-gray-500">Latest transactions this month</p>
+              <h3 className="text-base font-semibold text-gray-900">最近订单</h3>
+              <p className="text-sm text-gray-500">本月最新交易</p>
             </div>
-            <button className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">View all</button>
+            <button className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">查看全部</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-t border-gray-100">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Product</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">订单</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客户</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">产品</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">金额</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -164,7 +170,7 @@ export default function DashboardPage() {
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.amount}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${statusStyles[order.status]}`}>
-                        {order.status}
+                        {statusLabels[order.status]}
                       </span>
                     </td>
                   </tr>
