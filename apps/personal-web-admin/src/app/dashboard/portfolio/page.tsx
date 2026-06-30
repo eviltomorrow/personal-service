@@ -64,9 +64,9 @@ function recalcCostPrice(trades: TradeRecord[]): number {
 }
 
 function calcQuantity(trades: TradeRecord[], initialQty: number): number {
-  return trades.reduce((qty, t) => {
+  return Math.max(0, trades.reduce((qty, t) => {
     return t.type === "买入" ? qty + t.quantity : qty - t.quantity;
-  }, Math.max(0, initialQty));
+  }, Math.max(0, initialQty)));
 }
 
 function calcDerived(p: Position) {
