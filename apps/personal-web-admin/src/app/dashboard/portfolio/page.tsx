@@ -179,7 +179,7 @@ function RightPanel({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold text-gray-900">{position.name}</h3>
+          <h3 className="text-base font-semibold text-gray-900">{position.code} {position.name}</h3>
           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
             position.type === "股票"
               ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
@@ -187,6 +187,11 @@ function RightPanel({
           }`}>
             {position.type}
           </span>
+          {position.direction === "做空" && (
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset bg-orange-50 text-orange-700 ring-orange-600/20">
+              做空
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -206,6 +211,22 @@ function RightPanel({
 
       {/* Detail fields */}
       <div className="grid grid-cols-2 gap-x-8 gap-y-3 mb-6">
+        <div>
+          <span className="text-xs text-gray-500">代码</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">{position.code}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">方向</span>
+          <p className="text-sm font-medium text-gray-900">
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+              position.direction === "做多"
+                ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+                : "bg-orange-50 text-orange-700 ring-orange-600/20"
+            }`}>
+              {position.direction}
+            </span>
+          </p>
+        </div>
         <div>
           <span className="text-xs text-gray-500">持仓量</span>
           <p className="text-sm font-medium text-gray-900 tabular-nums">
