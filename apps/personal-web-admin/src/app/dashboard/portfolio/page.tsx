@@ -197,10 +197,11 @@ function LeftPanel({
 }
 
 function RightPanel({
-  position, onUpdatePosition, onAddTrade, onEditTrade, onDeleteTrade,
+  position, totalValue, onUpdatePosition, onAddTrade, onEditTrade, onDeleteTrade,
   onEditPosition, onDeletePosition,
 }: {
   position: Position;
+  totalValue: number;
   onUpdatePosition: (id: string, updates: Partial<Position>) => void;
   onAddTrade: (positionId: string) => void;
   onEditTrade: (positionId: string, trade: TradeRecord) => void;
@@ -212,6 +213,8 @@ function RightPanel({
     () => calcDerived(position),
     [position]
   );
+  const totalCost = position.costPrice * position.quantity;
+  const positionPct = totalValue > 0 ? (position.currentPrice * position.quantity / totalValue) * 100 : null;
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceDraft, setPriceDraft] = useState(String(position.currentPrice));
 
@@ -259,7 +262,7 @@ function RightPanel({
       </div>
 
       {/* Detail fields */}
-      <div className="grid grid-cols-2 gap-x-8 gap-y-3 mb-6">
+      <div className="grid grid-cols-3 gap-x-6 gap-y-4 mb-6">
         <div>
           <span className="text-xs text-gray-500">代码</span>
           <p className="text-sm font-medium text-gray-900 tabular-nums">{position.code}</p>
@@ -267,13 +270,22 @@ function RightPanel({
         <div>
           <span className="text-xs text-gray-500">方向</span>
           <p className="text-sm font-medium text-gray-900">
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
-              position.direction === "做多"
-                ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
-                : "bg-orange-50 text-orange-700 ring-orange-600/20"
-            }`}>
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${position.direction === "做多" ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20" : "bg-orange-50 text-orange-700 ring-orange-600/20"}`}>
               {position.direction}
             </span>
+          </p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">持仓占比</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">
+            {positionPct !== null ? (
+              <span className="flex items-center gap-2">
+                <span className="h-1.5 w-16 rounded-full bg-gray-200 overflow-hidden">
+                  <span className="block h-full rounded-full bg-slate-600" style={{ width: `${Math.min(positionPct, 100)}%` }} />
+                </span>
+                <span>{positionPct.toFixed(1)}%</span>
+              </span>
+            ) : "—"}
           </p>
         </div>
         <div>
@@ -281,6 +293,10 @@ function RightPanel({
           <p className="text-sm font-medium text-gray-900 tabular-nums">
             {position.quantity} {position.type === "股票" ? "股" : "手"}
           </p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">总成本</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">{formatCNY(totalCost)}</p>
         </div>
         <div>
           <span className="text-xs text-gray-500">成本均价</span>
@@ -335,7 +351,7 @@ function RightPanel({
           <span className="text-xs text-gray-500">当前市值</span>
           <p className="text-sm font-semibold text-gray-900 tabular-nums">{formatCNY(marketValue)}</p>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-3">
           <span className="text-xs text-gray-500">盈亏</span>
           <p className={`text-sm font-semibold tabular-nums ${profitColor}`}>
             {profitSign}{formatCNY(Math.abs(profitAmount))} ({profitSign}{profitPct.toFixed(2)}%)
@@ -358,35 +374,39 @@ function RightPanel({
         {sortedTrades.length === 0 ? (
           <p className="text-sm text-gray-400">暂无记录</p>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="space-y-3">
             {sortedTrades.map((t) => (
-              <div key={t.id} className="flex items-center justify-between py-2.5">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`shrink-0 text-xs font-medium px-1.5 py-0.5 rounded ${
-                    t.type === "买入" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
-                  }`}>
-                    {t.type}
-                  </span>
-                  <span className="text-sm text-gray-500 tabular-nums">{t.date}</span>
-                  <span className="text-sm text-gray-900 tabular-nums">
-                    {t.price.toFixed(2)} × {t.quantity}
-                  </span>
-                  {t.note && <span className="text-xs text-gray-400 truncate">{t.note}</span>}
+              <div key={t.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                      t.type === "买入" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                    }`}>
+                      {t.type}
+                    </span>
+                    <span className="text-sm text-gray-500 tabular-nums">{t.date}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <button onClick={() => onEditTrade(position.id, t)}
+                      className="rounded p-1 text-gray-300 hover:text-gray-500 transition-colors">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => onDeleteTrade(position.id, t.id)}
+                      className="rounded p-1 text-gray-300 hover:text-red-400 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <button
-                    onClick={() => onEditTrade(position.id, t)}
-                    className="rounded p-1 text-gray-300 hover:text-gray-500 transition-colors"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => onDeleteTrade(position.id, t.id)}
-                    className="rounded p-1 text-gray-300 hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                <div className="flex items-baseline gap-1.5 mb-1">
+                  <span className="text-sm font-medium text-gray-900 tabular-nums">
+                    {formatCNY(t.price)} × {t.quantity}
+                  </span>
+                  <span className="text-xs text-gray-400">=</span>
+                  <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                    {formatCNY(t.price * t.quantity)}
+                  </span>
                 </div>
+                {t.note && <p className="text-xs text-gray-400">{t.note}</p>}
               </div>
             ))}
           </div>
@@ -694,6 +714,11 @@ export default function PortfolioPage() {
     [positions, selectedId]
   );
 
+  const totalPortfolioValue = useMemo(
+    () => positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0),
+    [positions]
+  );
+
   type ModalType =
     | { type: "addPosition" }
     | { type: "editPosition"; positionId: string }
@@ -773,6 +798,7 @@ export default function PortfolioPage() {
         {selectedPosition ? (
           <RightPanel
             position={selectedPosition}
+            totalValue={totalPortfolioValue}
             onUpdatePosition={handleUpdatePosition}
             onAddTrade={(posId) => setModal({ type: "addTrade", positionId: posId })}
             onEditTrade={(posId, trade) => setModal({ type: "editTrade", positionId: posId, trade })}
