@@ -20,8 +20,11 @@ interface TradeRecord {
 
 interface Position {
   id: string;
+  code: string;
   name: string;
   type: "股票" | "期货";
+  direction: "做多" | "做空";
+  initialQty: number;
   quantity: number;
   currentPrice: number;
   costPrice: number;
@@ -60,11 +63,20 @@ function recalcCostPrice(trades: TradeRecord[]): number {
   return totalCost / totalQty;
 }
 
+function calcQuantity(trades: TradeRecord[], initialQty: number): number {
+  return trades.reduce((qty, t) => {
+    return t.type === "买入" ? qty + t.quantity : qty - t.quantity;
+  }, Math.max(0, initialQty));
+}
+
 function calcDerived(p: Position) {
   const marketValue = p.currentPrice * p.quantity;
-  const profitAmount = p.quantity > 0 ? (p.currentPrice - p.costPrice) * p.quantity : 0;
+  const priceDiff = p.direction === "做多"
+    ? p.currentPrice - p.costPrice
+    : p.costPrice - p.currentPrice;
+  const profitAmount = p.quantity > 0 ? priceDiff * p.quantity : 0;
   const profitPct = p.costPrice > 0 && p.quantity > 0
-    ? ((p.currentPrice - p.costPrice) / p.costPrice) * 100
+    ? (priceDiff / p.costPrice) * 100
     : 0;
   return { marketValue, profitAmount, profitPct };
 }
@@ -342,42 +354,68 @@ function AddPositionForm({ initial, onSave, onClose }: {
   onSave: (p: Omit<Position, "id" | "trades" | "costPrice">) => void;
   onClose: () => void;
 }) {
+  const [code, setCode] = useState(initial?.code ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState<"股票" | "期货">(initial?.type ?? "股票");
+  const [direction, setDirection] = useState<"做多" | "做空">(initial?.direction ?? "做多");
   const [quantity, setQuantity] = useState(initial ? String(initial.quantity) : "");
+  const [initialQty, setInitialQty] = useState(initial ? String(initial.initialQty) : "");
   const [price, setPrice] = useState(initial ? String(initial.currentPrice) : "");
   const [error, setError] = useState("");
 
   function handleSubmit() {
-    if (!name.trim() || !quantity || !price) { setError("请填写所有必填字段"); return; }
+    if (!code.trim() || !name.trim() || !quantity || !price) { setError("请填写所有必填字段"); return; }
     const q = parseFloat(quantity);
+    const iq = parseFloat(initialQty || quantity);
     const p = parseFloat(price);
     if (isNaN(q) || q <= 0) { setError("持仓量必须大于 0"); return; }
     if (isNaN(p) || p <= 0) { setError("价格必须大于 0"); return; }
-    onSave({ name: name.trim(), type, quantity: q, currentPrice: p });
+    onSave({ code: code.trim(), name: name.trim(), type, direction, initialQty: isNaN(iq) || iq < 0 ? 0 : iq, quantity: q, currentPrice: p });
   }
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">品种代码</label>
+        <input type="text" value={code} onChange={(e) => setCode(e.target.value)} autoFocus
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+          placeholder="如 600519" />
+      </div>
+      <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">品种名称</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)}
           className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
           placeholder="如 贵州茅台" />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">类型</label>
-        <select value={type} onChange={(e) => setType(e.target.value as "股票" | "期货")}
-          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none">
-          <option value="股票">股票</option>
-          <option value="期货">期货</option>
-        </select>
-      </div>
       <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">类型</label>
+          <select value={type} onChange={(e) => setType(e.target.value as "股票" | "期货")}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none">
+            <option value="股票">股票</option>
+            <option value="期货">期货</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">方向</label>
+          <select value={direction} onChange={(e) => setDirection(e.target.value as "做多" | "做空")}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none">
+            <option value="做多">做多</option>
+            <option value="做空">做空</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">持仓量</label>
           <input type="number" min="0" step="1" value={quantity} onChange={(e) => setQuantity(e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+            placeholder="100" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">初始数量</label>
+          <input type="number" min="0" step="1" value={initialQty} onChange={(e) => setInitialQty(e.target.value)}
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
             placeholder="100" />
         </div>
