@@ -4,21 +4,18 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
-  Activity, BarChart3, FileText, HelpCircle, Sparkles, User, CreditCard, LogOut,
-  Clock, ShoppingCart, MessageCircle, Feather, BookOpen, Plus, UserPlus,
-  Wallet,
+  LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
+  HelpCircle, Sparkles, User, CreditCard, LogOut,
+  Clock, ShoppingCart, MessageCircle, Feather, BookOpen, Plus,
+  Wallet, TrendingUp,
 } from "lucide-react";
 
 const navItems = [
   { label: "仪表盘", href: "/dashboard", icon: LayoutDashboard },
-  { label: "数据分析", href: "/dashboard/analytics", icon: BarChart3 },
   { label: "资产负债表", href: "/dashboard/balance-sheet", icon: BookOpen },
-  { label: "现金流量表", href: "/dashboard/cash-flow", icon: Wallet },
-  { label: "用户管理", href: "/dashboard/users", icon: Users },
-  { label: "活动记录", href: "/dashboard/activity", icon: Activity },
+  { label: "收入与支出", href: "/dashboard/cash-flow", icon: Wallet },
+  { label: "投资组合", href: "/dashboard/portfolio", icon: TrendingUp },
   { label: "博客", href: "/dashboard/blog", icon: Feather },
-  { label: "报表", href: "/dashboard/reports", icon: FileText },
   { label: "系统设置", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -28,8 +25,6 @@ const bottomNavItems = [
 ];
 
 const quickActions = [
-  { label: "新建用户", icon: UserPlus, href: "/dashboard/users" },
-  { label: "生成报表", icon: FileText, href: "/dashboard/reports" },
   { label: "发布博客", icon: Feather, href: "/dashboard/blog" },
 ];
 
