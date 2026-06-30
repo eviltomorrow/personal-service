@@ -101,7 +101,7 @@ function StatCards({ positions }: { positions: Position[] }) {
       icon: TrendingUp, label: "总盈亏",
       value: formatCNY(Math.abs(totalProfit)),
       positive: totalProfit >= 0,
-      sign: totalProfit >= 0 ? "+" : "-",
+      sign: totalProfit > 0 ? "+" : totalProfit < 0 ? "-" : "",
     },
     {
       icon: Percent, label: "总收益率",
