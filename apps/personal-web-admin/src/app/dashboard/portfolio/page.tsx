@@ -4,8 +4,16 @@ import { useState, useMemo, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
   Plus, Pencil, Trash2, X, AlertTriangle,
-  Layers, DollarSign, TrendingUp, Percent, ArrowUpDown,
+  Layers, DollarSign, TrendingUp, Percent, ArrowUpDown, GripVertical,
 } from "lucide-react";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 let nextId = 1;
 function genId() { return String(nextId++); }
@@ -29,6 +37,7 @@ interface Position {
   quantity: number;
   currentPrice: number;
   costPrice: number;
+  marginRatio?: number;
   trades: TradeRecord[];
 }
 
@@ -79,7 +88,9 @@ function calcDerived(p: Position) {
   const profitPct = p.costPrice > 0 && p.quantity > 0
     ? (priceDiff / p.costPrice) * 100
     : 0;
-  return { marketValue, profitAmount, profitPct };
+  const marginUsed = p.marginRatio ? marketValue * p.marginRatio : marketValue;
+  const leverage = p.marginRatio ? (1 / p.marginRatio).toFixed(1) + "x" : "—";
+  return { marketValue, profitAmount, profitPct, marginUsed, leverage };
 }
 
 function StatCards({ positions, totalCapital, onCapitalChange }: {
@@ -185,6 +196,69 @@ function StatCards({ positions, totalCapital, onCapitalChange }: {
   );
 }
 
+function SortablePositionItem({
+  position, isSelected, onSelect,
+}: {
+  position: Position;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: position.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    position: "relative",
+    zIndex: isDragging ? 10 : undefined,
+  };
+  const mv = position.currentPrice * position.quantity;
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center w-full text-left transition-colors ${
+        isDragging ? "shadow-lg rounded-lg border border-gray-200 bg-white" : ""
+      } ${isSelected ? "bg-slate-100" : "hover:bg-slate-50"}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="px-1.5 py-3 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing shrink-0 transition-colors"
+        tabIndex={-1}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => onSelect(position.id)}
+        className="flex-1 text-left px-1.5 py-3 min-w-0"
+      >
+        <div className="flex items-center gap-1.5 min-w-0 mb-0.5">
+          <span className="text-sm font-medium text-gray-900 truncate">
+            {position.code} {position.name}
+          </span>
+          <span className={`shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
+            position.type === "股票"
+              ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+              : "bg-blue-50 text-blue-700 ring-blue-600/20"
+          }`}>
+            {position.type}
+          </span>
+          {position.type === "期货" && position.marginRatio && (
+            <span className="shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset bg-purple-50 text-purple-700 ring-purple-600/20">
+              {(position.marginRatio * 100).toFixed(1)}%
+            </span>
+          )}
+          {position.direction === "做空" && (
+            <span className="shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset bg-orange-50 text-orange-700 ring-orange-600/20">
+              空
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-500 tabular-nums pl-0.5">{formatCNY(mv)}</p>
+      </button>
+    </div>
+  );
+}
+
 function LeftPanel({
   positions, selectedId, onSelect, onAdd,
 }: {
@@ -194,49 +268,27 @@ function LeftPanel({
   onAdd: () => void;
 }) {
   return (
-    <div className="w-[320px] shrink-0 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col overflow-hidden">
+    <div className="w-[320px] shrink-0 self-start rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col overflow-hidden">
       <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-b border-gray-100">
         <div className="w-1 h-4 rounded-full bg-slate-500" />
         <span className="text-sm font-semibold text-gray-800">📋 持仓列表</span>
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[400px]">
         {positions.length === 0 ? (
           <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无持仓</p>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {positions.map((p) => {
-              const mv = p.currentPrice * p.quantity;
-              const isSelected = p.id === selectedId;
-              return (
-                <button
+          <SortableContext items={positions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            <div className="divide-y divide-gray-100">
+              {positions.map((p) => (
+                <SortablePositionItem
                   key={p.id}
-                  onClick={() => onSelect(p.id)}
-                  className={`w-full text-left px-4 py-3 transition-colors hover:bg-slate-50 ${
-                    isSelected ? "bg-slate-100" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 min-w-0 mb-0.5">
-                    <span className="text-sm font-medium text-gray-900 truncate">
-                      {p.code} {p.name}
-                    </span>
-                    <span className={`shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
-                      p.type === "股票"
-                        ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
-                        : "bg-blue-50 text-blue-700 ring-blue-600/20"
-                    }`}>
-                      {p.type}
-                    </span>
-                    {p.direction === "做空" && (
-                      <span className="shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset bg-orange-50 text-orange-700 ring-orange-600/20">
-                        空
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 tabular-nums pl-0.5">{formatCNY(mv)}</p>
-                </button>
-              );
-            })}
-          </div>
+                  position={p}
+                  isSelected={p.id === selectedId}
+                  onSelect={onSelect}
+                />
+              ))}
+            </div>
+          </SortableContext>
         )}
       </div>
       <div className="px-4 py-3 border-t border-gray-100">
@@ -265,7 +317,7 @@ function RightPanel({
   onEditPosition: (id: string) => void;
   onDeletePosition: (id: string) => void;
 }) {
-  const { marketValue, profitAmount, profitPct } = useMemo(
+  const { marketValue, profitAmount, profitPct, marginUsed, leverage } = useMemo(
     () => calcDerived(position),
     [position]
   );
@@ -273,6 +325,8 @@ function RightPanel({
   const positionPct = totalValue > 0 ? (position.currentPrice * position.quantity / totalValue) * 100 : null;
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceDraft, setPriceDraft] = useState(String(position.currentPrice));
+  const [editingRatio, setEditingRatio] = useState(false);
+  const [ratioDraft, setRatioDraft] = useState(String((position.marginRatio ?? 0.1) * 100));
 
   const sortedTrades = useMemo(
     () => [...position.trades].sort((a, b) => b.date.localeCompare(a.date)),
@@ -407,13 +461,73 @@ function RightPanel({
           <span className="text-xs text-gray-500">当前市值</span>
           <p className="text-sm font-semibold text-gray-900 tabular-nums">{formatCNY(marketValue)}</p>
         </div>
-        <div className="col-span-3">
-          <span className="text-xs text-gray-500">盈亏</span>
-          <p className={`text-sm font-semibold tabular-nums ${profitColor}`}>
-            {profitSign}{formatCNY(Math.abs(profitAmount))} ({profitSign}{profitPct.toFixed(2)}%)
-          </p>
+          <div className="col-span-3">
+            <span className="text-xs text-gray-500">盈亏</span>
+            <p className={`text-sm font-semibold tabular-nums ${profitColor}`}>
+              {profitSign}{formatCNY(Math.abs(profitAmount))} ({profitSign}{profitPct.toFixed(2)}%)
+            </p>
+          </div>
+          {position.type === "期货" && (
+            <>
+              <div>
+                <span className="text-xs text-gray-500">保证金比例</span>
+                {editingRatio ? (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      max="100"
+                      value={ratioDraft}
+                      onChange={(e) => setRatioDraft(e.target.value)}
+                      className="w-20 rounded-md border border-gray-300 px-2 py-0.5 text-sm text-gray-900 tabular-nums focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+                      autoFocus
+                    />
+                    <span className="text-xs text-gray-400">%</span>
+                    <button
+                      onClick={() => {
+                        const v = parseFloat(ratioDraft);
+                        if (!isNaN(v) && v > 0 && v <= 100) {
+                          onUpdatePosition(position.id, { marginRatio: v / 100 });
+                        }
+                        setEditingRatio(false);
+                      }}
+                      className="text-xs font-medium text-slate-600 hover:text-slate-500"
+                    >
+                      确认
+                    </button>
+                    <button
+                      onClick={() => setEditingRatio(false)}
+                      className="text-xs text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-medium text-gray-900 tabular-nums">
+                      {(position.marginRatio ?? 0.1) * 100}%
+                    </p>
+                    <button
+                      onClick={() => { setRatioDraft(String((position.marginRatio ?? 0.1) * 100)); setEditingRatio(true); }}
+                      className="text-gray-300 hover:text-gray-500 transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div>
+                <span className="text-xs text-gray-500">占用保证金</span>
+                <p className="text-sm font-medium text-gray-900 tabular-nums">{formatCNY(marginUsed)}</p>
+              </div>
+              <div>
+                <span className="text-xs text-gray-500">杠杆</span>
+                <p className="text-sm font-medium text-gray-900 tabular-nums">{leverage}</p>
+              </div>
+            </>
+          )}
         </div>
-      </div>
 
       {/* Trade records */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden mt-4">
@@ -429,9 +543,15 @@ function RightPanel({
           </button>
         </div>
         {sortedTrades.length === 0 ? (
-          <p className="text-sm text-gray-400">暂无记录</p>
+          <button
+            onClick={() => onAddTrade(position.id)}
+            className="w-full flex flex-col items-center justify-center py-8 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:text-gray-600 hover:border-gray-300 hover:bg-gray-50/50 transition-all cursor-pointer"
+          >
+            <Plus className="h-5 w-5 mb-1" />
+            <span className="text-xs">点击新增第一条买卖记录</span>
+          </button>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar p-1">
             {sortedTrades.map((t) => (
               <div key={t.id} className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white px-4 py-3 hover:border-gray-200 hover:shadow-sm transition-all">
                 <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded ${
@@ -508,6 +628,7 @@ function AddPositionForm({ initial, onSave, onClose }: {
   const [direction, setDirection] = useState<"做多" | "做空">(initial?.direction ?? "做多");
   const [initialQty, setInitialQty] = useState(initial ? String(initial.initialQty) : "0");
   const [price, setPrice] = useState(initial ? String(initial.currentPrice) : "0");
+  const [marginRatio, setMarginRatio] = useState(initial?.marginRatio ? String(initial.marginRatio * 100) : "10");
   const [error, setError] = useState("");
 
   function handleSubmit() {
@@ -524,6 +645,7 @@ function AddPositionForm({ initial, onSave, onClose }: {
       direction,
       initialQty: iq,
       currentPrice: p,
+      ...(type === "期货" ? { marginRatio: (parseFloat(marginRatio) || 10) / 100 } : {}),
     });
   }
 
@@ -574,6 +696,17 @@ function AddPositionForm({ initial, onSave, onClose }: {
             placeholder="0.00" />
         </div>
       </div>
+      {type === "期货" && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">保证金比例</label>
+          <div className="flex items-center gap-2">
+            <input type="number" min="0.1" max="100" step="0.1" value={marginRatio} onChange={(e) => setMarginRatio(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+              placeholder="10" />
+            <span className="text-sm text-gray-500">%</span>
+          </div>
+        </div>
+      )}
       <div className="flex justify-end gap-2 pt-2">
         <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
         <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">确认</button>
@@ -828,6 +961,24 @@ export default function PortfolioPage() {
     if (selectedId === id) setSelectedId(null);
   }
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setPositions((prev) => {
+      const oldIndex = prev.findIndex((p) => p.id === active.id);
+      const newIndex = prev.findIndex((p) => p.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(oldIndex, 1);
+      next.splice(newIndex, 0, moved);
+      return next;
+    });
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
   return (
     <div className="flex flex-col h-full space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="投资组合" description="股票与期货持仓监控" />
@@ -838,12 +989,14 @@ export default function PortfolioPage() {
       {/* Two-column layout */}
       <div className="flex flex-1 gap-6">
         {/* Left panel */}
-        <LeftPanel
-          positions={positions}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onAdd={() => setModal({ type: "addPosition" })}
-        />
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <LeftPanel
+            positions={positions}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onAdd={() => setModal({ type: "addPosition" })}
+          />
+        </DndContext>
 
         {/* Right panel */}
         {selectedPosition ? (

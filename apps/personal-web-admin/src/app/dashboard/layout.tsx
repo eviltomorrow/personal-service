@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
   HelpCircle, Sparkles, User, CreditCard, LogOut,
-  Clock, ShoppingCart, MessageCircle, Feather, BookOpen, Plus,
+  Clock, ShoppingCart, MessageCircle, BookOpen,
   Wallet, TrendingUp,
 } from "lucide-react";
 
@@ -15,17 +15,12 @@ const navItems = [
   { label: "资产负债表", href: "/dashboard/balance-sheet", icon: BookOpen },
   { label: "收入与支出", href: "/dashboard/cash-flow", icon: Wallet },
   { label: "投资组合", href: "/dashboard/portfolio", icon: TrendingUp },
-  { label: "博客", href: "/dashboard/blog", icon: Feather },
   { label: "系统设置", href: "/dashboard/settings", icon: Settings },
 ];
 
 const bottomNavItems = [
   { label: "帮助中心", href: "/dashboard/help", icon: HelpCircle },
   { label: "安全设置", href: "/dashboard/security", icon: Shield },
-];
-
-const quickActions = [
-  { label: "发布博客", icon: Feather, href: "/dashboard/blog" },
 ];
 
 const hour = new Date().getHours();
@@ -36,16 +31,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [quickActionOpen, setQuickActionOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const quickActionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
-      if (quickActionRef.current && !quickActionRef.current.contains(e.target as Node)) setQuickActionOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -169,36 +161,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-1 ml-auto">
-            {/* Quick action */}
-            <div className="relative" ref={quickActionRef}>
-              <button
-                onClick={() => { setQuickActionOpen(!quickActionOpen); setNotifOpen(false); setUserMenuOpen(false); }}
-                className="rounded-lg p-2 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95"
-              >
-                <Plus className="h-5 w-5" />
-              </button>
-
-              {quickActionOpen && (
-                <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden z-[60] anim-in anim-fade anim-down" style={{ animationDuration: "200ms" }}>
-                  {quickActions.map((action) => (
-                    <Link
-                      key={action.label}
-                      href={action.href}
-                      onClick={() => setQuickActionOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-50 hover:text-gray-900 transition-colors"
-                    >
-                      <action.icon className="h-4 w-4 text-slate-500" />
-                      {action.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Notification dropdown */}
             <div className="relative" ref={notifRef}>
               <button
-                onClick={() => { setNotifOpen(!notifOpen); setUserMenuOpen(false); setQuickActionOpen(false); }}
+                onClick={() => { setNotifOpen(!notifOpen); setUserMenuOpen(false); }}
                 className="relative rounded-lg p-2 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95"
               >
                 <Bell className="h-5 w-5" />
@@ -233,7 +199,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* User menu dropdown */}
             <div className="relative" ref={userMenuRef}>
               <button
-                onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); setQuickActionOpen(false); }}
+                onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }}
                 className="flex items-center gap-2 pl-2 border-l border-gray-200 cursor-pointer group"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-400 to-slate-600 text-xs font-semibold text-white shadow-xs shadow-slate-400/20">

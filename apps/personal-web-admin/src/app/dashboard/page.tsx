@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/page-header";
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Home, Car, Utensils, Shirt, BookOpen, Plus, Feather } from "lucide-react";
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Home, Car, Utensils, Shirt, BookOpen, Plus } from "lucide-react";
 
 const summaryCards = [
   {
@@ -23,10 +23,6 @@ const summaryCards = [
     trend: "up" as const,
     icon: TrendingUp,
   },
-];
-
-const quickActionCards = [
-  { label: "发布博客", icon: Feather, href: "/dashboard/blog", color: "from-slate-600 to-slate-700" },
 ];
 
 const monthlyBudget = [
@@ -60,24 +56,6 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="仪表盘" description="欢迎回来，这是本月的财务概况。" />
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {quickActionCards.map((action) => (
-          <a
-            key={action.label}
-            href={action.href}
-            className="group flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
-          >
-            <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${action.color} shadow-sm transition-all group-hover:shadow-md group-hover:scale-105`}>
-              <action.icon className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
-              {action.label}
-            </span>
-          </a>
-        ))}
-      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
