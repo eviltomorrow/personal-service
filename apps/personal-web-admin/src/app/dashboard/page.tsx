@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/page-header";
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, ShoppingCart, Home, Car, Utensils, Shirt, BookOpen, Plus, UserPlus, FileText, Feather } from "lucide-react";
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Home, Car, Utensils, Shirt, BookOpen, Plus, Feather } from "lucide-react";
 
 const summaryCards = [
   {
@@ -26,8 +26,6 @@ const summaryCards = [
 ];
 
 const quickActionCards = [
-  { label: "新建用户", icon: UserPlus, href: "/dashboard/users", color: "from-slate-500 to-slate-600" },
-  { label: "生成报表", icon: FileText, href: "/dashboard/reports", color: "from-slate-400 to-slate-500" },
   { label: "发布博客", icon: Feather, href: "/dashboard/blog", color: "from-slate-600 to-slate-700" },
 ];
 

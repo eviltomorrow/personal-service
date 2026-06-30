@@ -1,0 +1,148 @@
+<h2>现金流量表 — 三种布局方案</h2>
+<p class="subtitle">点击选项查看说明，在终端告诉我你的选择</p>
+
+<div class="cards" style="grid-template-columns: 1fr;">
+  <!-- 方案 A -->
+  <div class="card" data-choice="A" onclick="toggleSelect(this)" style="cursor:pointer;">
+    <div class="card-body">
+      <h3>方案 A：双区列表（推荐）</h3>
+      <div class="mockup" style="margin-top:8px;">
+        <div class="mockup-header">📊 月度汇总卡片</div>
+        <div class="mockup-body" style="padding:12px;">
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <div style="flex:1;background:#e8f5e9;border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:11px;color:#666;">总收入</div>
+              <div style="font-size:14px;font-weight:700;color:#2e7d32;">¥28,500</div>
+            </div>
+            <div style="flex:1;background:#fbe9e7;border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:11px;color:#666;">总支出</div>
+              <div style="font-size:14px;font-weight:700;color:#c62828;">¥16,230</div>
+            </div>
+            <div style="flex:1;background:#e3f2fd;border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:11px;color:#666;">净结余</div>
+              <div style="font-size:14px;font-weight:700;color:#1565c0;">¥12,270</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;">
+            <div style="flex:1;">
+              <div class="mock-nav" style="background:#e8f5e9;color:#2e7d32;margin-bottom:4px;">💰 收入</div>
+              <div style="padding:4px 8px;background:#f9f9f9;border-radius:4px;margin-bottom:2px;display:flex;justify-content:space-between;font-size:11px;">
+                <span>工资</span><span style="font-weight:600;">¥20,000</span>
+              </div>
+              <div style="padding:4px 8px;background:#f9f9f9;border-radius:4px;margin-bottom:2px;display:flex;justify-content:space-between;font-size:11px;">
+                <span>理财收益</span><span style="font-weight:600;">¥5,000</span>
+              </div>
+              <div style="padding:4px 8px;background:#f0f0f0;border-radius:4px;display:flex;justify-content:space-between;font-size:11px;">
+                <span>小计</span><span style="font-weight:700;color:#2e7d32;">¥28,500</span>
+              </div>
+            </div>
+            <div style="flex:1;">
+              <div class="mock-nav" style="background:#fbe9e7;color:#c62828;margin-bottom:4px;">💸 支出</div>
+              <div style="padding:4px 8px;background:#f9f9f9;border-radius:4px;margin-bottom:2px;display:flex;justify-content:space-between;font-size:11px;">
+                <span>住房</span><span style="font-weight:600;">¥5,000</span>
+              </div>
+              <div style="padding:4px 8px;background:#f9f9f9;border-radius:4px;margin-bottom:2px;display:flex;justify-content:space-between;font-size:11px;">
+                <span>餐饮</span><span style="font-weight:600;">¥3,000</span>
+              </div>
+              <div style="padding:4px 8px;background:#f0f0f0;border-radius:4px;display:flex;justify-content:space-between;font-size:11px;">
+                <span>小计</span><span style="font-weight:700;color:#c62828;">¥16,230</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:8px;text-align:center;font-size:10px;color:#999;">↕ 滚动查看更多分类 · ✏️ 可编辑/删除</div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><ul><li>与资产负债表交互一致</li><li>收入/支出分开展示，对比清晰</li><li>扩展性好（可加图表）</li></ul></div>
+        <div class="cons"><ul><li>垂直空间需求较大</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 B -->
+  <div class="card" data-choice="B" onclick="toggleSelect(this)" style="cursor:pointer;">
+    <div class="card-body">
+      <h3>方案 B：扁平流水账</h3>
+      <div class="mockup" style="margin-top:8px;">
+        <div class="mockup-header">📋 收支流水</div>
+        <div class="mockup-body" style="padding:12px;">
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <div style="flex:1;background:#e8f5e9;border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:11px;color:#666;">总收入</div>
+              <div style="font-size:14px;font-weight:700;color:#2e7d32;">¥28,500</div>
+            </div>
+            <div style="flex:1;background:#fbe9e7;border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:11px;color:#666;">总支出</div>
+              <div style="font-size:14px;font-weight:700;color:#c62828;">¥16,230</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px;margin-bottom:8px;">
+            <span style="background:#e0e0e0;border-radius:12px;padding:2px 8px;font-size:10px;">全部</span>
+            <span style="background:#e8f5e9;border-radius:12px;padding:2px 8px;font-size:10px;">收入</span>
+            <span style="background:#fbe9e7;border-radius:12px;padding:2px 8px;font-size:10px;">支出</span>
+          </div>
+          <div style="padding:4px 8px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;font-size:11px;">
+            <span>06-28</span><span>工资入账</span><span style="background:#e8f5e9;border-radius:4px;padding:0 4px;font-size:10px;">收入</span><span style="font-weight:600;color:#2e7d32;">+¥28,500</span>
+          </div>
+          <div style="padding:4px 8px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;font-size:11px;">
+            <span>06-27</span><span>房租</span><span style="background:#fbe9e7;border-radius:4px;padding:0 4px;font-size:10px;">住房</span><span style="font-weight:600;color:#c62828;">-¥4,800</span>
+          </div>
+          <div style="padding:4px 8px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;font-size:11px;">
+            <span>06-27</span><span>盒马鲜生</span><span style="background:#fbe9e7;border-radius:4px;padding:0 4px;font-size:10px;">餐饮</span><span style="font-weight:600;color:#c62828;">-¥328</span>
+          </div>
+          <div style="text-align:center;margin-top:6px;font-size:10px;color:#999;">⏳ 按日期降序排列</div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><ul><li>紧凑，一屏信息多</li><li>按时间线查看直观</li></ul></div>
+        <div class="cons"><ul><li>分类维度不突出</li><li>收入/支出混合展示，对比不便</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 C -->
+  <div class="card" data-choice="C" onclick="toggleSelect(this)" style="cursor:pointer;">
+    <div class="card-body">
+      <h3>方案 C：分类分组折叠</h3>
+      <div class="mockup" style="margin-top:8px;">
+        <div class="mockup-header">📁 收支分类汇总</div>
+        <div class="mockup-body" style="padding:12px;">
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <div style="flex:1;background:#e8f5e9;border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:11px;color:#666;">总收入</div>
+              <div style="font-size:14px;font-weight:700;color:#2e7d32;">¥28,500</div>
+            </div>
+            <div style="flex:1;background:#fbe9e7;border-radius:8px;padding:8px;text-align:center;">
+              <div style="font-size:11px;color:#666;">总支出</div>
+              <div style="font-size:14px;font-weight:700;color:#c62828;">¥16,230</div>
+            </div>
+          </div>
+          <div>
+            <div style="background:#e8f5e9;border-radius:6px;padding:8px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;">
+              <span style="font-size:12px;font-weight:600;">▼ 收入</span><span style="font-size:12px;color:#2e7d32;font-weight:600;">¥28,500</span>
+            </div>
+            <div style="padding-left:16px;">
+              <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;">工资 <span style="font-weight:600;">¥20,000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;">理财收益 <span style="font-weight:600;">¥5,000</span></div>
+            </div>
+            <div style="background:#fbe9e7;border-radius:6px;padding:8px;margin:4px 0;cursor:pointer;display:flex;justify-content:space-between;">
+              <span style="font-size:12px;font-weight:600;">▼ 支出</span><span style="font-size:12px;color:#c62828;font-weight:600;">¥16,230</span>
+            </div>
+            <div style="padding-left:16px;">
+              <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;">住房 <span style="font-weight:600;">¥5,000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;">餐饮 <span style="font-weight:600;">¥3,000</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;">交通 <span style="font-weight:600;">¥2,000</span></div>
+            </div>
+          </div>
+          <div style="margin-top:8px;text-align:center;font-size:10px;color:#999;">🔼 点击分类头可折叠/展开</div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px;">
+        <div class="pros"><ul><li>信息密度高，折叠后一屏可看全</li><li>分类层级清晰</li></ul></div>
+        <div class="cons"><ul><li>操作步骤多（需展开/折叠）</li><li>新增/编辑流程不如方案 A 直接</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px;text-align:center;">在终端告诉我你的选择（A / B / C）</p>

@@ -200,7 +200,7 @@ export default function BalanceSheetPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader
         title="资产负债表"
         description="个人资产负债总览"

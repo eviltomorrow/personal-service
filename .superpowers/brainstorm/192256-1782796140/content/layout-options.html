@@ -1,0 +1,117 @@
+<h2>持仓页面 — 三种版式方案</h2>
+<p class="subtitle">选一个你喜欢的，我们接着细化</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="mockup" style="margin:0">
+      <div class="mockup-body" style="padding:8px;font-size:11px;line-height:1.6">
+        <div style="background:#f1f5f9;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-weight:600;font-size:12px">📈 总市值趋势图</div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:6px">
+          <span>持仓品种</span><span>类型</span><span>持仓量</span><span>现价</span><span>市值</span><span>盈亏</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #e2e8f0">
+          <span>贵州茅台</span><span style="color:#059669">股票</span><span>100</span><span>1,520</span><span>15.2万</span><span style="color:#059669">+2.3%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #e2e8f0">
+          <span>沪铜主力</span><span style="color:#2563eb">期货</span><span>3手</span><span>68,500</span><span>20.6万</span><span style="color:#dc2626">-1.1%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #e2e8f0;cursor:pointer" onclick="event.stopPropagation()">
+          <span style="padding-left:16px;color:#64748b">└ 买入 200股 @1,480</span><span style="color:#64748b;font-size:10px">03-15</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #e2e8f0">
+          <span>腾讯控股</span><span style="color:#059669">股票</span><span>200</span><span>385</span><span>7.7万</span><span style="color:#059669">+5.6%</span>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <div style="background:#f1f5f9;border-radius:4px;padding:4px 8px;font-size:10px;color:#475569">+ 新增品种</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · 单表展开式</h3>
+      <p>一张表格列出所有持仓，点击行展开买卖记录。与现金流量表风格一致。</p>
+      <div class="pros-cons" style="margin:4px 0 0">
+        <div class="pros"><ul><li>操作路径短</li><li>跟现有页面一致</li></ul></div>
+        <div class="cons"><ul><li>品种多时行高变化大</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="mockup" style="margin:0">
+      <div class="mockup-body" style="padding:8px;font-size:11px;line-height:1.6">
+        <div style="background:#f1f5f9;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-weight:600;font-size:12px">📈 总市值趋势图</div>
+        <div style="display:flex;gap:8px;min-height:100px">
+          <div style="flex:1">
+            <div style="font-size:10px;font-weight:600;color:#475569;margin-bottom:4px">持仓列表</div>
+            <div style="padding:6px 8px;background:#f8fafc;border-radius:4px;margin-bottom:2px;font-weight:500">贵州茅台</div>
+            <div style="padding:6px 8px;background:#eff6ff;border-radius:4px;margin-bottom:2px;font-weight:500">沪铜主力</div>
+            <div style="padding:6px 8px;background:#f8fafc;border-radius:4px;margin-bottom:2px">腾讯控股</div>
+          </div>
+          <div style="flex:2">
+            <div style="font-size:10px;font-weight:600;color:#475569;margin-bottom:4px">品种详情</div>
+            <div style="padding:6px 8px;background:#f1f5f9;border-radius:4px;font-size:10px">
+              <div>类型: <span style="color:#059669">股票</span></div>
+              <div>持仓量: 100 | 现价: 1,520</div>
+              <div>市值: 15.2万 | 盈亏: <span style="color:#059669">+2.3%</span></div>
+            </div>
+            <div style="font-size:10px;font-weight:600;color:#475569;margin:4px 0">买卖记录</div>
+            <div style="padding:4px 8px;background:#f8fafc;border-radius:4px">买入 200股 @1,480 — 03-15</div>
+            <div style="padding:4px 8px;background:#f8fafc;border-radius:4px;margin-top:2px">买入 100股 @1,510 — 01-20</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <div style="background:#f1f5f9;border-radius:4px;padding:4px 8px;font-size:10px;color:#475569">+ 新增品种</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · 双栏布局</h3>
+      <p>左栏持仓列表，右栏展示选中品种的详情+买卖记录。</p>
+      <div class="pros-cons" style="margin:4px 0 0">
+        <div class="pros"><ul><li>信息密度高</li><li>详情区不跳转</li></ul></div>
+        <div class="cons"><ul><li>小屏适配复杂</li><li>跟现有页面风格不同</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="mockup" style="margin:0">
+      <div class="mockup-body" style="padding:8px;font-size:11px;line-height:1.6">
+        <div style="background:#f1f5f9;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-weight:600;font-size:12px">📈 总市值趋势图</div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:6px">
+          <span>持仓品种</span><span>类型</span><span>持仓量</span><span>现价</span><span>市值</span><span>盈亏</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #e2e8f0;background:#f1f5f9;margin:0 -8px;padding:4px 8px">
+          <span style="font-weight:500">贵州茅台</span><span style="color:#059669">股票</span><span>100</span><span>1,520</span><span>15.2万</span><span style="color:#059669">+2.3%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #e2e8f0">
+          <span>沪铜主力</span><span style="color:#2563eb">期货</span><span>3手</span><span>68,500</span><span>20.6万</span><span style="color:#dc2626">-1.1%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #e2e8f0">
+          <span>腾讯控股</span><span style="color:#059669">股票</span><span>200</span><span>385</span><span>7.7万</span><span style="color:#059669">+5.6%</span>
+        </div>
+
+        <div style="margin-top:12px;background:#f8fafc;border-radius:6px;padding:8px;font-size:10px">
+          <div style="font-weight:600;color:#475569;margin-bottom:4px">📋 贵州茅台 买卖记录</div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>买入 200股 @1,480</span><span style="color:#64748b">2026-03-15</span></div>
+          <div style="display:flex;justify-content:space-between;padding:2px 0"><span>买入 100股 @1,510</span><span style="color:#64748b">2026-01-20</span></div>
+        </div>
+
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <div style="background:#f1f5f9;border-radius:4px;padding:4px 8px;font-size:10px;color:#475569">+ 新增品种</div>
+          <div style="background:#f1f5f9;border-radius:4px;padding:4px 8px;font-size:10px;color:#475569">+ 新增记录</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · 分段布局</h3>
+      <p>顶部趋势图 → 持仓表格 → 选中品种下方显示买卖记录副表。</p>
+      <div class="pros-cons" style="margin:4px 0 0">
+        <div class="pros"><ul><li>层次清晰</li><li>记录区有更多空间</li></ul></div>
+        <div class="cons"><ul><li>需额外选中操作</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:16px;font-size:13px;color:#64748b">在卡片上点击即可选中，在终端告诉我你的选择。</p>

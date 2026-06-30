@@ -1,9 +1,60 @@
+# Portfolio Tracking Page — Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Build a stock/commodity futures portfolio tracking page at `/dashboard/portfolio` with positions list, detail panel, trade records, and trend chart.
+
+**Architecture:** Single "use client" page component (~550-650 lines) following the existing cash-flow and balance-sheet patterns. All data in React state (in-memory), no external dependencies. SVG line chart drawn inline — no chart library.
+
+**Tech Stack:** Next.js 15, React 19, TypeScript, Tailwind CSS v4, lucide-react
+
+## Global Constraints
+
+- No external UI libraries or chart libraries
+- All data in React state (useState), no data fetching
+- Amounts displayed in CNY format using `formatCNY` from existing pattern
+- Colors: green for profit/income, red for loss/expense, slate/gray palette
+- Modal patterns follow cash-flow page exactly
+
+---
+
+### Task 1: Navigation & Page Shell
+
+**Files:**
+- Create: `src/app/dashboard/portfolio/page.tsx`
+- Modify: `src/app/dashboard/layout.tsx`
+
+**Interfaces:**
+- Consumes: layout nav items array, lucide-react icons
+- Produces: `/dashboard/portfolio` route accessible via sidebar
+
+- [ ] **Step 1: Add nav item to layout.tsx**
+
+Add `TrendingUp` to the lucide-react import and insert the nav item:
+
+```tsx
+// In import:
+  LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
+  HelpCircle, Sparkles, User, CreditCard, LogOut,
+  Clock, ShoppingCart, MessageCircle, Feather, BookOpen, Plus,
+  Wallet, TrendingUp,
+} from "lucide-react";
+
+// In navItems array, between "收入与支出" and "博客":
+  { label: "投资组合", href: "/dashboard/portfolio", icon: TrendingUp },
+```
+
+- [ ] **Step 2: Create page shell with types**
+
+```typescript
+// src/app/dashboard/portfolio/page.tsx
 "use client";
 
 import { useState, useMemo, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
-  Plus, Pencil, Trash2, X, AlertTriangle,
+  TrendingUp, Plus, Pencil, Trash2, X, AlertTriangle,
+  ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 
 let nextId = 1;
@@ -40,35 +91,98 @@ function formatCNY(amount: number) {
     maximumFractionDigits: 2,
   })}`;
 }
+```
 
-function recalcCostPrice(trades: TradeRecord[]): number {
-  let totalQty = 0;
-  let totalCost = 0;
-  for (const t of trades) {
-    if (t.type === "买入") {
-      totalQty += t.quantity;
-      totalCost += t.price * t.quantity;
-    } else {
-      if (totalQty > 0) {
-        totalCost -= (totalCost / totalQty) * t.quantity;
-      }
-      totalQty -= t.quantity;
-    }
-    if (totalQty < 0) totalQty = 0;
-  }
-  if (totalQty <= 0) return 0;
-  return totalCost / totalQty;
+- [ ] **Step 3: Add state and default data, render empty page**
+
+```tsx
+export default function PortfolioPage() {
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
+
+  const selectedPosition = useMemo(
+    () => positions.find((p) => p.id === selectedId) ?? null,
+    [positions, selectedId]
+  );
+
+  const totalMarketValue = useMemo(
+    () => positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0),
+    [positions]
+  );
+
+  return (
+    <div className="space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
+      <PageHeader title="投资组合" description="股票与期货持仓监控" />
+      <p className="text-sm text-gray-500">暂无持仓数据，请添加品种。</p>
+    </div>
+  );
 }
+```
 
-function calcDerived(p: Position) {
-  const marketValue = p.currentPrice * p.quantity;
-  const profitAmount = p.quantity > 0 ? (p.currentPrice - p.costPrice) * p.quantity : 0;
-  const profitPct = p.costPrice > 0 && p.quantity > 0
-    ? ((p.currentPrice - p.costPrice) / p.costPrice) * 100
-    : 0;
-  return { marketValue, profitAmount, profitPct };
-}
+- [ ] **Step 4: Build verify**
 
+Run: `npx next build` in `apps/personal-web-admin/` — expect success.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/personal-web-admin/src/app/dashboard/layout.tsx apps/personal-web-admin/src/app/dashboard/portfolio/page.tsx
+git commit -m "feat: add portfolio page shell and nav item"
+```
+
+---
+
+### Task 2: Left Panel — Position List
+
+**Files:**
+- Modify: `src/app/dashboard/portfolio/page.tsx`
+
+**Interfaces:**
+- Consumes: `positions[]`, `selectedId`, `setSelectedId`
+- Produces: left panel with position list, add position button triggers modal
+
+- [ ] **Step 1: Replace the placeholder paragraph with full layout structure**
+
+```tsx
+return (
+  <div className="space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
+    <PageHeader title="投资组合" description="股票与期货持仓监控" />
+
+    {/* Trend chart area — placeholder for Task 4 */}
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+      <h3 className="text-sm font-semibold text-gray-900 mb-1">总市值趋势</h3>
+      <p className="text-xs text-gray-500">暂无足够数据绘制趋势图</p>
+    </div>
+
+    {/* Two-column layout */}
+    <div className="flex gap-6">
+      {/* Left panel */}
+      <LeftPanel
+        positions={positions}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        onAdd={() => {}}
+      />
+
+      {/* Right panel */}
+      <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+        {selectedPosition ? (
+          <p className="text-sm text-gray-500">{selectedPosition.name} — 详情区（待实现）</p>
+        ) : (
+          <p className="text-sm text-gray-500">请从左侧选择一个品种</p>
+        )}
+      </div>
+    </div>
+  </div>
+);
+```
+
+- [ ] **Step 2: Implement LeftPanel component**
+
+Add above the main component:
+
+```tsx
 function LeftPanel({
   positions, selectedId, onSelect, onAdd,
 }: {
@@ -127,7 +241,66 @@ function LeftPanel({
     </div>
   );
 }
+```
 
+- [ ] **Step 3: Build verify**
+
+Run: `npx next build` — expect success.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add apps/personal-web-admin/src/app/dashboard/portfolio/page.tsx
+git commit -m "feat: add left panel with position list"
+```
+
+---
+
+### Task 3: Right Panel — Position Detail + Trade List
+
+**Files:**
+- Modify: `src/app/dashboard/portfolio/page.tsx`
+
+**Interfaces:**
+- Consumes: `selectedPosition`, `setPositions`, `setSnapshots`
+- Produces: detail view with fields, inline price editing, trade list
+
+- [ ] **Step 1: Add helper functions**
+
+Insert before the main component:
+
+```tsx
+function recalcCostPrice(trades: TradeRecord[]): number {
+  let totalQty = 0;
+  let totalCost = 0;
+  for (const t of trades) {
+    if (t.type === "买入") {
+      totalQty += t.quantity;
+      totalCost += t.price * t.quantity;
+    } else {
+      totalQty -= t.quantity;
+    }
+    if (totalQty < 0) totalQty = 0;
+  }
+  if (totalQty <= 0) return 0;
+  return totalCost / totalQty;
+}
+
+function calcDerived(p: Position) {
+  const marketValue = p.currentPrice * p.quantity;
+  const profitAmount = p.quantity > 0 ? (p.currentPrice - p.costPrice) * p.quantity : 0;
+  const profitPct = p.costPrice > 0 && p.quantity > 0
+    ? ((p.currentPrice - p.costPrice) / p.costPrice) * 100
+    : 0;
+  return { marketValue, profitAmount, profitPct };
+}
+```
+
+- [ ] **Step 2: Implement RightPanel component**
+
+Add above the main component:
+
+```tsx
 function RightPanel({
   position, onUpdatePosition, onAddTrade, onEditTrade, onDeleteTrade,
   onEditPosition, onDeletePosition,
@@ -306,7 +479,109 @@ function RightPanel({
     </div>
   );
 }
+```
 
+- [ ] **Step 3: Wire RightPanel into main component**
+
+Replace the right panel placeholder:
+
+```tsx
+{selectedPosition ? (
+  <RightPanel
+    position={selectedPosition}
+    onUpdatePosition={handleUpdatePosition}
+    onAddTrade={(posId) => setModal({ type: "addTrade", positionId: posId })}
+    onEditTrade={(posId, trade) => setModal({ type: "editTrade", positionId: posId, trade })}
+    onDeleteTrade={handleDeleteTrade}
+    onEditPosition={(id) => setModal({ type: "editPosition", positionId: id })}
+    onDeletePosition={handleDeletePosition}
+  />
+) : (
+  <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6 flex items-center justify-center">
+    <p className="text-sm text-gray-400">请从左侧选择一个品种</p>
+  </div>
+)}
+```
+
+Add state and handlers in main component:
+
+```tsx
+type ModalType =
+  | { type: "addPosition" }
+  | { type: "editPosition"; positionId: string }
+  | { type: "addTrade"; positionId: string }
+  | { type: "editTrade"; positionId: string; trade: TradeRecord }
+  | { type: "deletePosition"; positionId: string }
+  | { type: "deleteTrade"; positionId: string; tradeId: string }
+  | null;
+
+const [modal, setModal] = useState<ModalType>(null);
+
+function handleUpdatePosition(id: string, updates: Partial<Position>) {
+  const updatedPositions = positions.map((p) =>
+    p.id === id ? { ...p, ...updates } : p
+  );
+  setPositions(updatedPositions);
+  if ("currentPrice" in updates) {
+    const today = new Date().toISOString().slice(0, 10);
+    const newTotal = updatedPositions.reduce((s, p) => s + p.currentPrice * p.quantity, 0);
+    setSnapshots((prev) => {
+      const existing = prev.findIndex((s) => s.date === today);
+      if (existing >= 0) {
+        const next = [...prev];
+        next[existing] = { ...next[existing], totalValue: newTotal };
+        return next;
+      }
+      return [...prev, { date: today, totalValue: newTotal }];
+    });
+  }
+}
+
+// Placeholder handlers for now
+function handleDeleteTrade(positionId: string, tradeId: string) {
+  setPositions((prev) =>
+    prev.map((p) =>
+      p.id === positionId
+        ? { ...p, trades: p.trades.filter((t) => t.id !== tradeId), costPrice: recalcCostPrice(p.trades.filter((t) => t.id !== tradeId)) }
+        : p
+    )
+  );
+}
+
+function handleDeletePosition(id: string) {
+  setPositions((prev) => prev.filter((p) => p.id !== id));
+  setSnapshots([]);
+  if (selectedId === id) setSelectedId(null);
+}
+```
+
+- [ ] **Step 4: Build verify**
+
+Run: `npx next build` — expect success.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/personal-web-admin/src/app/dashboard/portfolio/page.tsx
+git commit -m "feat: add right panel with detail fields and trade list"
+```
+
+---
+
+### Task 4: Modal Components (Add/Edit Position, Add/Edit/Delete Trade, Delete Position)
+
+**Files:**
+- Modify: `src/app/dashboard/portfolio/page.tsx`
+
+**Interfaces:**
+- Consumes: `modal`, `setModal`, `positions`, `setPositions`, `setSnapshots`
+- Produces: all modal dialogs following cash-flow modal patterns
+
+- [ ] **Step 1: Add Modal component**
+
+Insert before the main component:
+
+```tsx
 function Modal({
   title, children, onClose,
 }: {
@@ -336,7 +611,11 @@ function Modal({
     </div>
   );
 }
+```
 
+- [ ] **Step 2: Add position form**
+
+```tsx
 function AddPositionForm({ initial, onSave, onClose }: {
   initial?: Position;
   onSave: (p: Omit<Position, "id" | "trades" | "costPrice">) => void;
@@ -395,7 +674,11 @@ function AddPositionForm({ initial, onSave, onClose }: {
     </form>
   );
 }
+```
 
+- [ ] **Step 3: Add trade form**
+
+```tsx
 function TradeForm({
   initial, onSave, onClose,
 }: {
@@ -462,7 +745,11 @@ function TradeForm({
     </form>
   );
 }
+```
 
+- [ ] **Step 4: Delete confirm modal**
+
+```tsx
 function DeleteConfirm({
   message, onConfirm, onClose,
 }: {
@@ -484,7 +771,142 @@ function DeleteConfirm({
     </div>
   );
 }
+```
 
+- [ ] **Step 5: Wire modal rendering into main component**
+
+Add at the end of the main component's return, inside the root div:
+
+```tsx
+{/* Modals */}
+{modal?.type === "addPosition" && (
+  <Modal title="新增品种" onClose={() => setModal(null)}>
+    <AddPositionForm
+      onSave={(data) => {
+        const id = genId();
+        setPositions((prev) => [...prev, { ...data, id, costPrice: data.currentPrice, trades: [] }]);
+        setSnapshots((prev) => {
+          const today = new Date().toISOString().slice(0, 10);
+          const newTotal = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0) + data.currentPrice * data.quantity;
+          const existing = prev.findIndex((s) => s.date === today);
+          if (existing >= 0) {
+            const next = [...prev];
+            next[existing] = { ...next[existing], totalValue: newTotal };
+            return next;
+          }
+          return [...prev, { date: today, totalValue: newTotal }];
+        });
+        setSelectedId(id);
+        setModal(null);
+      }}
+      onClose={() => setModal(null)}
+    />
+  </Modal>
+)}
+
+{modal?.type === "editPosition" && (() => {
+  const p = positions.find((x) => x.id === modal.positionId);
+  if (!p) return null;
+  return (
+    <Modal title="编辑品种" onClose={() => setModal(null)}>
+      <AddPositionForm
+        initial={p}
+        onSave={(data) => {
+          handleUpdatePosition(modal.positionId, data);
+          setModal(null);
+        }}
+        onClose={() => setModal(null)}
+      />
+    </Modal>
+  );
+})()}
+
+{modal?.type === "deletePosition" && (
+  <Modal title="删除品种" onClose={() => setModal(null)}>
+    <DeleteConfirm
+      message="删除此品种将同时清除所有关联的买卖记录和趋势数据。"
+      onConfirm={() => { handleDeletePosition(modal.positionId); }}
+      onClose={() => setModal(null)}
+    />
+  </Modal>
+)}
+
+{modal?.type === "addTrade" && (
+  <Modal title="新增记录" onClose={() => setModal(null)}>
+    <TradeForm
+      onSave={(data) => {
+        const newTrade = { id: genId(), ...data };
+        setPositions((prev) =>
+          prev.map((p) => {
+            if (p.id !== modal.positionId) return p;
+            const newTrades = [...p.trades, newTrade];
+            return { ...p, trades: newTrades, costPrice: recalcCostPrice(newTrades) };
+          })
+        );
+        setModal(null);
+      }}
+      onClose={() => setModal(null)}
+    />
+  </Modal>
+)}
+
+{modal?.type === "editTrade" && (
+  <Modal title="编辑记录" onClose={() => setModal(null)}>
+    <TradeForm
+      initial={modal.trade}
+      onSave={(data) => {
+        setPositions((prev) =>
+          prev.map((p) =>
+            p.id === modal.positionId
+              ? { ...p, trades: p.trades.map((t) => t.id === modal.trade.id ? { ...t, ...data } : t) }
+              : p
+          )
+        );
+        setModal(null);
+      }}
+      onClose={() => setModal(null)}
+    />
+  </Modal>
+)}
+
+{modal?.type === "deleteTrade" && (
+  <Modal title="删除记录" onClose={() => setModal(null)}>
+    <DeleteConfirm
+      message="确定要删除此买卖记录吗？"
+      onConfirm={() => { handleDeleteTrade(modal.positionId, modal.tradeId); }}
+      onClose={() => setModal(null)}
+    />
+  </Modal>
+)}
+```
+
+- [ ] **Step 6: Build verify**
+
+Run: `npx next build` — expect success.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add apps/personal-web-admin/src/app/dashboard/portfolio/page.tsx
+git commit -m "feat: add all CRUD modals for portfolio page"
+```
+
+---
+
+### Task 5: Trend Chart (SVG)
+
+**Files:**
+- Modify: `src/app/dashboard/portfolio/page.tsx`
+
+**Interfaces:**
+- Consumes: `snapshots[]`
+- Produces: SVG line chart in the top area
+
+- [ ] **Step 1: Add TrendChart component**
+
+Insert before the main component:
+
+```tsx
 function TrendChart({ snapshots }: { snapshots: ValueSnapshot[] }) {
   if (snapshots.length < 2) {
     return (
@@ -505,8 +927,8 @@ function TrendChart({ snapshots }: { snapshots: ValueSnapshot[] }) {
   const paddedMax = max + padding;
   const paddedRange = paddedMax - paddedMin;
 
-  const W = 700;
-  const H = 200;
+  const W = 700; // viewBox width
+  const H = 200; // viewBox height
   const count = sorted.length;
   const stepX = count > 1 ? W / (count - 1) : W / 2;
 
@@ -555,7 +977,7 @@ function TrendChart({ snapshots }: { snapshots: ValueSnapshot[] }) {
           return <circle key={s.date} cx={cx} cy={cy} r="3" fill="#64748b" className="hover:r-4" />;
         })}
         {/* X-axis labels */}
-        {sorted.filter((_, i) => i === 0 || i === count - 1 || (i % Math.max(1, Math.floor(count / 5)) === 0)).map((s) => {
+        {sorted.filter((_, i) => i === 0 || i === count - 1 || (i % Math.max(1, Math.floor(count / 5)) === 0)).map((s, i) => {
           const idx = sorted.indexOf(s);
           const x = count > 1 ? idx * stepX : W / 2;
           return (
@@ -568,198 +990,31 @@ function TrendChart({ snapshots }: { snapshots: ValueSnapshot[] }) {
     </div>
   );
 }
+```
 
-export default function PortfolioPage() {
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
+- [ ] **Step 2: Replace trend chart placeholder in main component**
 
-  const selectedPosition = useMemo(
-    () => positions.find((p) => p.id === selectedId) ?? null,
-    [positions, selectedId]
-  );
+Replace:
+```tsx
+{/* Trend chart area — placeholder for Task 4 */}
+<div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+  <h3 className="text-sm font-semibold text-gray-900 mb-1">总市值趋势</h3>
+  <p className="text-xs text-gray-500">暂无足够数据绘制趋势图</p>
+</div>
+```
 
-  type ModalType =
-    | { type: "addPosition" }
-    | { type: "editPosition"; positionId: string }
-    | { type: "addTrade"; positionId: string }
-    | { type: "editTrade"; positionId: string; trade: TradeRecord }
-    | { type: "deletePosition"; positionId: string }
-    | { type: "deleteTrade"; positionId: string; tradeId: string }
-    | null;
+With:
+```tsx
+<TrendChart snapshots={snapshots} />
+```
 
-  const [modal, setModal] = useState<ModalType>(null);
+- [ ] **Step 3: Build verify**
 
-  function handleUpdatePosition(id: string, updates: Partial<Position>) {
-    const updatedPositions = positions.map((p) =>
-      p.id === id ? { ...p, ...updates } : p
-    );
-    setPositions(updatedPositions);
-    if ("currentPrice" in updates) {
-      const today = new Date().toISOString().slice(0, 10);
-      const newTotal = updatedPositions.reduce((s, p) => s + p.currentPrice * p.quantity, 0);
-      setSnapshots((prev) => {
-        const existing = prev.findIndex((s) => s.date === today);
-        if (existing >= 0) {
-          const next = [...prev];
-          next[existing] = { ...next[existing], totalValue: newTotal };
-          return next;
-        }
-        return [...prev, { date: today, totalValue: newTotal }];
-      });
-    }
-  }
+Run: `npx next build` — expect success.
 
-  function handleDeleteTrade(positionId: string, tradeId: string) {
-    setPositions((prev) =>
-      prev.map((p) =>
-        p.id === positionId
-          ? { ...p, trades: p.trades.filter((t) => t.id !== tradeId), costPrice: recalcCostPrice(p.trades.filter((t) => t.id !== tradeId)) }
-          : p
-      )
-    );
-  }
+- [ ] **Step 4: Commit**
 
-  function handleDeletePosition(id: string) {
-    setPositions((prev) => prev.filter((p) => p.id !== id));
-    setSnapshots([]);
-    if (selectedId === id) setSelectedId(null);
-  }
-
-  return (
-    <div className="space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
-      <PageHeader title="投资组合" description="股票与期货持仓监控" />
-
-      <TrendChart snapshots={snapshots} />
-
-      {/* Two-column layout */}
-      <div className="flex gap-6">
-        {/* Left panel */}
-        <LeftPanel
-          positions={positions}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onAdd={() => setModal({ type: "addPosition" })}
-        />
-
-        {/* Right panel */}
-        {selectedPosition ? (
-          <RightPanel
-            position={selectedPosition}
-            onUpdatePosition={handleUpdatePosition}
-            onAddTrade={(posId) => setModal({ type: "addTrade", positionId: posId })}
-            onEditTrade={(posId, trade) => setModal({ type: "editTrade", positionId: posId, trade })}
-            onDeleteTrade={(posId, tradeId) => setModal({ type: "deleteTrade", positionId: posId, tradeId })}
-            onEditPosition={(id) => setModal({ type: "editPosition", positionId: id })}
-            onDeletePosition={(id) => setModal({ type: "deletePosition", positionId: id })}
-          />
-        ) : (
-          <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6 flex items-center justify-center">
-            <p className="text-sm text-gray-400">请从左侧选择一个品种</p>
-          </div>
-        )}
-      </div>
-
-      {/* Modals */}
-      {modal?.type === "addPosition" && (
-        <Modal title="新增品种" onClose={() => setModal(null)}>
-          <AddPositionForm
-            onSave={(data) => {
-              const id = genId();
-              setPositions((prev) => [...prev, { ...data, id, costPrice: data.currentPrice, trades: [] }]);
-              setSnapshots((prev) => {
-                const today = new Date().toISOString().slice(0, 10);
-                const newTotal = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0) + data.currentPrice * data.quantity;
-                const existing = prev.findIndex((s) => s.date === today);
-                if (existing >= 0) {
-                  const next = [...prev];
-                  next[existing] = { ...next[existing], totalValue: newTotal };
-                  return next;
-                }
-                return [...prev, { date: today, totalValue: newTotal }];
-              });
-              setSelectedId(id);
-              setModal(null);
-            }}
-            onClose={() => setModal(null)}
-          />
-        </Modal>
-      )}
-
-      {modal?.type === "editPosition" && (() => {
-        const p = positions.find((x) => x.id === modal.positionId);
-        if (!p) return null;
-        return (
-          <Modal title="编辑品种" onClose={() => setModal(null)}>
-            <AddPositionForm
-              initial={p}
-              onSave={(data) => {
-                handleUpdatePosition(modal.positionId, data);
-                setModal(null);
-              }}
-              onClose={() => setModal(null)}
-            />
-          </Modal>
-        );
-      })()}
-
-      {modal?.type === "deletePosition" && (
-        <Modal title="删除品种" onClose={() => setModal(null)}>
-          <DeleteConfirm
-            message="删除此品种将同时清除所有关联的买卖记录和趋势数据。"
-            onConfirm={() => { handleDeletePosition(modal.positionId); }}
-            onClose={() => setModal(null)}
-          />
-        </Modal>
-      )}
-
-      {modal?.type === "addTrade" && (
-        <Modal title="新增记录" onClose={() => setModal(null)}>
-          <TradeForm
-            onSave={(data) => {
-              const newTrade = { id: genId(), ...data };
-              setPositions((prev) =>
-                prev.map((p) => {
-                  if (p.id !== modal.positionId) return p;
-                  const newTrades = [...p.trades, newTrade];
-                  return { ...p, trades: newTrades, costPrice: recalcCostPrice(newTrades) };
-                })
-              );
-              setModal(null);
-            }}
-            onClose={() => setModal(null)}
-          />
-        </Modal>
-      )}
-
-      {modal?.type === "editTrade" && (
-        <Modal title="编辑记录" onClose={() => setModal(null)}>
-          <TradeForm
-            initial={modal.trade}
-            onSave={(data) => {
-              setPositions((prev) =>
-                prev.map((p) => {
-                  if (p.id !== modal.positionId) return p;
-                  const newTrades = p.trades.map((t) => t.id === modal.trade.id ? { ...t, ...data } : t);
-                  return { ...p, trades: newTrades, costPrice: recalcCostPrice(newTrades) };
-                })
-              );
-              setModal(null);
-            }}
-            onClose={() => setModal(null)}
-          />
-        </Modal>
-      )}
-
-      {modal?.type === "deleteTrade" && (
-        <Modal title="删除记录" onClose={() => setModal(null)}>
-          <DeleteConfirm
-            message="确定要删除此买卖记录吗？"
-            onConfirm={() => { handleDeleteTrade(modal.positionId, modal.tradeId); }}
-            onClose={() => setModal(null)}
-          />
-        </Modal>
-      )}
-    </div>
-  );
-}
+```bash
+git add apps/personal-web-admin/src/app/dashboard/portfolio/page.tsx
+git commit -m "feat: add SVG trend chart for portfolio total value"
+```
