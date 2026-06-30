@@ -657,9 +657,14 @@ export default function PortfolioPage() {
   const [modal, setModal] = useState<ModalType>(null);
 
   function handleUpdatePosition(id: string, updates: Partial<Position>) {
-    const updatedPositions = positions.map((p) =>
-      p.id === id ? { ...p, ...updates } : p
-    );
+    const updatedPositions = positions.map((p) => {
+      if (p.id !== id) return p;
+      const next = { ...p, ...updates };
+      if ("initialQty" in updates) {
+        next.quantity = calcQuantity(next.trades, next.initialQty);
+      }
+      return next;
+    });
     setPositions(updatedPositions);
     if ("currentPrice" in updates) {
       const today = new Date().toISOString().slice(0, 10);
@@ -678,11 +683,16 @@ export default function PortfolioPage() {
 
   function handleDeleteTrade(positionId: string, tradeId: string) {
     setPositions((prev) =>
-      prev.map((p) =>
-        p.id === positionId
-          ? { ...p, trades: p.trades.filter((t) => t.id !== tradeId), costPrice: recalcCostPrice(p.trades.filter((t) => t.id !== tradeId)) }
-          : p
-      )
+      prev.map((p) => {
+        if (p.id !== positionId) return p;
+        const newTrades = p.trades.filter((t) => t.id !== tradeId);
+        return {
+          ...p,
+          trades: newTrades,
+          quantity: calcQuantity(newTrades, p.initialQty),
+          costPrice: recalcCostPrice(newTrades),
+        };
+      })
     );
   }
 
@@ -732,7 +742,7 @@ export default function PortfolioPage() {
           <AddPositionForm
             onSave={(data) => {
               const id = genId();
-              const qty = Math.max(0, data.initialQty);
+              const qty = calcQuantity([], data.initialQty);
               setPositions((prev) => [...prev, { ...data, id, quantity: qty, costPrice: data.currentPrice, trades: [] }]);
               setSnapshots((prev) => {
                 const today = new Date().toISOString().slice(0, 10);
@@ -789,7 +799,12 @@ export default function PortfolioPage() {
                 prev.map((p) => {
                   if (p.id !== modal.positionId) return p;
                   const newTrades = [...p.trades, newTrade];
-                  return { ...p, trades: newTrades, costPrice: recalcCostPrice(newTrades) };
+                  return {
+                    ...p,
+                    trades: newTrades,
+                    quantity: calcQuantity(newTrades, p.initialQty),
+                    costPrice: recalcCostPrice(newTrades),
+                  };
                 })
               );
               setModal(null);
@@ -808,7 +823,12 @@ export default function PortfolioPage() {
                 prev.map((p) => {
                   if (p.id !== modal.positionId) return p;
                   const newTrades = p.trades.map((t) => t.id === modal.trade.id ? { ...t, ...data } : t);
-                  return { ...p, trades: newTrades, costPrice: recalcCostPrice(newTrades) };
+                  return {
+                    ...p,
+                    trades: newTrades,
+                    quantity: calcQuantity(newTrades, p.initialQty),
+                    costPrice: recalcCostPrice(newTrades),
+                  };
                 })
               );
               setModal(null);
