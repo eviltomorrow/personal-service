@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
+import { formatCNY } from "@/lib/format";
 import {
   Wallet, Landmark, TrendingUp, Plus, Pencil, Trash2, X, AlertTriangle,
   ChevronLeft, ChevronRight,
@@ -15,10 +16,6 @@ interface BalanceItem {
 interface BalanceGroup {
   category: string;
   items: BalanceItem[];
-}
-
-function formatCNY(amount: number) {
-  return `¥ ${Math.abs(amount).toLocaleString("zh-CN")}.00`;
 }
 
 function createDefaultData(): BalanceGroup[] {
@@ -348,8 +345,8 @@ export default function BalanceSheetPage() {
 
       {/* Add/Edit Modal */}
       {(modal?.type === "add" || modal?.type === "edit") && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/10 backdrop-blur-sm p-4" onClick={() => setModal(null)}>
-          <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/5" onClick={() => setModal(null)}>
+          <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="text-base font-semibold text-gray-900">
                 {modal.type === "add" ? "添加项目" : "编辑项目"}
@@ -362,7 +359,7 @@ export default function BalanceSheetPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">项目名称</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="请输入项目名称" autoFocus
-                  className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 px-3.5 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none transition-all" />
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">金额（元）</label>
@@ -373,8 +370,8 @@ export default function BalanceSheetPage() {
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setModal(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
-                <button type="submit" className="rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-slate-700 hover:to-slate-800 transition-all">保存</button>
+                <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+                <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">保存</button>
               </div>
             </form>
           </div>
@@ -383,8 +380,8 @@ export default function BalanceSheetPage() {
 
       {/* Delete Modal */}
       {modal?.type === "delete" && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/10 backdrop-blur-sm p-4" onClick={() => setModal(null)}>
-          <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[18vh] bg-black/5" onClick={() => setModal(null)}>
+          <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down" onClick={(e) => e.stopPropagation()}>
             <div className="p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 mx-auto">
                 <AlertTriangle className="h-6 w-6 text-red-500" />
@@ -395,8 +392,8 @@ export default function BalanceSheetPage() {
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 pb-6">
-              <button type="button" onClick={() => setModal(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
-              <button type="button" onClick={handleDelete} className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-600 transition-all">删除</button>
+              <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+              <button type="button" onClick={handleDelete} className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-colors">删除</button>
             </div>
           </div>
         </div>

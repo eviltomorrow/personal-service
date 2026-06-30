@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
-  HelpCircle, Sparkles, User, CreditCard, LogOut,
+  HelpCircle, Sparkles, User, LogOut,
   Clock, ShoppingCart, MessageCircle, BookOpen,
   Wallet, TrendingUp,
 } from "lucide-react";
@@ -13,8 +13,8 @@ import {
 const navItems = [
   { label: "仪表盘", href: "/dashboard", icon: LayoutDashboard },
   { label: "资产负债表", href: "/dashboard/balance-sheet", icon: BookOpen },
-  { label: "收入与支出", href: "/dashboard/cash-flow", icon: Wallet },
   { label: "投资组合", href: "/dashboard/portfolio", icon: TrendingUp },
+  { label: "收入与支出", href: "/dashboard/cash-flow", icon: Wallet },
   { label: "系统设置", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -23,16 +23,24 @@ const bottomNavItems = [
   { label: "安全设置", href: "/dashboard/security", icon: Shield },
 ];
 
-const hour = new Date().getHours();
-const greeting = hour < 12 ? "上午好" : hour < 18 ? "下午好" : "晚上好";
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [profile, setProfile] = useState({ nickname: "管理员", avatarDataUrl: "" });
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const data = localStorage.getItem("settings-profile");
+      if (data) {
+        const p = JSON.parse(data);
+        setProfile({ nickname: p.nickname || "管理员", avatarDataUrl: p.avatarDataUrl || "" });
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -52,9 +60,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const userMenuItems = [
     { label: "个人信息", icon: User, href: "/dashboard/settings" },
-    { label: "账单管理", icon: CreditCard, href: "/dashboard/settings" },
-    { label: "退出登录", icon: LogOut, danger: true },
   ];
+
+  const initials = profile.nickname.slice(0, 1);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-50/50">
@@ -202,12 +210,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }}
                 className="flex items-center gap-2 pl-2 border-l border-gray-200 cursor-pointer group"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-400 to-slate-600 text-xs font-semibold text-white shadow-xs shadow-slate-400/20">
-                  管
+                <div className="flex h-8 w-8 items-center justify-center rounded-full overflow-hidden bg-gradient-to-br from-slate-400 to-slate-600 text-xs font-semibold text-white shadow-xs shadow-slate-400/20 shrink-0">
+                  {profile.avatarDataUrl ? (
+                    <img src={profile.avatarDataUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    initials
+                  )}
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-sm font-medium text-gray-700 leading-tight group-hover:text-gray-900 transition-colors">
-                    管理员
+                    {profile.nickname}
                   </p>
                   <p className="text-xs text-gray-500">管理员</p>
                 </div>
@@ -215,37 +227,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden z-[60] anim-in anim-fade anim-down" style={{ animationDuration: "200ms" }}>
-                  {userMenuItems.map((item) =>
-                    item.href ? (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        onClick={() => setUserMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                          item.danger
-                            ? "text-red-600 hover:bg-red-50"
-                            : "text-gray-700 hover:bg-slate-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        {item.label}
-                      </Link>
-                    ) : (
-                      <button
-                        key={item.label}
-                        onClick={() => { setUserMenuOpen(false); window.location.href = "/login"; }}
-                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                          item.danger
-                            ? "text-red-600 hover:bg-red-50"
-                            : "text-gray-700 hover:bg-slate-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        {item.label}
-                      </button>
-                    )
-                  )}
+                <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden z-[60] anim-in anim-fade anim-down" style={{ animationDuration: "200ms" }}>
+                  {userMenuItems.map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-50 hover:text-gray-900 transition-colors"
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      {item.label}
+                    </Link>
+                  ))}
+                  <div className="border-t border-gray-100">
+                    <button
+                      onClick={() => { setUserMenuOpen(false); window.location.href = "/login"; }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4 shrink-0" />
+                      退出登录
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

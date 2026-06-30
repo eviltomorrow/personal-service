@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
+import { formatCNY } from "@/lib/format";
 import {
   Wallet, TrendingUp, Plus, Pencil, Trash2, X, AlertTriangle,
   ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
@@ -26,14 +27,6 @@ const MONTH_LABELS = ["", "1月", "2月", "3月", "4月", "5月", "6月", "7月"
 
 function getMonthKey(year: number, month: number) {
   return `${year}-${String(month).padStart(2, "0")}`;
-}
-
-function formatCNY(amount: number) {
-  const prefix = amount < 0 ? "- " : "";
-  return `${prefix}¥ ${Math.abs(amount).toLocaleString("zh-CN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 function createEmptyMonth(): MonthCashFlow {
@@ -503,8 +496,8 @@ export default function CashFlowPage() {
 
       {/* Add Category Modal */}
       {modal?.type === "add-category" && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/10 backdrop-blur-sm p-4" onClick={() => setModal(null)}>
-          <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/5" onClick={() => setModal(null)}>
+          <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="text-base font-semibold text-gray-900">
                 添加分类
@@ -518,11 +511,11 @@ export default function CashFlowPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">分类名称</label>
                 <input type="text" value={modalName} onChange={(e) => setModalName(e.target.value)} placeholder="请输入分类名称" autoFocus
-                  className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 px-3.5 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none transition-all" />
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
               </div>
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setModal(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
-                <button type="submit" className="rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-slate-700 hover:to-slate-800 transition-all">保存</button>
+                <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+                <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">保存</button>
               </div>
             </form>
           </div>
@@ -531,8 +524,8 @@ export default function CashFlowPage() {
 
       {/* Add/Edit Item Modal */}
       {(modal?.type === "add-item" || modal?.type === "edit-item") && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/10 backdrop-blur-sm p-4" onClick={() => setModal(null)}>
-          <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/5" onClick={() => setModal(null)}>
+          <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="text-base font-semibold text-gray-900">
                 {modal.type === "add-item" ? "添加记录" : "编辑记录"}
@@ -549,7 +542,7 @@ export default function CashFlowPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">项目名称</label>
                 <input type="text" value={modalName} onChange={(e) => setModalName(e.target.value)} placeholder="请输入项目名称" autoFocus
-                  className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 px-3.5 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none transition-all" />
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">金额（元）</label>
@@ -560,8 +553,8 @@ export default function CashFlowPage() {
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setModal(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
-                <button type="submit" className="rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-slate-700 hover:to-slate-800 transition-all">保存</button>
+                <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+                <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">保存</button>
               </div>
             </form>
           </div>
@@ -570,8 +563,8 @@ export default function CashFlowPage() {
 
       {/* Delete Modal */}
       {(modal?.type === "delete-item" || modal?.type === "delete-category") && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/10 backdrop-blur-sm p-4" onClick={() => setModal(null)}>
-          <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/5" onClick={() => setModal(null)}>
+          <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down" onClick={(e) => e.stopPropagation()}>
             <div className="p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 mx-auto">
                 <AlertTriangle className="h-6 w-6 text-red-500" />
@@ -585,8 +578,8 @@ export default function CashFlowPage() {
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 pb-6">
-              <button type="button" onClick={() => setModal(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
-              <button type="button" onClick={handleDelete} autoFocus className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-600 transition-all">删除</button>
+              <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+              <button type="button" onClick={handleDelete} autoFocus className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-colors">删除</button>
             </div>
           </div>
         </div>

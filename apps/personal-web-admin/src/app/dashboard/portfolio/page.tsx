@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
+import { formatCNY } from "@/lib/format";
 import {
   Plus, Pencil, Trash2, X, AlertTriangle,
   Layers, DollarSign, TrendingUp, Percent, ArrowUpDown, GripVertical,
@@ -15,8 +16,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-let nextId = 1;
-function genId() { return String(nextId++); }
+function genId() { return crypto.randomUUID(); }
 
 interface TradeRecord {
   id: string;
@@ -44,14 +44,6 @@ interface Position {
 interface ValueSnapshot {
   date: string;
   totalValue: number;
-}
-
-function formatCNY(amount: number) {
-  const prefix = amount < 0 ? "- " : "";
-  return `${prefix}¥ ${Math.abs(amount).toLocaleString("zh-CN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 function recalcCostPrice(trades: TradeRecord[]): number {
@@ -598,7 +590,7 @@ function Modal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/[0.02] backdrop-blur-none"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/5"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
