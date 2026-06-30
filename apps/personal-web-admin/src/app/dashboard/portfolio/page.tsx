@@ -81,7 +81,7 @@ function calcDerived(p: Position) {
     ? (priceDiff / p.costPrice) * 100
     : 0;
   const marginUsed = p.marginRatio ? marketValue * p.marginRatio : marketValue;
-  const leverage = p.marginRatio ? (1 / p.marginRatio).toFixed(1) + "x" : "—";
+  const leverage = p.marginRatio ? (1 / p.marginRatio).toFixed(1) + "x" : "-";
   return { marketValue, profitAmount, profitPct, marginUsed, leverage };
 }
 
@@ -99,7 +99,7 @@ function StatCards({ positions, totalCapital, onCapitalChange }: {
     const d = calcDerived(p);
     return s + d.profitAmount;
   }, 0);
-  const totalProfitPct = totalCapital > 0 ? (totalProfit / totalCapital) * 100 : null;
+  const totalProfitPct = totalCapital > 0 ? (totalProfit / totalCapital) * 100 : 0;
   const longCount = positions.filter((p) => p.direction === "做多").length;
   const shortCount = positions.filter((p) => p.direction === "做空").length;
 
@@ -111,7 +111,7 @@ function StatCards({ positions, totalCapital, onCapitalChange }: {
     { icon: Layers, label: "总品种数", value: String(count), bar: "blue" },
     { icon: TrendingUp, label: "总市值", value: formatCNY(totalValue), bar: "emerald" },
     { icon: TrendingUp, label: "总盈亏", value: `${profitSign}${formatCNY(Math.abs(totalProfit))}`, bar: profitColor, text: profitColor },
-    { icon: Percent, label: "总收益率", value: totalProfitPct !== null ? `${profitSign}${totalProfitPct.toFixed(2)}%` : "—", bar: "amber", text: profitColor },
+    { icon: Percent, label: "总收益率", value: `${profitSign}${totalProfitPct.toFixed(2)}%`, bar: "amber", text: profitColor },
     { icon: ArrowUpDown, label: "多空比", value: `${longCount} : ${shortCount}`, bar: "purple" },
   ];
 
@@ -314,7 +314,7 @@ function RightPanel({
     [position]
   );
   const totalCost = position.costPrice * position.quantity;
-  const positionPct = totalValue > 0 ? (position.currentPrice * position.quantity / totalValue) * 100 : null;
+  const positionPct = totalValue > 0 ? (position.currentPrice * position.quantity / totalValue) * 100 : 0;
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceDraft, setPriceDraft] = useState(String(position.currentPrice));
   const [editingRatio, setEditingRatio] = useState(false);
@@ -380,14 +380,14 @@ function RightPanel({
         <div>
           <span className="text-xs text-gray-500">持仓占比</span>
           <p className="text-sm font-medium text-gray-900 tabular-nums">
-            {positionPct !== null ? (
+            {positionPct > 0 ? (
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-16 rounded-full bg-gray-200 overflow-hidden">
                   <span className="block h-full rounded-full bg-slate-600" style={{ width: `${Math.min(positionPct, 100)}%` }} />
                 </span>
                 <span>{positionPct.toFixed(1)}%</span>
               </span>
-            ) : "—"}
+            ) : positionPct === 0 ? <span>0.0%</span> : "-"}
           </p>
         </div>
         <div>
