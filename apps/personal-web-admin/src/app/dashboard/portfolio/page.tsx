@@ -82,15 +82,14 @@ function calcDerived(p: Position) {
   return { marketValue, profitAmount, profitPct };
 }
 
-function StatCards({ positions }: { positions: Position[] }) {
+function StatCards({ positions, totalCapital }: { positions: Position[]; totalCapital: number }) {
   const count = positions.length;
   const totalValue = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0);
-  const totalCost = positions.reduce((s, p) => s + p.costPrice * p.quantity, 0);
   const totalProfit = positions.reduce((s, p) => {
     const d = calcDerived(p);
     return s + d.profitAmount;
   }, 0);
-  const totalProfitPct = totalCost > 0 ? (totalProfit / totalCost) * 100 : null;
+  const totalProfitPct = totalCapital > 0 ? (totalProfit / totalCapital) * 100 : null;
   const longCount = positions.filter((p) => p.direction === "做多").length;
   const shortCount = positions.filter((p) => p.direction === "做空").length;
 
@@ -124,6 +123,63 @@ function StatCards({ positions }: { positions: Position[] }) {
               {card.sign || ""}{card.value}
             </p>
           </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AccountCapital({
+  futuresCapital, stockCapital, onFuturesChange, onStockChange,
+}: {
+  futuresCapital: number;
+  stockCapital: number;
+  onFuturesChange: (v: number) => void;
+  onStockChange: (v: number) => void;
+}) {
+  const total = futuresCapital + stockCapital;
+  const [editing, setEditing] = useState<"futures" | "stock" | null>(null);
+  const [draft, setDraft] = useState("");
+
+  function startEdit(field: "futures" | "stock" | undefined) {
+    if (!field) return;
+    setEditing(field);
+    setDraft(String(field === "futures" ? futuresCapital : stockCapital));
+  }
+
+  function confirmEdit() {
+    const v = parseFloat(draft) || 0;
+    if (editing === "futures") onFuturesChange(v);
+    else onStockChange(v);
+    setEditing(null);
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      {([
+        { label: "期货账户本金", value: futuresCapital, key: "futures" as const },
+        { label: "股票账户本金", value: stockCapital, key: "stock" as const },
+        { label: "总本金", value: total, readOnly: true },
+      ]).map((item) => (
+        <div key={item.label} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
+          <p className="text-xs text-gray-500 mb-1">{item.label}</p>
+          {item.readOnly ? (
+            <p className="text-lg font-semibold text-gray-900 tabular-nums">{formatCNY(item.value)}</p>
+          ) : editing === item.key ? (
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-gray-400">¥</span>
+              <input type="number" step="0.01" value={draft} autoFocus
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={confirmEdit}
+                onKeyDown={(e) => e.key === "Enter" && confirmEdit()}
+                className="w-full rounded border border-gray-300 px-2 py-1 text-lg font-semibold text-gray-900 tabular-nums focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
+            </div>
+          ) : (
+            <button onClick={() => startEdit(item.key)}
+              className="text-lg font-semibold text-gray-900 tabular-nums hover:text-slate-600 transition-colors cursor-text text-left w-full">
+              {formatCNY(item.value)}
+            </button>
+          )}
         </div>
       ))}
     </div>
@@ -702,6 +758,9 @@ export default function PortfolioPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
+  const [futuresCapital, setFuturesCapital] = useState(0);
+  const [stockCapital, setStockCapital] = useState(0);
+  const totalCapital = futuresCapital + stockCapital;
 
   const selectedPosition = useMemo(
     () => positions.find((p) => p.id === selectedId) ?? null,
@@ -773,8 +832,9 @@ export default function PortfolioPage() {
   return (
     <div className="flex flex-col h-full space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="投资组合" description="股票与期货持仓监控" />
-
-      <StatCards positions={positions} />
+      <AccountCapital futuresCapital={futuresCapital} stockCapital={stockCapital}
+        onFuturesChange={setFuturesCapital} onStockChange={setStockCapital} />
+      <StatCards positions={positions} totalCapital={totalCapital} />
 
       <TrendChart snapshots={snapshots} />
 
