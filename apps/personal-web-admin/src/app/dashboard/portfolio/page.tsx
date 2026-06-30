@@ -111,7 +111,9 @@ function LeftPanel({
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm font-medium text-gray-900 truncate">{p.name}</span>
+                    <span className="text-sm font-medium text-gray-900 truncate">
+                      {p.code} {p.name}
+                    </span>
                     <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
                       p.type === "股票"
                         ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
@@ -119,6 +121,11 @@ function LeftPanel({
                     }`}>
                       {p.type}
                     </span>
+                    {p.direction === "做空" && (
+                      <span className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset bg-orange-50 text-orange-700 ring-orange-600/20">
+                        空
+                      </span>
+                    )}
                   </div>
                   <span className="text-sm text-gray-700 tabular-nums ml-3">{formatCNY(mv)}</span>
                 </button>
