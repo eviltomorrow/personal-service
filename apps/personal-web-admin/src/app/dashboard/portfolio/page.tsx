@@ -4,6 +4,7 @@ import { useState, useMemo, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
   Plus, Pencil, Trash2, X, AlertTriangle,
+  Layers, DollarSign, TrendingUp, Percent, ArrowUpDown,
 } from "lucide-react";
 
 let nextId = 1;
@@ -79,6 +80,54 @@ function calcDerived(p: Position) {
     ? (priceDiff / p.costPrice) * 100
     : 0;
   return { marketValue, profitAmount, profitPct };
+}
+
+function StatCards({ positions }: { positions: Position[] }) {
+  const count = positions.length;
+  const totalValue = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0);
+  const totalCost = positions.reduce((s, p) => s + p.costPrice * p.quantity, 0);
+  const totalProfit = positions.reduce((s, p) => {
+    const d = calcDerived(p);
+    return s + d.profitAmount;
+  }, 0);
+  const totalProfitPct = totalCost > 0 ? (totalProfit / totalCost) * 100 : null;
+  const longCount = positions.filter((p) => p.direction === "做多").length;
+  const shortCount = positions.filter((p) => p.direction === "做空").length;
+
+  const cards = [
+    { icon: Layers, label: "总品种数", value: String(count) },
+    { icon: DollarSign, label: "总市值", value: formatCNY(totalValue) },
+    {
+      icon: TrendingUp, label: "总盈亏",
+      value: formatCNY(Math.abs(totalProfit)),
+      positive: totalProfit >= 0,
+      sign: totalProfit >= 0 ? "+" : "-",
+    },
+    {
+      icon: Percent, label: "总收益率",
+      value: totalProfitPct !== null ? `${(totalProfit >= 0 ? "+" : "")}${totalProfitPct.toFixed(2)}%` : "—",
+      positive: totalProfit >= 0,
+    },
+    { icon: ArrowUpDown, label: "多空比", value: `${longCount} : ${shortCount}` },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      {cards.map((card) => (
+        <div key={card.label} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex items-center gap-3">
+          <div className="rounded-lg bg-slate-50 p-2.5 shrink-0">
+            <card.icon className="h-5 w-5 text-slate-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-500">{card.label}</p>
+            <p className={`text-lg font-semibold tabular-nums ${card.positive !== undefined ? (card.positive ? "text-emerald-600" : "text-red-600") : "text-gray-900"}`}>
+              {card.sign || ""}{card.value}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function LeftPanel({
@@ -358,7 +407,7 @@ function Modal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/[0.02] backdrop-blur-none"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
@@ -703,13 +752,15 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
+    <div className="flex flex-col h-full space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="投资组合" description="股票与期货持仓监控" />
+
+      <StatCards positions={positions} />
 
       <TrendChart snapshots={snapshots} />
 
       {/* Two-column layout */}
-      <div className="flex gap-6">
+      <div className="flex flex-1 gap-6">
         {/* Left panel */}
         <LeftPanel
           positions={positions}
