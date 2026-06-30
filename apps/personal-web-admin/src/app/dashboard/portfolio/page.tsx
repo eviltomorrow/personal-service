@@ -351,42 +351,48 @@ function Modal({
 
 function AddPositionForm({ initial, onSave, onClose }: {
   initial?: Position;
-  onSave: (p: Omit<Position, "id" | "trades" | "costPrice">) => void;
+  onSave: (p: Omit<Position, "id" | "trades" | "costPrice" | "quantity">) => void;
   onClose: () => void;
 }) {
   const [code, setCode] = useState(initial?.code ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState<"股票" | "期货">(initial?.type ?? "股票");
   const [direction, setDirection] = useState<"做多" | "做空">(initial?.direction ?? "做多");
-  const [quantity, setQuantity] = useState(initial ? String(initial.quantity) : "");
-  const [initialQty, setInitialQty] = useState(initial ? String(initial.initialQty) : "");
-  const [price, setPrice] = useState(initial ? String(initial.currentPrice) : "");
+  const [initialQty, setInitialQty] = useState(initial ? String(initial.initialQty) : "0");
+  const [price, setPrice] = useState(initial ? String(initial.currentPrice) : "0");
   const [error, setError] = useState("");
 
   function handleSubmit() {
-    if (!code.trim() || !name.trim() || !quantity || !price) { setError("请填写所有必填字段"); return; }
-    const q = parseFloat(quantity);
-    const iq = parseFloat(initialQty || quantity);
-    const p = parseFloat(price);
-    if (isNaN(q) || q <= 0) { setError("持仓量必须大于 0"); return; }
-    if (isNaN(p) || p <= 0) { setError("价格必须大于 0"); return; }
-    onSave({ code: code.trim(), name: name.trim(), type, direction, initialQty: isNaN(iq) || iq < 0 ? 0 : iq, quantity: q, currentPrice: p });
+    if (!code.trim()) { setError("请输入代码"); return; }
+    if (!name.trim()) { setError("请输入名称"); return; }
+    const iq = parseFloat(initialQty) || 0;
+    const p = parseFloat(price) || 0;
+    if (iq < 0) { setError("持仓量不能为负数"); return; }
+    if (p < 0) { setError("价格不能为负数"); return; }
+    onSave({
+      code: code.trim(),
+      name: name.trim(),
+      type,
+      direction,
+      initialQty: iq,
+      currentPrice: p,
+    });
   }
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">品种代码</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">代码</label>
         <input type="text" value={code} onChange={(e) => setCode(e.target.value)} autoFocus
           className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
-          placeholder="如 600519" />
+          placeholder="600519.SH" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">品种名称</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">名称</label>
         <input type="text" value={name} onChange={(e) => setName(e.target.value)}
           className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
-          placeholder="如 贵州茅台" />
+          placeholder="贵州茅台" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -406,24 +412,18 @@ function AddPositionForm({ initial, onSave, onClose }: {
           </select>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">持仓量</label>
-          <input type="number" min="0" step="1" value={quantity} onChange={(e) => setQuantity(e.target.value)}
-            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
-            placeholder="100" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">初始数量</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">持仓量（可选）</label>
           <input type="number" min="0" step="1" value={initialQty} onChange={(e) => setInitialQty(e.target.value)}
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
-            placeholder="100" />
+            placeholder="0" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">现价</label>
-          <input type="number" min="0.01" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
+          <label className="block text-sm font-medium text-gray-700 mb-1">现价（可选）</label>
+          <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
-            placeholder="1500.00" />
+            placeholder="0.00" />
         </div>
       </div>
       <div className="flex justify-end gap-2 pt-2">
@@ -704,10 +704,11 @@ export default function PortfolioPage() {
           <AddPositionForm
             onSave={(data) => {
               const id = genId();
-              setPositions((prev) => [...prev, { ...data, id, costPrice: data.currentPrice, trades: [] }]);
+              const qty = Math.max(0, data.initialQty);
+              setPositions((prev) => [...prev, { ...data, id, quantity: qty, costPrice: data.currentPrice, trades: [] }]);
               setSnapshots((prev) => {
                 const today = new Date().toISOString().slice(0, 10);
-                const newTotal = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0) + data.currentPrice * data.quantity;
+                const newTotal = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0) + data.currentPrice * qty;
                 const existing = prev.findIndex((s) => s.date === today);
                 if (existing >= 0) {
                   const next = [...prev];
