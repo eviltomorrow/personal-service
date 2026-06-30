@@ -155,15 +155,15 @@ function LeftPanel({
                 <button
                   key={p.id}
                   onClick={() => onSelect(p.id)}
-                  className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-slate-50 ${
+                  className={`w-full text-left px-4 py-3 transition-colors hover:bg-slate-50 ${
                     isSelected ? "bg-slate-100" : ""
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0 mb-0.5">
                     <span className="text-sm font-medium text-gray-900 truncate">
                       {p.code} {p.name}
                     </span>
-                    <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+                    <span className={`shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
                       p.type === "股票"
                         ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
                         : "bg-blue-50 text-blue-700 ring-blue-600/20"
@@ -171,12 +171,12 @@ function LeftPanel({
                       {p.type}
                     </span>
                     {p.direction === "做空" && (
-                      <span className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset bg-orange-50 text-orange-700 ring-orange-600/20">
+                      <span className="shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset bg-orange-50 text-orange-700 ring-orange-600/20">
                         空
                       </span>
                     )}
                   </div>
-                  <span className="text-sm text-gray-700 tabular-nums ml-3">{formatCNY(mv)}</span>
+                  <p className="text-xs text-gray-500 tabular-nums pl-0.5">{formatCNY(mv)}</p>
                 </button>
               );
             })}
@@ -374,39 +374,33 @@ function RightPanel({
         {sortedTrades.length === 0 ? (
           <p className="text-sm text-gray-400">暂无记录</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {sortedTrades.map((t) => (
-              <div key={t.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                      t.type === "买入" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
-                    }`}>
-                      {t.type}
-                    </span>
-                    <span className="text-sm text-gray-500 tabular-nums">{t.date}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    <button onClick={() => onEditTrade(position.id, t)}
-                      className="rounded p-1 text-gray-300 hover:text-gray-500 transition-colors">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => onDeleteTrade(position.id, t.id)}
-                      className="rounded p-1 text-gray-300 hover:text-red-400 transition-colors">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+              <div key={t.id} className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white px-4 py-3 hover:border-gray-200 hover:shadow-sm transition-all">
+                <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded ${
+                  t.type === "买入" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                }`}>
+                  {t.type}
+                </span>
+                <span className="text-sm text-gray-500 tabular-nums w-28 shrink-0">{t.date}</span>
+                <span className="text-sm text-gray-500 tabular-nums w-24 text-right shrink-0">{formatCNY(t.price)}</span>
+                <span className="text-sm text-gray-900 tabular-nums w-20 text-right shrink-0">{t.quantity}</span>
+                <span className="text-sm font-semibold text-gray-900 tabular-nums w-28 text-right shrink-0">{formatCNY(t.price * t.quantity)}</span>
+                {t.note ? (
+                  <span className="text-sm text-gray-400 truncate flex-1 min-w-0">{t.note}</span>
+                ) : (
+                  <span className="flex-1 min-w-0" />
+                )}
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button onClick={() => onEditTrade(position.id, t)}
+                    className="rounded p-1 text-gray-300 hover:text-gray-500 transition-colors">
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => onDeleteTrade(position.id, t.id)}
+                    className="rounded p-1 text-gray-300 hover:text-red-400 transition-colors">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-                <div className="flex items-baseline gap-1.5 mb-1">
-                  <span className="text-sm font-medium text-gray-900 tabular-nums">
-                    {formatCNY(t.price)} × {t.quantity}
-                  </span>
-                  <span className="text-xs text-gray-400">=</span>
-                  <span className="text-sm font-semibold text-gray-900 tabular-nums">
-                    {formatCNY(t.price * t.quantity)}
-                  </span>
-                </div>
-                {t.note && <p className="text-xs text-gray-400">{t.note}</p>}
               </div>
             ))}
           </div>
