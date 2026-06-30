@@ -82,7 +82,14 @@ function calcDerived(p: Position) {
   return { marketValue, profitAmount, profitPct };
 }
 
-function StatCards({ positions, totalCapital }: { positions: Position[]; totalCapital: number }) {
+function StatCards({ positions, totalCapital, onCapitalChange }: {
+  positions: Position[];
+  totalCapital: number;
+  onCapitalChange: (v: number) => void;
+}) {
+  const [editingCapital, setEditingCapital] = useState(false);
+  const [capitalDraft, setCapitalDraft] = useState("");
+
   const count = positions.length;
   const totalValue = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0);
   const totalProfit = positions.reduce((s, p) => {
@@ -93,95 +100,87 @@ function StatCards({ positions, totalCapital }: { positions: Position[]; totalCa
   const longCount = positions.filter((p) => p.direction === "做多").length;
   const shortCount = positions.filter((p) => p.direction === "做空").length;
 
+  const profitColor = totalProfit >= 0 ? "emerald" : "red";
+  const profitSign = totalProfit > 0 ? "+" : totalProfit < 0 ? "-" : "";
+
   const cards = [
-    { icon: Layers, label: "总品种数", value: String(count) },
-    { icon: DollarSign, label: "总市值", value: formatCNY(totalValue) },
-    {
-      icon: TrendingUp, label: "总盈亏",
-      value: formatCNY(Math.abs(totalProfit)),
-      positive: totalProfit >= 0,
-      sign: totalProfit > 0 ? "+" : totalProfit < 0 ? "-" : "",
-    },
-    {
-      icon: Percent, label: "总收益率",
-      value: totalProfitPct !== null ? `${(totalProfit >= 0 ? "+" : "")}${totalProfitPct.toFixed(2)}%` : "—",
-      positive: totalProfit >= 0,
-    },
-    { icon: ArrowUpDown, label: "多空比", value: `${longCount} : ${shortCount}` },
+    { icon: DollarSign, label: "总本金", value: formatCNY(totalCapital), bar: "slate", editable: true },
+    { icon: Layers, label: "总品种数", value: String(count), bar: "blue" },
+    { icon: TrendingUp, label: "总市值", value: formatCNY(totalValue), bar: "emerald" },
+    { icon: TrendingUp, label: "总盈亏", value: `${profitSign}${formatCNY(Math.abs(totalProfit))}`, bar: profitColor, text: profitColor },
+    { icon: Percent, label: "总收益率", value: totalProfitPct !== null ? `${profitSign}${totalProfitPct.toFixed(2)}%` : "—", bar: "amber", text: profitColor },
+    { icon: ArrowUpDown, label: "多空比", value: `${longCount} : ${shortCount}`, bar: "purple" },
   ];
 
+  function bar(color: string) {
+    const colors: Record<string, string> = {
+      slate: "bg-slate-500", blue: "bg-blue-500", emerald: "bg-emerald-500",
+      red: "bg-red-500", amber: "bg-amber-500", purple: "bg-purple-500",
+    };
+    return colors[color] || "bg-slate-500";
+  }
+
+  function iconBg(color: string) {
+    const colors: Record<string, string> = {
+      slate: "bg-slate-100 text-slate-600", blue: "bg-blue-100 text-blue-600",
+      emerald: "bg-emerald-100 text-emerald-600", red: "bg-red-100 text-red-600",
+      amber: "bg-amber-100 text-amber-600", purple: "bg-purple-100 text-purple-600",
+    };
+    return colors[color] || "bg-slate-100 text-slate-600";
+  }
+
+  function textCls(color: string) {
+    const colors: Record<string, string> = {
+      slate: "text-slate-700", blue: "text-blue-700", emerald: "text-emerald-700",
+      red: "text-red-700", amber: "text-amber-700", purple: "text-purple-700",
+    };
+    return colors[color] || "text-gray-900";
+  }
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {cards.map((card) => (
-        <div key={card.label} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 flex items-center gap-3">
-          <div className="rounded-lg bg-slate-50 p-2.5 shrink-0">
-            <card.icon className="h-5 w-5 text-slate-600" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-gray-500">{card.label}</p>
-            <p className={`text-lg font-semibold tabular-nums ${card.positive !== undefined ? (card.positive ? "text-emerald-600" : "text-red-600") : "text-gray-900"}`}>
-              {card.sign || ""}{card.value}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function AccountCapital({
-  futuresCapital, stockCapital, onFuturesChange, onStockChange,
-}: {
-  futuresCapital: number;
-  stockCapital: number;
-  onFuturesChange: (v: number) => void;
-  onStockChange: (v: number) => void;
-}) {
-  const total = futuresCapital + stockCapital;
-  const [editing, setEditing] = useState<"futures" | "stock" | null>(null);
-  const [draft, setDraft] = useState("");
-
-  function startEdit(field: "futures" | "stock" | undefined) {
-    if (!field) return;
-    setEditing(field);
-    setDraft(String(field === "futures" ? futuresCapital : stockCapital));
-  }
-
-  function confirmEdit() {
-    const v = parseFloat(draft) || 0;
-    if (editing === "futures") onFuturesChange(v);
-    else onStockChange(v);
-    setEditing(null);
-  }
-
-  return (
-    <div className="grid grid-cols-3 gap-4">
-      {([
-        { label: "期货账户本金", value: futuresCapital, key: "futures" as const },
-        { label: "股票账户本金", value: stockCapital, key: "stock" as const },
-        { label: "总本金", value: total, readOnly: true },
-      ]).map((item) => (
-        <div key={item.label} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
-          <p className="text-xs text-gray-500 mb-1">{item.label}</p>
-          {item.readOnly ? (
-            <p className="text-lg font-semibold text-gray-900 tabular-nums">{formatCNY(item.value)}</p>
-          ) : editing === item.key ? (
-            <div className="flex items-center gap-1">
-              <span className="text-sm text-gray-400">¥</span>
-              <input type="number" step="0.01" value={draft} autoFocus
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={confirmEdit}
-                onKeyDown={(e) => e.key === "Enter" && confirmEdit()}
-                className="w-full rounded border border-gray-300 px-2 py-1 text-lg font-semibold text-gray-900 tabular-nums focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
+        <div key={card.label} className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden ${card.editable ? "relative" : ""}`}>
+          <div className={`h-1 ${bar(card.bar)}`} />
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`rounded-lg ${iconBg(card.bar)} p-2`}>
+                <card.icon className="h-5 w-5" />
+              </div>
+              {card.editable && !editingCapital && (
+                <button onClick={() => { setCapitalDraft(String(totalCapital)); setEditingCapital(true); }}
+                  className="rounded p-1 text-gray-300 hover:text-gray-500 transition-colors">
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
-          ) : (
-            <button onClick={() => startEdit(item.key)}
-              className="text-lg font-semibold text-gray-900 tabular-nums hover:text-slate-600 transition-colors cursor-text text-left w-full">
-              {formatCNY(item.value)}
-            </button>
-          )}
+            <p className={`text-lg font-bold tabular-nums ${card.text ? textCls(card.text) : textCls(card.bar)}`}>
+              {card.value}
+            </p>
+            <p className="mt-0.5 text-sm text-gray-500">{card.label}</p>
+          </div>
         </div>
       ))}
+      {editingCapital && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setEditingCapital(false)}>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-xl p-5 w-80" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">修改总本金</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-400">¥</span>
+              <input type="number" step="0.01" value={capitalDraft} autoFocus
+                onChange={(e) => setCapitalDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { onCapitalChange(parseFloat(capitalDraft) || 0); setEditingCapital(false); } }}
+                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setEditingCapital(false)}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+              <button onClick={() => { onCapitalChange(parseFloat(capitalDraft) || 0); setEditingCapital(false); }}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">确认</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -195,9 +194,10 @@ function LeftPanel({
   onAdd: () => void;
 }) {
   return (
-    <div className="w-[320px] shrink-0 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col">
-      <div className="px-4 py-3 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-900">持仓列表</h3>
+    <div className="w-[320px] shrink-0 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col overflow-hidden">
+      <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-b border-gray-100">
+        <div className="w-1 h-4 rounded-full bg-slate-500" />
+        <span className="text-sm font-semibold text-gray-800">📋 持仓列表</span>
       </div>
       <div className="flex-1 overflow-y-auto">
         {positions.length === 0 ? (
@@ -416,12 +416,13 @@ function RightPanel({
       </div>
 
       {/* Trade records */}
-      <div className="border-t border-gray-100 pt-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-gray-900">买卖记录</h4>
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden mt-4">
+        <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-b border-gray-100">
+          <div className="w-1 h-4 rounded-full bg-slate-500" />
+          <span className="text-sm font-semibold text-gray-800">📝 买卖记录</span>
           <button
             onClick={() => onAddTrade(position.id)}
-            className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors"
+            className="ml-auto flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             新增记录
@@ -758,9 +759,7 @@ export default function PortfolioPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
-  const [futuresCapital, setFuturesCapital] = useState(0);
-  const [stockCapital, setStockCapital] = useState(0);
-  const totalCapital = futuresCapital + stockCapital;
+  const [totalCapital, setTotalCapital] = useState(0);
 
   const selectedPosition = useMemo(
     () => positions.find((p) => p.id === selectedId) ?? null,
@@ -832,9 +831,7 @@ export default function PortfolioPage() {
   return (
     <div className="flex flex-col h-full space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="投资组合" description="股票与期货持仓监控" />
-      <AccountCapital futuresCapital={futuresCapital} stockCapital={stockCapital}
-        onFuturesChange={setFuturesCapital} onStockChange={setStockCapital} />
-      <StatCards positions={positions} totalCapital={totalCapital} />
+      <StatCards positions={positions} totalCapital={totalCapital} onCapitalChange={setTotalCapital} />
 
       <TrendChart snapshots={snapshots} />
 
