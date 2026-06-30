@@ -7,12 +7,14 @@ import {
   LayoutDashboard, Users, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
   Activity, BarChart3, FileText, HelpCircle, Sparkles, User, CreditCard, LogOut,
   Clock, ShoppingCart, MessageCircle, Feather, BookOpen, Plus, UserPlus,
+  Wallet,
 } from "lucide-react";
 
 const navItems = [
   { label: "仪表盘", href: "/dashboard", icon: LayoutDashboard },
   { label: "数据分析", href: "/dashboard/analytics", icon: BarChart3 },
   { label: "资产负债表", href: "/dashboard/balance-sheet", icon: BookOpen },
+  { label: "现金流量表", href: "/dashboard/cash-flow", icon: Wallet },
   { label: "用户管理", href: "/dashboard/users", icon: Users },
   { label: "活动记录", href: "/dashboard/activity", icon: Activity },
   { label: "博客", href: "/dashboard/blog", icon: Feather },
