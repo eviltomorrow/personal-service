@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
   Wallet, TrendingUp, Plus, Pencil, Trash2, X, AlertTriangle,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 
 interface CashFlowItem {
@@ -27,7 +27,10 @@ function getMonthKey(year: number, month: number) {
 }
 
 function formatCNY(amount: number) {
-  return `¥ ${Math.abs(amount).toLocaleString("zh-CN")}.00`;
+  return `¥ ${Math.abs(amount).toLocaleString("zh-CN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function createEmptyMonth(): MonthCashFlow {
@@ -100,6 +103,20 @@ export default function CashFlowPage() {
     [data],
   );
   const netBalance = totalIncome - totalExpense;
+
+  const prevMonthKey = getMonthKey(
+    month === 1 ? year - 1 : year,
+    month === 1 ? 12 : month - 1,
+  );
+  const prevData = monthData[prevMonthKey];
+  const prevTotalIncome = prevData ? prevData.income.reduce((s, i) => s + i.amount, 0) : 0;
+  const prevTotalExpense = prevData ? prevData.expense.reduce((s, i) => s + i.amount, 0) : 0;
+
+  function calcChange(current: number, previous: number): string | null {
+    if (previous === 0) return null;
+    const pct = ((current - previous) / previous) * 100;
+    return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
+  }
 
   function openAdd(section: "income" | "expense") {
     setModalCategory(section === "income" ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]);
@@ -214,6 +231,21 @@ export default function CashFlowPage() {
               <div className="rounded-lg bg-emerald-100 p-2">
                 <TrendingUp className="h-5 w-5 text-emerald-600" />
               </div>
+              {(() => {
+                const change = calcChange(totalIncome, prevTotalIncome);
+                return change !== null ? (
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                    change.startsWith("+")
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-700"
+                  }`}>
+                    {change.startsWith("+") ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {change}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-400">-</span>
+                );
+              })()}
             </div>
             <p className="text-2xl font-bold text-emerald-700 tabular-nums">
               {totalIncome > 0 ? formatCNY(totalIncome) : "¥ 0.00"}
@@ -228,6 +260,21 @@ export default function CashFlowPage() {
               <div className="rounded-lg bg-red-100 p-2">
                 <Wallet className="h-5 w-5 text-red-600" />
               </div>
+              {(() => {
+                const change = calcChange(totalExpense, prevTotalExpense);
+                return change !== null ? (
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                    change.startsWith("+")
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-700"
+                  }`}>
+                    {change.startsWith("+") ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {change}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-400">-</span>
+                );
+              })()}
             </div>
             <p className="text-2xl font-bold text-red-700 tabular-nums">
               {totalExpense > 0 ? formatCNY(totalExpense) : "¥ 0.00"}
@@ -242,6 +289,22 @@ export default function CashFlowPage() {
               <div className={`rounded-lg p-2 ${netBalance >= 0 ? "bg-blue-100" : "bg-red-100"}`}>
                 <TrendingUp className={`h-5 w-5 ${netBalance >= 0 ? "text-blue-600" : "text-red-600"}`} />
               </div>
+              {(() => {
+                const prevNetBalance = prevTotalIncome - prevTotalExpense;
+                const change = calcChange(netBalance, prevNetBalance);
+                return change !== null ? (
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                    change.startsWith("+")
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-700"
+                  }`}>
+                    {change.startsWith("+") ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {change}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-400">-</span>
+                );
+              })()}
             </div>
             <p className={`text-2xl font-bold tabular-nums ${netBalance >= 0 ? "text-blue-700" : "text-red-700"}`}>
               {formatCNY(netBalance)}
@@ -388,7 +451,7 @@ export default function CashFlowPage() {
             </div>
             <div className="flex items-center justify-end gap-3 px-6 pb-6">
               <button type="button" onClick={() => setModal(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
-              <button type="button" onClick={handleDelete} className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-600 transition-all">删除</button>
+              <button type="button" onClick={handleDelete} autoFocus className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-600 transition-all">删除</button>
             </div>
           </div>
         </div>
