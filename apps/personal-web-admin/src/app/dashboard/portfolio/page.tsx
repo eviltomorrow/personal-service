@@ -483,6 +483,90 @@ function DeleteConfirm({
   );
 }
 
+function TrendChart({ snapshots }: { snapshots: ValueSnapshot[] }) {
+  if (snapshots.length < 2) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">总市值趋势</h3>
+        <p className="text-xs text-gray-500">暂无足够数据绘制趋势图</p>
+      </div>
+    );
+  }
+
+  const sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  const values = sorted.map((s) => s.totalValue);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const padding = range * 0.1;
+  const paddedMin = min - padding;
+  const paddedMax = max + padding;
+  const paddedRange = paddedMax - paddedMin;
+
+  const W = 700;
+  const H = 200;
+  const count = sorted.length;
+  const stepX = count > 1 ? W / (count - 1) : W / 2;
+
+  const points = sorted.map((s, i) => {
+    const x = count > 1 ? i * stepX : W / 2;
+    const y = H - ((s.totalValue - paddedMin) / paddedRange) * H * 0.85 - H * 0.075;
+    return `${x},${y}`;
+  });
+
+  const pathD = `M ${points.join(" L ")}`;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900">总市值趋势</h3>
+        <p className="text-xs text-gray-500 tabular-nums">
+          {formatCNY(sorted[sorted.length - 1].totalValue)}
+        </p>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[240px]" preserveAspectRatio="xMidYMid meet">
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const y = H - ratio * H * 0.85 - H * 0.075;
+          return (
+            <g key={ratio}>
+              <line x1={0} y1={y} x2={W} y2={y} stroke="#e2e8f0" strokeWidth="1" />
+              <text x={W - 4} y={y + 3} textAnchor="end" className="fill-gray-400" fontSize="10">
+                {formatCNY(paddedMin + ratio * paddedRange)}
+              </text>
+            </g>
+          );
+        })}
+        {/* Area fill */}
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#64748b" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#64748b" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={`${pathD} L ${points[points.length - 1].split(",")[0]},${H} L ${points[0].split(",")[0]},${H} Z`} fill="url(#areaGrad)" />
+        {/* Line */}
+        <path d={pathD} fill="none" stroke="#64748b" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        {/* Dots */}
+        {sorted.map((s, i) => {
+          const [cx, cy] = points[i].split(",");
+          return <circle key={s.date} cx={cx} cy={cy} r="3" fill="#64748b" className="hover:r-4" />;
+        })}
+        {/* X-axis labels */}
+        {sorted.filter((_, i) => i === 0 || i === count - 1 || (i % Math.max(1, Math.floor(count / 5)) === 0)).map((s) => {
+          const idx = sorted.indexOf(s);
+          const x = count > 1 ? idx * stepX : W / 2;
+          return (
+            <text key={s.date} x={x} y={H - 4} textAnchor="middle" className="fill-gray-400" fontSize="10">
+              {s.date.slice(5)}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -549,11 +633,7 @@ export default function PortfolioPage() {
     <div className="space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="投资组合" description="股票与期货持仓监控" />
 
-      {/* Trend chart area — placeholder for Task 4 */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">总市值趋势</h3>
-        <p className="text-xs text-gray-500">暂无足够数据绘制趋势图</p>
-      </div>
+      <TrendChart snapshots={snapshots} />
 
       {/* Two-column layout */}
       <div className="flex gap-6">
