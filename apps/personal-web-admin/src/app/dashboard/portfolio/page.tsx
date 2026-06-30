@@ -305,6 +305,184 @@ function RightPanel({
   );
 }
 
+function Modal({
+  title, children, onClose,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+    >
+      <div
+        className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down"
+        style={{ animationDuration: "200ms" }}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+          <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="px-5 py-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function AddPositionForm({ initial, onSave, onClose }: {
+  initial?: Position;
+  onSave: (p: Omit<Position, "id" | "trades" | "costPrice">) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [type, setType] = useState<"股票" | "期货">(initial?.type ?? "股票");
+  const [quantity, setQuantity] = useState(initial ? String(initial.quantity) : "");
+  const [price, setPrice] = useState(initial ? String(initial.currentPrice) : "");
+  const [error, setError] = useState("");
+
+  function handleSubmit() {
+    if (!name.trim() || !quantity || !price) { setError("请填写所有必填字段"); return; }
+    const q = parseFloat(quantity);
+    const p = parseFloat(price);
+    if (isNaN(q) || q <= 0) { setError("持仓量必须大于 0"); return; }
+    if (isNaN(p) || p <= 0) { setError("价格必须大于 0"); return; }
+    onSave({ name: name.trim(), type, quantity: q, currentPrice: p });
+  }
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">品种名称</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+          placeholder="如 贵州茅台" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">类型</label>
+        <select value={type} onChange={(e) => setType(e.target.value as "股票" | "期货")}
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none">
+          <option value="股票">股票</option>
+          <option value="期货">期货</option>
+        </select>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">持仓量</label>
+          <input type="number" min="0" step="1" value={quantity} onChange={(e) => setQuantity(e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+            placeholder="100" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">现价</label>
+          <input type="number" min="0.01" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+            placeholder="1500.00" />
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 pt-2">
+        <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+        <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">确认</button>
+      </div>
+    </form>
+  );
+}
+
+function TradeForm({
+  initial, onSave, onClose,
+}: {
+  initial?: TradeRecord;
+  onSave: (t: Omit<TradeRecord, "id">) => void;
+  onClose: () => void;
+}) {
+  const [type, setType] = useState<"买入" | "卖出">(initial?.type ?? "买入");
+  const [date, setDate] = useState(initial?.date ?? new Date().toISOString().slice(0, 10));
+  const [price, setPrice] = useState(initial ? String(initial.price) : "");
+  const [quantity, setQuantity] = useState(initial ? String(initial.quantity) : "");
+  const [note, setNote] = useState(initial?.note ?? "");
+  const [error, setError] = useState("");
+
+  function handleSubmit() {
+    if (!date || !price || !quantity) { setError("请填写所有必填字段"); return; }
+    const p = parseFloat(price);
+    const q = parseFloat(quantity);
+    if (isNaN(p) || p <= 0) { setError("价格必须大于 0"); return; }
+    if (isNaN(q) || q <= 0) { setError("数量必须大于 0"); return; }
+    onSave({ type, date, price: p, quantity: q, note: note.trim() || undefined });
+  }
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">方向</label>
+        <select value={type} onChange={(e) => setType(e.target.value as "买入" | "卖出")}
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none">
+          <option value="买入">买入</option>
+          <option value="卖出">卖出</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">日期</label>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} autoFocus
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">成交价</label>
+          <input type="number" min="0.01" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+            placeholder="1500.00" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">数量</label>
+          <input type="number" min="0" step="1" value={quantity} onChange={(e) => setQuantity(e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+            placeholder="100" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">备注（可选）</label>
+        <input type="text" value={note} onChange={(e) => setNote(e.target.value)}
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+          placeholder="备注信息" />
+      </div>
+      <div className="flex justify-end gap-2 pt-2">
+        <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+        <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">确认</button>
+      </div>
+    </form>
+  );
+}
+
+function DeleteConfirm({
+  message, onConfirm, onClose,
+}: {
+  message: string;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center text-center">
+      <div className="rounded-full bg-red-50 p-3 mb-3">
+        <AlertTriangle className="h-6 w-6 text-red-500" />
+      </div>
+      <p className="text-sm text-gray-700 mb-1">{message}</p>
+      <p className="text-xs text-gray-500 mb-4">此操作不可撤销</p>
+      <div className="flex gap-2">
+        <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+        <button onClick={() => { onConfirm(); onClose(); }} className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-colors">确认删除</button>
+      </div>
+    </div>
+  );
+}
+
 export default function PortfolioPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -384,7 +562,7 @@ export default function PortfolioPage() {
           positions={positions}
           selectedId={selectedId}
           onSelect={setSelectedId}
-          onAdd={() => {}}
+          onAdd={() => setModal({ type: "addPosition" })}
         />
 
         {/* Right panel */}
@@ -394,9 +572,9 @@ export default function PortfolioPage() {
             onUpdatePosition={handleUpdatePosition}
             onAddTrade={(posId) => setModal({ type: "addTrade", positionId: posId })}
             onEditTrade={(posId, trade) => setModal({ type: "editTrade", positionId: posId, trade })}
-            onDeleteTrade={handleDeleteTrade}
+            onDeleteTrade={(posId, tradeId) => setModal({ type: "deleteTrade", positionId: posId, tradeId })}
             onEditPosition={(id) => setModal({ type: "editPosition", positionId: id })}
-            onDeletePosition={handleDeletePosition}
+            onDeletePosition={(id) => setModal({ type: "deletePosition", positionId: id })}
           />
         ) : (
           <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6 flex items-center justify-center">
@@ -404,6 +582,107 @@ export default function PortfolioPage() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      {modal?.type === "addPosition" && (
+        <Modal title="新增品种" onClose={() => setModal(null)}>
+          <AddPositionForm
+            onSave={(data) => {
+              const id = genId();
+              setPositions((prev) => [...prev, { ...data, id, costPrice: data.currentPrice, trades: [] }]);
+              setSnapshots((prev) => {
+                const today = new Date().toISOString().slice(0, 10);
+                const newTotal = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0) + data.currentPrice * data.quantity;
+                const existing = prev.findIndex((s) => s.date === today);
+                if (existing >= 0) {
+                  const next = [...prev];
+                  next[existing] = { ...next[existing], totalValue: newTotal };
+                  return next;
+                }
+                return [...prev, { date: today, totalValue: newTotal }];
+              });
+              setSelectedId(id);
+              setModal(null);
+            }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "editPosition" && (() => {
+        const p = positions.find((x) => x.id === modal.positionId);
+        if (!p) return null;
+        return (
+          <Modal title="编辑品种" onClose={() => setModal(null)}>
+            <AddPositionForm
+              initial={p}
+              onSave={(data) => {
+                handleUpdatePosition(modal.positionId, data);
+                setModal(null);
+              }}
+              onClose={() => setModal(null)}
+            />
+          </Modal>
+        );
+      })()}
+
+      {modal?.type === "deletePosition" && (
+        <Modal title="删除品种" onClose={() => setModal(null)}>
+          <DeleteConfirm
+            message="删除此品种将同时清除所有关联的买卖记录和趋势数据。"
+            onConfirm={() => { handleDeletePosition(modal.positionId); }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "addTrade" && (
+        <Modal title="新增记录" onClose={() => setModal(null)}>
+          <TradeForm
+            onSave={(data) => {
+              const newTrade = { id: genId(), ...data };
+              setPositions((prev) =>
+                prev.map((p) => {
+                  if (p.id !== modal.positionId) return p;
+                  const newTrades = [...p.trades, newTrade];
+                  return { ...p, trades: newTrades, costPrice: recalcCostPrice(newTrades) };
+                })
+              );
+              setModal(null);
+            }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "editTrade" && (
+        <Modal title="编辑记录" onClose={() => setModal(null)}>
+          <TradeForm
+            initial={modal.trade}
+            onSave={(data) => {
+              setPositions((prev) =>
+                prev.map((p) =>
+                  p.id === modal.positionId
+                    ? { ...p, trades: p.trades.map((t) => t.id === modal.trade.id ? { ...t, ...data } : t) }
+                    : p
+                )
+              );
+              setModal(null);
+            }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "deleteTrade" && (
+        <Modal title="删除记录" onClose={() => setModal(null)}>
+          <DeleteConfirm
+            message="确定要删除此买卖记录吗？"
+            onConfirm={() => { handleDeleteTrade(modal.positionId, modal.tradeId); }}
+            onClose={() => setModal(null)}
+          />
+        </Modal>
+      )}
     </div>
   );
 }
