@@ -3,60 +3,58 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { formatCNY } from "@/lib/format";
+import { api } from "@/lib/api";
 import {
   Wallet, TrendingUp, Plus, Pencil, Trash2, X, AlertTriangle,
   ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 
 interface CashFlowItem {
+  id: number;
   name: string;
   amount: number;
+  date: string;
+  note?: string;
 }
 
 interface CashFlowCategory {
+  id: number;
   category: string;
   items: CashFlowItem[];
 }
 
-interface MonthCashFlow {
-  income: CashFlowCategory[];
-  expense: CashFlowCategory[];
+interface Category {
+  id: number;
+  account_id: string;
+  name: string;
+  type: "income" | "expense";
+  sort_order: number;
+  created_at: number;
+  updated_at: number;
+}
+
+interface Transaction {
+  id: number;
+  account_id: string;
+  category_id: number;
+  type: "income" | "expense";
+  name: string;
+  amount: number;
+  date: string;
+  note: string;
+  created_at: number;
+  updated_at: number;
 }
 
 const MONTH_LABELS = ["", "1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
-
-function getMonthKey(year: number, month: number) {
-  return `${year}-${String(month).padStart(2, "0")}`;
-}
-
-function createEmptyMonth(): MonthCashFlow {
-  return { income: [], expense: [] };
-}
 
 export default function CashFlowPage() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
-  const [monthData, setMonthData] = useState<Record<string, MonthCashFlow>>({
-    [getMonthKey(today.getFullYear(), today.getMonth() + 1)]: {
-      income: [
-        { category: "工资", items: [{ name: "6月工资", amount: 20000 }, { name: "绩效奖金", amount: 8500 }] },
-        { category: "理财收益", items: [{ name: "基金分红", amount: 2500 }, { name: "银行利息", amount: 1000 }] },
-        { category: "兼职", items: [] },
-        { category: "其他", items: [] },
-      ],
-      expense: [
-        { category: "住房", items: [{ name: "房租", amount: 4800 }] },
-        { category: "餐饮", items: [{ name: "盒马鲜生", amount: 1200 }, { name: "外卖", amount: 1500 }, { name: "咖啡", amount: 500 }] },
-        { category: "交通", items: [{ name: "加油", amount: 800 }, { name: "停车费", amount: 700 }] },
-        { category: "购物", items: [{ name: "京东日用品", amount: 1600 }, { name: "衣服", amount: 1200 }] },
-        { category: "学习", items: [{ name: "在线课程", amount: 600 }] },
-        { category: "医疗", items: [{ name: "体检", amount: 200 }] },
-        { category: "娱乐", items: [{ name: "电影", amount: 300 }, { name: "聚餐", amount: 500 }] },
-        { category: "其他", items: [{ name: "快递费", amount: 430 }] },
-      ],
-    },
-  });
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<{
     type: "add-item" | "edit-item" | "delete-item" | "add-category" | "delete-category";
     section: "income" | "expense";
@@ -78,38 +76,74 @@ export default function CashFlowPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const monthKey = getMonthKey(year, month);
-  const data = monthData[monthKey] ?? createEmptyMonth();
-
-  function navigateMonth(delta: number) {
-    const d = new Date(year, month - 1 + delta, 1);
-    const ny = d.getFullYear();
-    const nm = d.getMonth() + 1;
-    const nk = getMonthKey(ny, nm);
-    setYear(ny);
-    setMonth(nm);
-    if (!monthData[nk]) {
-      setMonthData((prev) => ({ ...prev, [nk]: createEmptyMonth() }));
+  async function loadData(year: number, month: number) {
+    setLoading(true);
+    try {
+      const [catRes, txRes] = await Promise.all([
+        api("/api/v1/finance/categories"),
+        api(`/api/v1/finance/transactions?year=${year}&month=${month}`),
+      ]);
+      const catJson = await catRes.json();
+      const txJson = await txRes.json();
+      if (catJson.code === 0) setCategories(catJson.data);
+      if (txJson.code === 0) setTransactions(txJson.data.transactions);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
     }
   }
 
+  useEffect(() => {
+    loadData(year, month);
+  }, [year, month]);
+
+  const incomeCategories = useMemo(
+    () => categories
+      .filter((c) => c.type === "income")
+      .map((c) => ({
+        id: c.id,
+        category: c.name,
+        items: transactions
+          .filter((t) => t.category_id === c.id)
+          .map((t) => ({ id: t.id, name: t.name, amount: t.amount, date: t.date, note: t.note })),
+      })),
+    [categories, transactions]
+  );
+
+  const expenseCategories = useMemo(
+    () => categories
+      .filter((c) => c.type === "expense")
+      .map((c) => ({
+        id: c.id,
+        category: c.name,
+        items: transactions
+          .filter((t) => t.category_id === c.id)
+          .map((t) => ({ id: t.id, name: t.name, amount: t.amount, date: t.date, note: t.note })),
+      })),
+    [categories, transactions]
+  );
+
   const totalIncome = useMemo(
-    () => data.income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + i.amount, 0), 0),
-    [data],
+    () => transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
+    [transactions]
   );
+
   const totalExpense = useMemo(
-    () => data.expense.reduce((s, c) => s + c.items.reduce((ss, i) => ss + i.amount, 0), 0),
-    [data],
+    () => transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0),
+    [transactions]
   );
+
   const netBalance = totalIncome - totalExpense;
 
-  const prevMonthKey = getMonthKey(
-    month === 1 ? year - 1 : year,
-    month === 1 ? 12 : month - 1,
-  );
-  const prevData = monthData[prevMonthKey];
-  const prevTotalIncome = prevData ? prevData.income.reduce((s, c) => s + c.items.reduce((ss, i) => ss + i.amount, 0), 0) : 0;
-  const prevTotalExpense = prevData ? prevData.expense.reduce((s, c) => s + c.items.reduce((ss, i) => ss + i.amount, 0), 0) : 0;
+  const prevTotalIncome = 0;
+  const prevTotalExpense = 0;
+
+  function navigateMonth(delta: number) {
+    const d = new Date(year, month - 1 + delta, 1);
+    setYear(d.getFullYear());
+    setMonth(d.getMonth() + 1);
+  }
 
   function calcChange(current: number, previous: number): string | null {
     if (previous === 0) return null;
@@ -124,7 +158,8 @@ export default function CashFlowPage() {
   }
 
   function openEditItem(section: "income" | "expense", catIndex: number, itemIndex: number) {
-    const item = data[section][catIndex].items[itemIndex];
+    const list = section === "income" ? incomeCategories : expenseCategories;
+    const item = list[catIndex].items[itemIndex];
     setModalName(item.name);
     setModalAmount(String(item.amount));
     setModal({ type: "edit-item", section, catIndex, itemIndex });
@@ -141,62 +176,15 @@ export default function CashFlowPage() {
   }
 
   function handleSave() {
-    if (!modal) return;
-    const name = modalName.trim();
-
-    if (modal.type === "add-category") {
-      if (!name) return;
-      setMonthData((prev) => {
-        const src = prev[monthKey] ?? createEmptyMonth();
-        const next: MonthCashFlow = {
-          income: src.income.map((c) => ({ ...c, items: [...c.items] })),
-          expense: src.expense.map((c) => ({ ...c, items: [...c.items] })),
-        };
-        next[modal.section].push({ category: name, items: [] });
-        return { ...prev, [monthKey]: next };
-      });
-      setModal(null);
-      return;
-    }
-
-    if (modal.type === "delete-item" || modal.type === "delete-category") return;
-
-    // add-item / edit-item
-    const amt = Number(modalAmount);
-    if (!name || isNaN(amt) || amt <= 0) return;
-
-    setMonthData((prev) => {
-      const src = prev[monthKey];
-      const next: MonthCashFlow = {
-        income: src?.income.map((c) => ({ ...c, items: [...c.items] })) ?? [],
-        expense: src?.expense.map((c) => ({ ...c, items: [...c.items] })) ?? [],
-      };
-      if (modal.type === "add-item") {
-        next[modal.section][modal.catIndex!].items.push({ name, amount: amt });
-      } else {
-        next[modal.section][modal.catIndex!].items[modal.itemIndex!] = { name, amount: amt };
-      }
-      return { ...prev, [monthKey]: next };
-    });
     setModal(null);
   }
 
   function handleDelete() {
-    if (!modal) return;
-    setMonthData((prev) => {
-      const src = prev[monthKey];
-      const next: MonthCashFlow = {
-        income: src?.income.map((c) => ({ ...c, items: [...c.items] })) ?? [],
-        expense: src?.expense.map((c) => ({ ...c, items: [...c.items] })) ?? [],
-      };
-      if (modal.type === "delete-category") {
-        next[modal.section].splice(modal.catIndex!, 1);
-      } else {
-        next[modal.section][modal.catIndex!].items.splice(modal.itemIndex!, 1);
-      }
-      return { ...prev, [monthKey]: next };
-    });
     setModal(null);
+  }
+
+  function getCategoryList(section: "income" | "expense"): CashFlowCategory[] {
+    return section === "income" ? incomeCategories : expenseCategories;
   }
 
   return (
@@ -358,13 +346,13 @@ export default function CashFlowPage() {
             </button>
           </div>
           <div className="divide-y divide-gray-50">
-            {data.income.length === 0 && (
+            {incomeCategories.length === 0 && (
               <p className="px-5 py-3 text-sm text-gray-400">暂无分类，点击 + 添加</p>
             )}
-            {data.income.map((cat, ci) => {
+            {incomeCategories.map((cat, ci) => {
               const catTotal = cat.items.reduce((s, i) => s + i.amount, 0);
               return (
-                <div key={ci}>
+                <div key={cat.id}>
                   {/* Category header */}
                   <div className="group flex items-center justify-between px-5 py-2.5 bg-gray-50/50">
                     <span className="text-sm font-semibold text-gray-700">{cat.category}</span>
@@ -387,7 +375,7 @@ export default function CashFlowPage() {
                     <p className="px-8 py-2 text-xs text-gray-400">暂无记录</p>
                   )}
                   {cat.items.map((item, ii) => (
-                    <div key={ii}
+                    <div key={item.id}
                       className="group flex items-center justify-between pl-8 pr-5 py-2 hover:bg-gray-50/50 transition-colors">
                       <span className="text-sm text-gray-600">{item.name}</span>
                       <div className="flex items-center gap-3">
@@ -431,13 +419,13 @@ export default function CashFlowPage() {
             </button>
           </div>
           <div className="divide-y divide-gray-50">
-            {data.expense.length === 0 && (
+            {expenseCategories.length === 0 && (
               <p className="px-5 py-3 text-sm text-gray-400">暂无分类，点击 + 添加</p>
             )}
-            {data.expense.map((cat, ci) => {
+            {expenseCategories.map((cat, ci) => {
               const catTotal = cat.items.reduce((s, i) => s + i.amount, 0);
               return (
-                <div key={ci}>
+                <div key={cat.id}>
                   {/* Category header */}
                   <div className="group flex items-center justify-between px-5 py-2.5 bg-gray-50/50">
                     <span className="text-sm font-semibold text-gray-700">{cat.category}</span>
@@ -460,7 +448,7 @@ export default function CashFlowPage() {
                     <p className="px-8 py-2 text-xs text-gray-400">暂无记录</p>
                   )}
                   {cat.items.map((item, ii) => (
-                    <div key={ii}
+                    <div key={item.id}
                       className="group flex items-center justify-between pl-8 pr-5 py-2 hover:bg-gray-50/50 transition-colors">
                       <span className="text-sm text-gray-600">{item.name}</span>
                       <div className="flex items-center gap-3">
@@ -531,7 +519,7 @@ export default function CashFlowPage() {
                 {modal.type === "add-item" ? "添加记录" : "编辑记录"}
                 <span className="text-sm font-normal text-gray-500 ml-2">
                   ({modal.section === "income" ? "收入" : "支出"}
-                  {` ${data[modal.section][modal.catIndex!]?.category}`})
+                  {` ${getCategoryList(modal.section)[modal.catIndex!]?.category}`})
                 </span>
               </h3>
               <button type="button" onClick={() => setModal(null)} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 transition-colors">
@@ -572,8 +560,8 @@ export default function CashFlowPage() {
               <h3 className="mt-4 text-center text-base font-semibold text-gray-900">确认删除</h3>
               <p className="mt-2 text-center text-sm text-gray-500">
                 {modal.type === "delete-category"
-                  ? `确定要删除分类「${data[modal.section][modal.catIndex!]?.category}」及其所有记录吗？`
-                  : `确定要删除「${data[modal.section][modal.catIndex!]?.items[modal.itemIndex!]?.name}」吗？`
+                  ? `确定要删除分类「${getCategoryList(modal.section)[modal.catIndex!]?.category}」及其所有记录吗？`
+                  : `确定要删除「${getCategoryList(modal.section)[modal.catIndex!]?.items[modal.itemIndex!]?.name}」吗？`
                 }
               </p>
             </div>
