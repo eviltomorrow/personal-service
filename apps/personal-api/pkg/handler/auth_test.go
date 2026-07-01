@@ -330,6 +330,7 @@ func TestDeleteAccount_Success(t *testing.T) {
 	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/account/delete",
 		`{"account_id":"acc_123","password":"pwd123"}`)
 	c := e.NewContext(req, rec)
+	c.Set("account_id", "acc_123")
 
 	assert.NoError(t, handler.DeleteAccount(c))
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -357,8 +358,9 @@ func TestDeleteAccount_InvalidPassword(t *testing.T) {
 	handler := AuthHandler{client: mock}
 
 	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/account/delete",
-		`{"account_id":"acc_1","password":"wrong"}`)
+		`{"password":"wrong"}`)
 	c := e.NewContext(req, rec)
+	c.Set("account_id", "acc_1")
 
 	assert.NoError(t, handler.DeleteAccount(c))
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
@@ -405,8 +407,9 @@ func TestUpdateIdentifier_Success(t *testing.T) {
 	handler := AuthHandler{client: mock}
 
 	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/identifier/update",
-		`{"account_id":"acc_123","auth_type":"email","new_identifier":"new@test.com"}`)
+		`{"auth_type":"email","new_identifier":"new@test.com"}`)
 	c := e.NewContext(req, rec)
+	c.Set("account_id", "acc_123")
 
 	assert.NoError(t, handler.UpdateIdentifier(c))
 	assert.Equal(t, http.StatusOK, rec.Code)
@@ -434,8 +437,9 @@ func TestUpdateIdentifier_ClientError(t *testing.T) {
 	handler := AuthHandler{client: mock}
 
 	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/identifier/update",
-		`{"account_id":"acc_123","auth_type":"email","new_identifier":"nope"}`)
+		`{"auth_type":"email","new_identifier":"nope"}`)
 	c := e.NewContext(req, rec)
+	c.Set("account_id", "acc_123")
 
 	assert.NoError(t, handler.UpdateIdentifier(c))
 	assert.Equal(t, http.StatusNotFound, rec.Code)
