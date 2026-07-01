@@ -132,6 +132,8 @@ func TestRegister_Success(t *testing.T) {
 	assert.NoError(t, handler.Register(c))
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, rec.Body.String(), "success")
+	assert.NotContains(t, rec.Body.String(), "access_token")
+	assert.Contains(t, rec.Body.String(), "expires_in")
 }
 
 func TestRegister_InvalidBody(t *testing.T) {
@@ -257,24 +259,25 @@ func TestRevokeAllTokens_Success(t *testing.T) {
 	}
 	handler := AuthHandler{client: mock}
 
-	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/token/revoke-all",
-		`{"access_token":"access_token_abc"}`)
+	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/token/revoke-all", `{}`)
 	c := e.NewContext(req, rec)
+	c.Request().Header.Set("Cookie", "access_token=access_token_abc")
 
 	assert.NoError(t, handler.RevokeAllTokens(c))
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, rec.Body.String(), "success")
 }
 
-func TestRevokeAllTokens_InvalidBody(t *testing.T) {
+func TestRevokeAllTokens_NoToken(t *testing.T) {
 	e := setupEcho()
 	handler := AuthHandler{client: &mockAuthClient{}}
 
-	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/token/revoke-all", `!`)
+	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/token/revoke-all", `{}`)
 	c := e.NewContext(req, rec)
 
 	assert.NoError(t, handler.RevokeAllTokens(c))
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	assert.Contains(t, rec.Body.String(), "unauthorized")
 }
 
 func TestRevokeAllTokens_InternalError(t *testing.T) {
@@ -286,9 +289,9 @@ func TestRevokeAllTokens_InternalError(t *testing.T) {
 	}
 	handler := AuthHandler{client: mock}
 
-	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/token/revoke-all",
-		`{"access_token":"invalid"}`)
+	req, rec := newJSONRequest(http.MethodPost, "/api/v1/auth/token/revoke-all", `{}`)
 	c := e.NewContext(req, rec)
+	c.Request().Header.Set("Cookie", "access_token=invalid")
 
 	assert.NoError(t, handler.RevokeAllTokens(c))
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)

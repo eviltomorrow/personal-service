@@ -41,10 +41,9 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
+	setTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
 	return Respond(c, http.StatusOK, 0, "success", map[string]interface{}{
-		"access_token":  resp.AccessToken,
-		"refresh_token": resp.RefreshToken,
-		"expires_in":    resp.ExpiresIn,
+		"expires_in": resp.ExpiresIn,
 	})
 }
 
@@ -63,17 +62,21 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
+	setTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
 	return Respond(c, http.StatusOK, 0, "success", map[string]interface{}{
-		"access_token":  resp.AccessToken,
-		"refresh_token": resp.RefreshToken,
-		"expires_in":    resp.ExpiresIn,
+		"expires_in": resp.ExpiresIn,
 	})
 }
 
 func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	var req model.RefreshTokenRequest
-	if err := c.Bind(&req); err != nil {
-		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
+
+	if cookie, err := c.Cookie("refresh_token"); err == nil && cookie.Value != "" {
+		req.RefreshToken = cookie.Value
+	} else {
+		if err := c.Bind(&req); err != nil {
+			return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
+		}
 	}
 
 	resp, err := h.client.RefreshToken(c.Request().Context(), &req)
@@ -83,17 +86,21 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
+	setTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
 	return Respond(c, http.StatusOK, 0, "success", map[string]interface{}{
-		"access_token":  resp.AccessToken,
-		"refresh_token": resp.RefreshToken,
-		"expires_in":    resp.ExpiresIn,
+		"expires_in": resp.ExpiresIn,
 	})
 }
 
 func (h *AuthHandler) ValidateToken(c echo.Context) error {
 	var req model.ValidateTokenRequest
-	if err := c.Bind(&req); err != nil {
-		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
+
+	if cookie, err := c.Cookie("access_token"); err == nil && cookie.Value != "" {
+		req.AccessToken = cookie.Value
+	} else {
+		if err := c.Bind(&req); err != nil {
+			return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
+		}
 	}
 
 	resp, err := h.client.ValidateToken(c.Request().Context(), &req)
@@ -104,15 +111,19 @@ func (h *AuthHandler) ValidateToken(c echo.Context) error {
 	}
 
 	return Respond(c, http.StatusOK, 0, "success", map[string]interface{}{
-		"role":       resp.Role,
-		"expires_at": resp.ExpiresAt,
+		"role": resp.Role, "expires_at": resp.ExpiresAt,
 	})
 }
 
 func (h *AuthHandler) RevokeToken(c echo.Context) error {
 	var req model.RevokeTokenRequest
-	if err := c.Bind(&req); err != nil {
-		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
+
+	if cookie, err := c.Cookie("refresh_token"); err == nil && cookie.Value != "" {
+		req.RefreshToken = cookie.Value
+	} else {
+		if err := c.Bind(&req); err != nil {
+			return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
+		}
 	}
 
 	if err := h.client.RevokeToken(c.Request().Context(), &req); err != nil {
@@ -121,14 +132,22 @@ func (h *AuthHandler) RevokeToken(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
+	clearTokenCookies(c)
 	return Respond(c, http.StatusOK, 0, "success", nil)
 }
 
 func (h *AuthHandler) RevokeAllTokens(c echo.Context) error {
-	var req model.RevokeAllTokensRequest
-	if err := c.Bind(&req); err != nil {
-		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
+	accessToken := ""
+	if cookie, err := c.Cookie("access_token"); err == nil {
+		accessToken = cookie.Value
+	} else if t, ok := c.Get("token").(string); ok {
+		accessToken = t
 	}
+	if accessToken == "" {
+		return Respond(c, http.StatusUnauthorized, 401, "unauthorized", nil)
+	}
+
+	req := model.RevokeAllTokensRequest{AccessToken: accessToken}
 
 	if err := h.client.RevokeAllTokens(c.Request().Context(), &req); err != nil {
 		zlog.Error("auth revoke all tokens failure", zap.Error(err))
@@ -136,6 +155,7 @@ func (h *AuthHandler) RevokeAllTokens(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
+	clearTokenCookies(c)
 	return Respond(c, http.StatusOK, 0, "success", nil)
 }
 
