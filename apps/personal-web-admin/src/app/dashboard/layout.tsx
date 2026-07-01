@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { clearTokens, getRefreshToken } from "@/lib/auth";
 import {
   LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
   HelpCircle, Sparkles, User, LogOut,
@@ -25,6 +26,7 @@ const bottomNavItems = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -39,8 +41,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const p = JSON.parse(data);
         setProfile({ nickname: p.nickname || "管理员", avatarDataUrl: p.avatarDataUrl || "" });
       }
-    } catch { /* ignore */ }
+    } catch     { /* ignore */ }
   }, []);
+
+  async function handleLogout() {
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      try {
+        await fetch("/api/v1/auth/token/revoke", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      } catch { /* ignore */ }
+    }
+    clearTokens();
+    router.push("/login");
+  }
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -241,7 +258,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   ))}
                   <div className="border-t border-gray-100">
                     <button
-                      onClick={() => { setUserMenuOpen(false); window.location.href = "/login"; }}
+                      onClick={() => { setUserMenuOpen(false); handleLogout(); }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <LogOut className="h-4 w-4 shrink-0" />
