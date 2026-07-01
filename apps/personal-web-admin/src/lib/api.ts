@@ -33,6 +33,7 @@ async function doRefresh(): Promise<void> {
 }
 
 async function ensureToken(): Promise<void> {
+  if (!getAccessToken()) return
   if (!isTokenExpired()) return
   if (!refreshing) refreshing = doRefresh().finally(() => { refreshing = null })
   await refreshing
