@@ -983,14 +983,52 @@ export default function PortfolioPage() {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+
+    const activeItem = positions.find((p) => p.id === active.id);
+    const overItem = positions.find((p) => p.id === over.id);
+    if (!activeItem || !overItem) return;
+
+    // Cross-list drag: toggle archived status + snapshot PnL
+    if (activeItem.archived !== overItem.archived) {
+      setPositions((prev) =>
+        prev.map((p) => {
+          if (p.id !== activeItem.id) return p;
+          const nextArchived = !p.archived;
+          const d = calcDerived(p);
+          return {
+            ...p,
+            archived: nextArchived,
+            closedPnl: nextArchived ? d.profitAmount : undefined,
+          };
+        })
+      );
+      return;
+    }
+
+    // Same-list drag: reorder only within the same list
+    const sameList = positions.filter(
+      (p) => p.archived === activeItem.archived
+    );
+    if (!sameList) return;
+
     setPositions((prev) => {
-      const oldIndex = prev.findIndex((p) => p.id === active.id);
-      const newIndex = prev.findIndex((p) => p.id === over.id);
+      const oldIndex = sameList.findIndex((p) => p.id === active.id);
+      const newIndex = sameList.findIndex((p) => p.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(oldIndex, 1);
-      next.splice(newIndex, 0, moved);
-      return next;
+
+      const sameListIds = sameList.map((p) => p.id);
+      const movedItem = prev.find((p) => p.id === active.id);
+      if (!movedItem) return prev;
+
+      const otherItems = prev.filter((p) => p.archived !== movedItem.archived);
+      const reorderedList = sameListIds.filter((id) => id !== active.id);
+      reorderedList.splice(newIndex, 0, active.id as string);
+
+      const newList = reorderedList.map((id) => prev.find((p) => p.id === id)!).filter(Boolean);
+      const merged = movedItem.archived
+        ? [...otherItems, ...newList]
+        : [...newList, ...otherItems];
+      return merged.map((p) => ({ ...p }));
     });
   }
 
