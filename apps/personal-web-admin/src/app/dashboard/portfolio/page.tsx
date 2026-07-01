@@ -596,6 +596,68 @@ function RightPanel({
   );
 }
 
+function ArchivedRightPanel({ position }: { position: Position }) {
+  const sortedTrades = useMemo(
+    () => [...position.trades].sort((a, b) => b.date.localeCompare(a.date)),
+    [position.trades]
+  );
+
+  const pnlColor = (position.closedPnl ?? 0) >= 0 ? "text-emerald-600" : "text-red-600";
+  const pnlSign = (position.closedPnl ?? 0) > 0 ? "+" : "";
+
+  return (
+    <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-semibold text-gray-900">{position.code} {position.name}</h3>
+          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset bg-gray-100 text-gray-600 ring-gray-500/20">
+            已归档
+          </span>
+        </div>
+      </div>
+
+      {/* Closed PnL */}
+      <div className="mb-6">
+        <span className="text-xs text-gray-500">清仓盈亏</span>
+        <p className={`text-lg font-bold tabular-nums ${pnlColor}`}>
+          {pnlSign}{(position.closedPnl ?? 0) === 0 ? "0.00" : formatCNY(Math.abs(position.closedPnl ?? 0))}
+        </p>
+      </div>
+
+      {/* Trade records (read-only) */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-b border-gray-100">
+          <div className="w-1 h-4 rounded-full bg-slate-400" />
+          <span className="text-sm font-semibold text-gray-800">📝 买卖记录</span>
+        </div>
+        {sortedTrades.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无记录</p>
+        ) : (
+          <div className="space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar p-1">
+            {sortedTrades.map((t) => (
+              <div key={t.id} className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white px-4 py-3">
+                <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded ${
+                  t.type === "买入" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                }`}>
+                  {t.type}
+                </span>
+                <span className="text-sm text-gray-500 tabular-nums w-28 shrink-0">{t.date}</span>
+                <span className="text-sm text-gray-500 tabular-nums w-24 text-right shrink-0">{formatCNY(t.price)}</span>
+                <span className="text-sm text-gray-900 tabular-nums w-20 text-right shrink-0">{t.quantity}</span>
+                <span className="text-sm font-semibold text-gray-900 tabular-nums w-28 text-right shrink-0">{formatCNY(t.price * t.quantity)}</span>
+                {t.note ? (
+                  <span className="text-sm text-gray-400 truncate flex-1 min-w-0">{t.note}</span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Modal({
   title, children, onClose,
 }: {
@@ -1066,16 +1128,20 @@ export default function PortfolioPage() {
 
         {/* Right panel */}
         {selectedPosition ? (
-          <RightPanel
-            position={selectedPosition}
-            totalValue={totalPortfolioValue}
-            onUpdatePosition={handleUpdatePosition}
-            onAddTrade={(posId) => setModal({ type: "addTrade", positionId: posId })}
-            onEditTrade={(posId, trade) => setModal({ type: "editTrade", positionId: posId, trade })}
-            onDeleteTrade={(posId, tradeId) => setModal({ type: "deleteTrade", positionId: posId, tradeId })}
-            onEditPosition={(id) => setModal({ type: "editPosition", positionId: id })}
-            onDeletePosition={(id) => setModal({ type: "deletePosition", positionId: id })}
-          />
+          selectedPosition.archived ? (
+            <ArchivedRightPanel position={selectedPosition} />
+          ) : (
+            <RightPanel
+              position={selectedPosition}
+              totalValue={totalPortfolioValue}
+              onUpdatePosition={handleUpdatePosition}
+              onAddTrade={(posId) => setModal({ type: "addTrade", positionId: posId })}
+              onEditTrade={(posId, trade) => setModal({ type: "editTrade", positionId: posId, trade })}
+              onDeleteTrade={(posId, tradeId) => setModal({ type: "deleteTrade", positionId: posId, tradeId })}
+              onEditPosition={(id) => setModal({ type: "editPosition", positionId: id })}
+              onDeletePosition={(id) => setModal({ type: "deletePosition", positionId: id })}
+            />
+          )
         ) : (
           <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6 flex items-center justify-center">
             <p className="text-sm text-gray-400">请从左侧选择一个品种</p>
