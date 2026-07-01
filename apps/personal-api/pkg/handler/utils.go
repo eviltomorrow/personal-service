@@ -57,6 +57,7 @@ func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn
 		Value:    accessToken,
 		Path:     "/api",
 		HttpOnly: true,
+		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   accessMaxAge,
 	})
@@ -66,6 +67,7 @@ func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn
 		Value:    refreshToken,
 		Path:     "/api",
 		HttpOnly: true,
+		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   refreshMaxAge,
 	})
@@ -73,11 +75,11 @@ func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn
 
 func clearTokenCookies(c echo.Context) {
 	c.SetCookie(&http.Cookie{
-		Name: "access_token", Path: "/api", HttpOnly: true,
+		Name: "access_token", Path: "/api", HttpOnly: true, Secure: true,
 		SameSite: http.SameSiteStrictMode, MaxAge: -1,
 	})
 	c.SetCookie(&http.Cookie{
-		Name: "refresh_token", Path: "/api", HttpOnly: true,
+		Name: "refresh_token", Path: "/api", HttpOnly: true, Secure: true,
 		SameSite: http.SameSiteStrictMode, MaxAge: -1,
 	})
 }
