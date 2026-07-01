@@ -39,6 +39,8 @@ interface Position {
   costPrice: number;
   marginRatio?: number;
   trades: TradeRecord[];
+  archived: boolean;
+  closedPnl?: number;
 }
 
 interface ValueSnapshot {
@@ -611,7 +613,7 @@ function Modal({
 
 function AddPositionForm({ initial, onSave, onClose }: {
   initial?: Position;
-  onSave: (p: Omit<Position, "id" | "trades" | "costPrice" | "quantity">) => void;
+  onSave: (p: Omit<Position, "id" | "trades" | "costPrice" | "quantity" | "archived" | "closedPnl">) => void;
   onClose: () => void;
 }) {
   const [code, setCode] = useState(initial?.code ?? "");
@@ -891,9 +893,19 @@ export default function PortfolioPage() {
     [positions, selectedId]
   );
 
-  const totalPortfolioValue = useMemo(
-    () => positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0),
+  const activePositions = useMemo(
+    () => positions.filter((p) => !p.archived),
     [positions]
+  );
+
+  const archivedPositions = useMemo(
+    () => positions.filter((p) => p.archived),
+    [positions]
+  );
+
+  const totalPortfolioValue = useMemo(
+    () => activePositions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0),
+    [activePositions]
   );
 
   type ModalType =
@@ -974,7 +986,7 @@ export default function PortfolioPage() {
   return (
     <div className="flex flex-col h-full space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="投资组合" description="股票与期货持仓监控" />
-      <StatCards positions={positions} totalCapital={totalCapital} onCapitalChange={setTotalCapital} />
+      <StatCards positions={activePositions} totalCapital={totalCapital} onCapitalChange={setTotalCapital} />
 
       <TrendChart snapshots={snapshots} />
 
@@ -1016,7 +1028,7 @@ export default function PortfolioPage() {
             onSave={(data) => {
               const id = genId();
               const qty = calcQuantity([], data.initialQty);
-              setPositions((prev) => [...prev, { ...data, id, quantity: qty, costPrice: data.currentPrice, trades: [] }]);
+              setPositions((prev) => [...prev, { ...data, id, quantity: qty, costPrice: data.currentPrice, trades: [], archived: false }]);
               setSnapshots((prev) => {
                 const today = new Date().toISOString().slice(0, 10);
                 const newTotal = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0) + data.currentPrice * qty;
