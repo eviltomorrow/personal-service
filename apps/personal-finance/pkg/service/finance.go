@@ -30,6 +30,9 @@ var (
 	selectTransactionByID     = model.SelectTransactionByID
 	updateTransactionByID     = model.UpdateTransactionByID
 	softDeleteTransactionByID = model.SoftDeleteTransactionByID
+
+	selectMonthlySummary  = model.SelectMonthlySummary
+	selectCategorySummary = model.SelectCategorySummary
 )
 
 var selectDB = func(ctx context.Context) dbmysql.Exec {
@@ -97,6 +100,9 @@ func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequ
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
+	if len(req.Name) > 64 {
+		return nil, status.Error(codes.InvalidArgument, "name too long")
+	}
 	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
 		return nil, status.Error(codes.InvalidArgument, "invalid type")
 	}
@@ -138,6 +144,9 @@ func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequ
 	}
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+	if len(req.Name) > 64 {
+		return nil, status.Error(codes.InvalidArgument, "name too long")
 	}
 	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
 		return nil, status.Error(codes.InvalidArgument, "invalid type")
@@ -261,6 +270,12 @@ func (s *Finance) CreateTransaction(ctx context.Context, req *pb.CreateTransacti
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
+	if len(req.Name) > 128 {
+		return nil, status.Error(codes.InvalidArgument, "name too long")
+	}
+	if len(req.Note) > 256 {
+		return nil, status.Error(codes.InvalidArgument, "note too long")
+	}
 	if req.Amount <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "amount must be positive")
 	}
@@ -315,6 +330,12 @@ func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransacti
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
+	if len(req.Name) > 128 {
+		return nil, status.Error(codes.InvalidArgument, "name too long")
+	}
+	if len(req.Note) > 256 {
+		return nil, status.Error(codes.InvalidArgument, "note too long")
+	}
 	if req.Amount <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "amount must be positive")
 	}
@@ -352,7 +373,7 @@ func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransacti
 		Id:         existing.ID,
 		AccountId:  existing.AccountID,
 		CategoryId: req.CategoryId,
-		Type:       req.Type,
+		Type:       pb.FinanceType(existing.Type),
 		Name:       req.Name,
 		Amount:     req.Amount,
 		Date:       req.Date,
@@ -395,41 +416,46 @@ func (s *Finance) GetMonthlySummary(ctx context.Context, req *pb.GetMonthlySumma
 		return nil, err
 	}
 
-	filter := &model.TransactionFilter{
-		AccountID: accountID,
-		Year:      int(req.Year),
-		Month:     int(req.Month),
-		PageSize:  1000,
-	}
+	year, month := int(req.Year), int(req.Month)
 
-	list, _, err := selectTransactions(ctx, selectDB(ctx), filter)
+	typeRows, err := selectMonthlySummary(ctx, selectDB(ctx), accountID, year, month)
 	if err != nil {
 		zlog.Error("get monthly summary failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	var totalIncome, totalExpense float64
-	catMap := make(map[int64]*pb.CategorySummary)
-	for _, t := range list {
-		if t.Type == int(pb.FinanceType_FINANCE_TYPE_INCOME) {
-			totalIncome += t.Amount
+	for _, r := range typeRows {
+		if r.Type == int(pb.FinanceType_FINANCE_TYPE_INCOME) {
+			totalIncome = r.Amount
 		} else {
-			totalExpense += t.Amount
-		}
-		if cs, ok := catMap[t.CategoryID]; ok {
-			cs.TotalAmount += t.Amount
-		} else {
-			catMap[t.CategoryID] = &pb.CategorySummary{
-				CategoryId:   t.CategoryID,
-				CategoryName: "",
-				TotalAmount:  t.Amount,
-			}
+			totalExpense = r.Amount
 		}
 	}
 
-	catSummaries := make([]*pb.CategorySummary, 0, len(catMap))
-	for _, cs := range catMap {
-		catSummaries = append(catSummaries, cs)
+	cats, err := selectCategoriesByAcctID(ctx, selectDB(ctx), accountID)
+	if err != nil {
+		zlog.Error("get categories failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	catName := make(map[int64]string)
+	for _, c := range cats {
+		catName[c.ID] = c.Name
+	}
+
+	catRows, err := selectCategorySummary(ctx, selectDB(ctx), accountID, year, month)
+	if err != nil {
+		zlog.Error("get monthly summary failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	catSummaries := make([]*pb.CategorySummary, 0, len(catRows))
+	for _, r := range catRows {
+		catSummaries = append(catSummaries, &pb.CategorySummary{
+			CategoryId:   r.CategoryID,
+			CategoryName: catName[r.CategoryID],
+			TotalAmount:  r.Amount,
+		})
 	}
 
 	return &pb.MonthlySummary{

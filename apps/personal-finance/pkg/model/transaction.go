@@ -174,12 +174,81 @@ func SelectTransactionByID(ctx context.Context, exec dbmysql.Exec, id int64) (*T
 }
 
 func UpdateTransactionByID(ctx context.Context, exec dbmysql.Exec, id int64, updates map[string]interface{}) (int64, error) {
-	updates[FieldTransactionUpdatedAt] = updates[FieldTransactionUpdatedAt]
 	return sqlutil.NewUpdate(exec).
 		Table(TableNameTransactions).
 		Field(updates).
 		Where(sqlutil.WithEq("id", id), sqlutil.WithEq(FieldTransactionDeletedAt, 0)).
 		UpdateCtx(ctx)
+}
+
+type MonthlySummaryRow struct {
+	Type   int
+	Amount float64
+}
+
+type CategorySummaryRow struct {
+	CategoryID int64
+	Amount     float64
+}
+
+func SelectMonthlySummary(ctx context.Context, exec dbmysql.Exec, accountID string, year, month int) ([]MonthlySummaryRow, error) {
+	firstDay := fmt.Sprintf("%04d-%02d-01", year, month)
+	lastDay := time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+
+	var list []MonthlySummaryRow
+	err := sqlutil.NewQuery(exec).
+		Columns([]string{FieldTransactionType, "SUM(" + FieldTransactionAmount + ")"}).
+		Table(TableNameTransactions).
+		Where(
+			sqlutil.WithEq(FieldTransactionAccountID, accountID),
+			sqlutil.WithEq(FieldTransactionDeletedAt, 0),
+			sqlutil.WithBetweenAnd(FieldTransactionDate, firstDay, lastDay),
+		).
+		GroupBy([]string{FieldTransactionType}).
+		QueryCtx(ctx, func(rows *sql.Rows) error {
+			for rows.Next() {
+				var r MonthlySummaryRow
+				if err := rows.Scan(&r.Type, &r.Amount); err != nil {
+					return err
+				}
+				list = append(list, r)
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func SelectCategorySummary(ctx context.Context, exec dbmysql.Exec, accountID string, year, month int) ([]CategorySummaryRow, error) {
+	firstDay := fmt.Sprintf("%04d-%02d-01", year, month)
+	lastDay := time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+
+	var list []CategorySummaryRow
+	err := sqlutil.NewQuery(exec).
+		Columns([]string{FieldTransactionCategoryID, "SUM(" + FieldTransactionAmount + ")"}).
+		Table(TableNameTransactions).
+		Where(
+			sqlutil.WithEq(FieldTransactionAccountID, accountID),
+			sqlutil.WithEq(FieldTransactionDeletedAt, 0),
+			sqlutil.WithBetweenAnd(FieldTransactionDate, firstDay, lastDay),
+		).
+		GroupBy([]string{FieldTransactionCategoryID}).
+		QueryCtx(ctx, func(rows *sql.Rows) error {
+			for rows.Next() {
+				var r CategorySummaryRow
+				if err := rows.Scan(&r.CategoryID, &r.Amount); err != nil {
+					return err
+				}
+				list = append(list, r)
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
 }
 
 func SoftDeleteTransactionByID(ctx context.Context, exec dbmysql.Exec, id int64, deletedAt int64) (int64, error) {

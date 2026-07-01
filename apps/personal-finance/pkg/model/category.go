@@ -112,7 +112,6 @@ func SelectCategoryByID(ctx context.Context, exec dbmysql.Exec, id int64) (*Cate
 }
 
 func UpdateCategoryByID(ctx context.Context, exec dbmysql.Exec, id int64, updates map[string]interface{}) (int64, error) {
-	updates[FieldCategoryUpdatedAt] = updates[FieldCategoryUpdatedAt]
 	return sqlutil.NewUpdate(exec).
 		Table(TableNameCategories).
 		Field(updates).

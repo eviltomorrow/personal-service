@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
 
@@ -47,7 +48,7 @@ func financeTypeFromProto(t pb.FinanceType) model.FinanceType {
 }
 
 func (s *FinanceService) ListCategories(ctx context.Context, accountID string) ([]model.Category, error) {
-	pbResp, err := s.client.ListCategories(withAccountID(ctx, accountID), nil)
+	pbResp, err := s.client.ListCategories(withAccountID(ctx, accountID), &emptypb.Empty{})
 	if err != nil {
 		return nil, err
 	}
