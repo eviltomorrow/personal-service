@@ -26,14 +26,16 @@ type HTTP struct {
 	handler *echo.Echo
 
 	registeredAPI []func(libhttp.Router) error
+	refresher     middleware.TokenRefresher
 }
 
-func NewHTTP(network *netutil.Config, log *log.Config, supported ...func(libhttp.Router) error) *HTTP {
+func NewHTTP(network *netutil.Config, log *log.Config, refresher middleware.TokenRefresher, supported ...func(libhttp.Router) error) *HTTP {
 	return &HTTP{
 		network: network,
 		log:     log,
 
 		registeredAPI: supported,
+		refresher:     refresher,
 
 		handler: echo.New(),
 	}
@@ -67,7 +69,7 @@ func (h *HTTP) Serve() error {
 			return true
 		}
 		return false
-	}))
+	}, h.refresher))
 
 	for _, api := range h.registeredAPI {
 		api(h.handler)

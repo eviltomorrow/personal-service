@@ -69,9 +69,12 @@ func New(cfg *config.Config) (*Server, error) {
 		FinanceClient: provider.GetFinanceClient(),
 	}
 
+	refresher := provider.NewTokenRefresher(deps.AuthClient)
+
 	httpSrv := httpserver.NewHTTP(
 		&cfg.Network,
 		&cfg.Log,
+		refresher,
 		handler.SetupRoutes(deps, "/api/v1"),
 	)
 
