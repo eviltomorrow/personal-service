@@ -1,0 +1,435 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	dbmysql "github.com/eviltomorrow/personal-service/lib/db/mysql"
+	"github.com/eviltomorrow/personal-service/lib/zlog"
+	"go.uber.org/zap"
+
+	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
+	"github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/model"
+)
+
+var (
+	insertCategory           = model.InsertCategory
+	selectCategoriesByAcctID = model.SelectCategoriesByAccountID
+	selectCategoryByID       = model.SelectCategoryByID
+	updateCategoryByID       = model.UpdateCategoryByID
+	softDeleteCategoryByID   = model.SoftDeleteCategoryByID
+
+	insertTransaction         = model.InsertTransaction
+	selectTransactions        = model.SelectTransactions
+	selectTransactionByID     = model.SelectTransactionByID
+	updateTransactionByID     = model.UpdateTransactionByID
+	softDeleteTransactionByID = model.SoftDeleteTransactionByID
+)
+
+var selectDB = func(ctx context.Context) dbmysql.Exec {
+	return dbmysql.DB
+}
+
+func accountIDFromCtx(ctx context.Context) (string, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return "", status.Error(codes.Unauthenticated, "missing metadata")
+	}
+	vals := md.Get("x-account-id")
+	if len(vals) == 0 {
+		return "", status.Error(codes.Unauthenticated, "missing account_id")
+	}
+	return vals[0], nil
+}
+
+type Finance struct {
+	pb.UnimplementedFinanceServer
+}
+
+func NewFinance() *Finance {
+	return &Finance{}
+}
+
+func now() int64 {
+	return time.Now().Unix()
+}
+
+// --- Categories ---
+
+func (s *Finance) ListCategories(ctx context.Context, _ *emptypb.Empty) (*pb.ListCategoriesResponse, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cats, err := selectCategoriesByAcctID(ctx, selectDB(ctx), accountID)
+	if err != nil {
+		zlog.Error("list categories failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	result := make([]*pb.Category, 0, len(cats))
+	for _, c := range cats {
+		result = append(result, &pb.Category{
+			Id:        c.ID,
+			AccountId: c.AccountID,
+			Name:      c.Name,
+			Type:      pb.FinanceType(c.Type),
+			SortOrder: int32(c.SortOrder),
+			CreatedAt: c.CreatedAt,
+			UpdatedAt: c.UpdatedAt,
+		})
+	}
+	return &pb.ListCategoriesResponse{Categories: result}, nil
+}
+
+func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequest) (*pb.Category, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
+		return nil, status.Error(codes.InvalidArgument, "invalid type")
+	}
+
+	n := now()
+	c := &model.Category{
+		AccountID: accountID,
+		Name:      req.Name,
+		Type:      int(req.Type),
+		SortOrder: int(req.SortOrder),
+		DeletedAt: 0,
+		CreatedAt: n,
+		UpdatedAt: n,
+	}
+	id, err := insertCategory(ctx, selectDB(ctx), c)
+	if err != nil {
+		zlog.Error("create category failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	c.ID = id
+	return &pb.Category{
+		Id:        c.ID,
+		AccountId: c.AccountID,
+		Name:      c.Name,
+		Type:      pb.FinanceType(c.Type),
+		SortOrder: int32(c.SortOrder),
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}, nil
+}
+
+func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequest) (*pb.Category, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.Id == 0 {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+
+	existing, err := selectCategoryByID(ctx, selectDB(ctx), req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "category not found")
+		}
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	if existing.AccountID != accountID {
+		return nil, status.Error(codes.NotFound, "category not found")
+	}
+
+	n := now()
+	_, err = updateCategoryByID(ctx, selectDB(ctx), req.Id, map[string]interface{}{
+		model.FieldCategoryName:      req.Name,
+		model.FieldCategoryType:      int(req.Type),
+		model.FieldCategorySortOrder: int(req.SortOrder),
+		model.FieldCategoryUpdatedAt: n,
+	})
+	if err != nil {
+		zlog.Error("update category failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	existing.Name = req.Name
+	existing.Type = int(req.Type)
+	existing.SortOrder = int(req.SortOrder)
+	existing.UpdatedAt = n
+	return &pb.Category{
+		Id:        existing.ID,
+		AccountId: existing.AccountID,
+		Name:      existing.Name,
+		Type:      pb.FinanceType(existing.Type),
+		SortOrder: int32(existing.SortOrder),
+		CreatedAt: existing.CreatedAt,
+		UpdatedAt: existing.UpdatedAt,
+	}, nil
+}
+
+func (s *Finance) DeleteCategory(ctx context.Context, req *pb.DeleteCategoryRequest) (*emptypb.Empty, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	existing, err := selectCategoryByID(ctx, selectDB(ctx), req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			return &emptypb.Empty{}, nil
+		}
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	if existing.AccountID != accountID {
+		return &emptypb.Empty{}, nil
+	}
+
+	_, err = softDeleteCategoryByID(ctx, selectDB(ctx), req.Id, now())
+	if err != nil {
+		zlog.Error("delete category failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// --- Transactions ---
+
+func (s *Finance) ListTransactions(ctx context.Context, req *pb.ListTransactionsRequest) (*pb.ListTransactionsResponse, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := &model.TransactionFilter{
+		AccountID:  accountID,
+		Year:       int(req.Year),
+		Month:      int(req.Month),
+		CategoryID: req.CategoryId,
+		Page:       int(req.Page),
+		PageSize:   int(req.PageSize),
+	}
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.PageSize < 1 {
+		filter.PageSize = 50
+	}
+
+	list, total, err := selectTransactions(ctx, selectDB(ctx), filter)
+	if err != nil {
+		zlog.Error("list transactions failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	result := make([]*pb.Transaction, 0, len(list))
+	for _, t := range list {
+		result = append(result, &pb.Transaction{
+			Id:         t.ID,
+			AccountId:  t.AccountID,
+			CategoryId: t.CategoryID,
+			Type:       pb.FinanceType(t.Type),
+			Name:       t.Name,
+			Amount:     t.Amount,
+			Date:       t.Date,
+			Note:       t.Note,
+			CreatedAt:  t.CreatedAt,
+			UpdatedAt:  t.UpdatedAt,
+		})
+	}
+	return &pb.ListTransactionsResponse{Transactions: result, Total: int32(total)}, nil
+}
+
+func (s *Finance) CreateTransaction(ctx context.Context, req *pb.CreateTransactionRequest) (*pb.Transaction, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+	if req.Amount <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "amount must be positive")
+	}
+	if req.Date == "" {
+		return nil, status.Error(codes.InvalidArgument, "date is required")
+	}
+	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
+		return nil, status.Error(codes.InvalidArgument, "invalid type")
+	}
+
+	n := now()
+	t := &model.Transaction{
+		AccountID:  accountID,
+		CategoryID: req.CategoryId,
+		Type:       int(req.Type),
+		Name:       req.Name,
+		Amount:     req.Amount,
+		Date:       req.Date,
+		Note:       req.Note,
+		DeletedAt:  0,
+		CreatedAt:  n,
+		UpdatedAt:  n,
+	}
+	id, err := insertTransaction(ctx, selectDB(ctx), t)
+	if err != nil {
+		zlog.Error("create transaction failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	t.ID = id
+	return &pb.Transaction{
+		Id:         t.ID,
+		AccountId:  t.AccountID,
+		CategoryId: t.CategoryID,
+		Type:       pb.FinanceType(t.Type),
+		Name:       t.Name,
+		Amount:     t.Amount,
+		Date:       t.Date,
+		Note:       t.Note,
+		CreatedAt:  t.CreatedAt,
+		UpdatedAt:  t.UpdatedAt,
+	}, nil
+}
+
+func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransactionRequest) (*pb.Transaction, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.Id == 0 {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+	if req.Amount <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "amount must be positive")
+	}
+
+	existing, err := selectTransactionByID(ctx, selectDB(ctx), req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "transaction not found")
+		}
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	if existing.AccountID != accountID {
+		return nil, status.Error(codes.NotFound, "transaction not found")
+	}
+
+	n := now()
+	_, err = updateTransactionByID(ctx, selectDB(ctx), req.Id, map[string]interface{}{
+		model.FieldTransactionCategoryID: req.CategoryId,
+		model.FieldTransactionType:       int(req.Type),
+		model.FieldTransactionName:       req.Name,
+		model.FieldTransactionAmount:     req.Amount,
+		model.FieldTransactionDate:       req.Date,
+		model.FieldTransactionNote:       req.Note,
+		model.FieldTransactionUpdatedAt:  n,
+	})
+	if err != nil {
+		zlog.Error("update transaction failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	return &pb.Transaction{
+		Id:         existing.ID,
+		AccountId:  existing.AccountID,
+		CategoryId: req.CategoryId,
+		Type:       req.Type,
+		Name:       req.Name,
+		Amount:     req.Amount,
+		Date:       req.Date,
+		Note:       req.Note,
+		CreatedAt:  existing.CreatedAt,
+		UpdatedAt:  n,
+	}, nil
+}
+
+func (s *Finance) DeleteTransaction(ctx context.Context, req *pb.DeleteTransactionRequest) (*emptypb.Empty, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	existing, err := selectTransactionByID(ctx, selectDB(ctx), req.Id)
+	if err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			return &emptypb.Empty{}, nil
+		}
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	if existing.AccountID != accountID {
+		return &emptypb.Empty{}, nil
+	}
+
+	_, err = softDeleteTransactionByID(ctx, selectDB(ctx), req.Id, now())
+	if err != nil {
+		zlog.Error("delete transaction failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// --- Summary ---
+
+func (s *Finance) GetMonthlySummary(ctx context.Context, req *pb.GetMonthlySummaryRequest) (*pb.MonthlySummary, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := &model.TransactionFilter{
+		AccountID: accountID,
+		Year:      int(req.Year),
+		Month:     int(req.Month),
+		PageSize:  1000,
+	}
+
+	list, _, err := selectTransactions(ctx, selectDB(ctx), filter)
+	if err != nil {
+		zlog.Error("get monthly summary failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	var totalIncome, totalExpense float64
+	catMap := make(map[int64]*pb.CategorySummary)
+	for _, t := range list {
+		if t.Type == 1 {
+			totalIncome += t.Amount
+		} else {
+			totalExpense += t.Amount
+		}
+		if cs, ok := catMap[t.CategoryID]; ok {
+			cs.TotalAmount += t.Amount
+		} else {
+			catMap[t.CategoryID] = &pb.CategorySummary{
+				CategoryId:   t.CategoryID,
+				CategoryName: "",
+				TotalAmount:  t.Amount,
+			}
+		}
+	}
+
+	catSummaries := make([]*pb.CategorySummary, 0, len(catMap))
+	for _, cs := range catMap {
+		catSummaries = append(catSummaries, cs)
+	}
+
+	return &pb.MonthlySummary{
+		TotalIncome:       totalIncome,
+		TotalExpense:      totalExpense,
+		NetBalance:        totalIncome - totalExpense,
+		CategorySummaries: catSummaries,
+	}, nil
+}
