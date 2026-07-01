@@ -160,7 +160,7 @@ func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn
 		HttpOnly: httpOnly,
 		Secure:   secure,
 		SameSite: sameSite,
-		MaxAge:   int(expiresIn),
+		MaxAge:   7 * 24 * 3600,
 	})
 }
 

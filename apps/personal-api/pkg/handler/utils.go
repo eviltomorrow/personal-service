@@ -51,35 +51,35 @@ func GrpcStatusToHTTP(err error) (int, string) {
 }
 
 func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn int64) {
-	accessMaxAge := int(expiresIn)
+	secure := c.Request().TLS != nil
 	c.SetCookie(&http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
 		Path:     "/api",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   accessMaxAge,
+		MaxAge:   int(expiresIn),
 	})
-	refreshMaxAge := 7 * 24 * 3600 // 7 days default
 	c.SetCookie(&http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		Path:     "/api",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   refreshMaxAge,
+		MaxAge:   7 * 24 * 3600,
 	})
 }
 
 func clearTokenCookies(c echo.Context) {
+	secure := c.Request().TLS != nil
 	c.SetCookie(&http.Cookie{
-		Name: "access_token", Path: "/api", HttpOnly: true, Secure: true,
+		Name: "access_token", Path: "/api", HttpOnly: true, Secure: secure,
 		SameSite: http.SameSiteStrictMode, MaxAge: -1,
 	})
 	c.SetCookie(&http.Cookie{
-		Name: "refresh_token", Path: "/api", HttpOnly: true, Secure: true,
+		Name: "refresh_token", Path: "/api", HttpOnly: true, Secure: secure,
 		SameSite: http.SameSiteStrictMode, MaxAge: -1,
 	})
 }
