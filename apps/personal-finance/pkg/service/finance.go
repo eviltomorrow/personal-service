@@ -139,6 +139,9 @@ func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequ
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
+	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
+		return nil, status.Error(codes.InvalidArgument, "invalid type")
+	}
 
 	existing, err := selectCategoryByID(ctx, selectDB(ctx), req.Id)
 	if err != nil {
@@ -315,6 +318,9 @@ func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransacti
 	if req.Amount <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "amount must be positive")
 	}
+	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
+		return nil, status.Error(codes.InvalidArgument, "invalid type")
+	}
 
 	existing, err := selectTransactionByID(ctx, selectDB(ctx), req.Id)
 	if err != nil {
@@ -405,7 +411,7 @@ func (s *Finance) GetMonthlySummary(ctx context.Context, req *pb.GetMonthlySumma
 	var totalIncome, totalExpense float64
 	catMap := make(map[int64]*pb.CategorySummary)
 	for _, t := range list {
-		if t.Type == 1 {
+		if t.Type == int(pb.FinanceType_FINANCE_TYPE_INCOME) {
 			totalIncome += t.Amount
 		} else {
 			totalExpense += t.Amount
