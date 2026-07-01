@@ -65,7 +65,8 @@ func New(cfg *config.Config) (*Server, error) {
 	}
 
 	deps := &handler.Dependencies{
-		AuthClient: provider.GetAuthClient(),
+		AuthClient:    provider.GetAuthClient(),
+		FinanceClient: provider.GetFinanceClient(),
 	}
 
 	httpSrv := httpserver.NewHTTP(

@@ -25,8 +25,9 @@ type Config struct {
 }
 
 type ServiceConfig struct {
-	AuthServiceTarget string `json:"auth_service_target" toml:"auth_service_target" mapstructure:"auth_service_target"`
-	SigningKey        string `json:"signing_key" toml:"signing_key" mapstructure:"signing_key"`
+	AuthServiceTarget    string `json:"auth_service_target" toml:"auth_service_target" mapstructure:"auth_service_target"`
+	FinanceServiceTarget string `json:"finance_service_target" toml:"finance_service_target" mapstructure:"finance_service_target"`
+	SigningKey           string `json:"signing_key" toml:"signing_key" mapstructure:"signing_key"`
 }
 
 var DefaultConfig = Config{
@@ -48,15 +49,17 @@ var DefaultConfig = Config{
 		ConnectTimeout: 10 * time.Second,
 	},
 	Service: ServiceConfig{
-		AuthServiceTarget: "etcd:///grpclb/personal-auth",
-		SigningKey:        "",
+		AuthServiceTarget:    "etcd:///grpclb/personal-auth",
+		FinanceServiceTarget: "etcd:///grpclb/personal-finance",
+		SigningKey:           "",
 	},
 }
 
 func (c *ServiceConfig) String() string {
 	data := map[string]interface{}{
-		"auth_service_target": c.AuthServiceTarget,
-		"signing_key":         c.SigningKey,
+		"auth_service_target":    c.AuthServiceTarget,
+		"finance_service_target": c.FinanceServiceTarget,
+		"signing_key":            c.SigningKey,
 	}
 	buf, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(data)
 	return string(buf)
