@@ -270,17 +270,17 @@ function LeftPanel({
         <span className="text-sm font-semibold text-gray-800">📋 持仓列表</span>
       </div>
       <div className="overflow-y-auto custom-scrollbar max-h-[300px]">
-        {activePositions.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无持仓</p>
-        ) : (
-          <SortableContext items={activePositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={activePositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          {activePositions.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无持仓</p>
+          ) : (
             <div className="divide-y divide-gray-100">
               {activePositions.map((p) => (
                 <SortablePositionItem key={p.id} position={p} isSelected={p.id === selectedId} onSelect={onSelect} />
               ))}
             </div>
-          </SortableContext>
-        )}
+          )}
+        </SortableContext>
       </div>
       <div className="px-4 py-3 border-t border-gray-100">
         <button onClick={onAdd}
@@ -297,17 +297,17 @@ function LeftPanel({
         <span className="text-sm font-semibold text-gray-800">🗄️ 归档列表 ({archivedPositions.length})</span>
       </div>
       <div className="overflow-y-auto custom-scrollbar max-h-[300px]">
-        {archivedPositions.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无归档</p>
-        ) : (
-          <SortableContext items={archivedPositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={archivedPositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          {archivedPositions.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无归档</p>
+          ) : (
             <div className="divide-y divide-gray-100">
               {archivedPositions.map((p) => (
                 <SortablePositionItem key={p.id} position={p} isSelected={p.id === selectedId} onSelect={onSelect} />
               ))}
             </div>
-          </SortableContext>
-        )}
+          )}
+        </SortableContext>
       </div>
     </div>
   );
@@ -602,8 +602,10 @@ function ArchivedRightPanel({ position }: { position: Position }) {
     [position.trades]
   );
 
-  const pnlColor = (position.closedPnl ?? 0) >= 0 ? "text-emerald-600" : "text-red-600";
-  const pnlSign = (position.closedPnl ?? 0) > 0 ? "+" : "";
+  const rawPnl = position.closedPnl ?? 0;
+  const pnlColor = rawPnl >= 0 ? "text-emerald-600" : "text-red-600";
+  const pnlSign = rawPnl > 0 ? "+" : rawPnl < 0 ? "-" : "";
+  const displayPnl = rawPnl === 0 ? "0.00" : `${pnlSign}${formatCNY(Math.abs(rawPnl))}`;
 
   return (
     <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6">
@@ -619,7 +621,7 @@ function ArchivedRightPanel({ position }: { position: Position }) {
       <div className="mb-6">
         <span className="text-xs text-gray-500">清仓盈亏</span>
         <p className={`text-lg font-bold tabular-nums ${pnlColor}`}>
-          {pnlSign}{(position.closedPnl ?? 0) === 0 ? "0.00" : formatCNY(Math.abs(position.closedPnl ?? 0))}
+          {displayPnl}
         </p>
       </div>
 
@@ -1075,18 +1077,16 @@ export default function PortfolioPage() {
 
     // Same-list drag: reorder only within the same list
     setPositions((prev) => {
-      const sameList = prev.filter(
-        (p) => p.archived === activeItem.archived
-      );
+      const movedItem = prev.find((p) => p.id === active.id);
+      if (!movedItem) return prev;
+
+      const sameList = prev.filter((p) => p.archived === movedItem.archived);
 
       const oldIndex = sameList.findIndex((p) => p.id === active.id);
       const newIndex = sameList.findIndex((p) => p.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return prev;
 
       const sameListIds = sameList.map((p) => p.id);
-      const movedItem = prev.find((p) => p.id === active.id);
-      if (!movedItem) return prev;
-
       const otherItems = prev.filter((p) => p.archived !== movedItem.archived);
       const reorderedList = sameListIds.filter((id) => id !== active.id);
       reorderedList.splice(newIndex, 0, String(active.id));
