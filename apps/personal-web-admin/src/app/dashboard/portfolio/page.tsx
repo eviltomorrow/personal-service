@@ -935,28 +935,34 @@ export default function PortfolioPage() {
   const [modal, setModal] = useState<ModalType>(null);
 
   function handleUpdatePosition(id: string, updates: Partial<Position>) {
-    const updatedPositions = positions.map((p) => {
-      if (p.id !== id) return p;
-      const next = { ...p, ...updates };
-      if ("initialQty" in updates) {
-        next.quantity = calcQuantity(next.trades, next.initialQty);
-      }
-      return next;
-    });
-    setPositions(updatedPositions);
-    if ("currentPrice" in updates) {
-      const today = new Date().toISOString().slice(0, 10);
-      const newTotal = updatedPositions.reduce((s, p) => s + p.currentPrice * p.quantity, 0);
-      setSnapshots((prev) => {
-        const existing = prev.findIndex((s) => s.date === today);
-        if (existing >= 0) {
-          const next = [...prev];
-          next[existing] = { ...next[existing], totalValue: newTotal };
-          return next;
+    setPositions((prev) => {
+      const updated = prev.map((p) => {
+        if (p.id !== id) return p;
+        let next = { ...p, ...updates };
+        if ("initialQty" in updates || "trades" in updates) {
+          next.quantity = calcQuantity(next.trades, next.initialQty);
         }
-        return [...prev, { date: today, totalValue: newTotal }];
+        if (next.quantity === 0 && !next.archived) {
+          next.archived = true;
+          next.closedPnl = calcDerived(next).profitAmount;
+        }
+        return next;
       });
-    }
+      if ("currentPrice" in updates) {
+        const today = new Date().toISOString().slice(0, 10);
+        const newTotal = updated.reduce((s, p) => s + p.currentPrice * (p.archived ? 0 : p.quantity), 0);
+        setSnapshots((prev) => {
+          const existing = prev.findIndex((s) => s.date === today);
+          if (existing >= 0) {
+            const next = [...prev];
+            next[existing] = { ...next[existing], totalValue: newTotal };
+            return next;
+          }
+          return [...prev, { date: today, totalValue: newTotal }];
+        });
+      }
+      return updated;
+    });
   }
 
   function handleDeleteTrade(positionId: string, tradeId: string) {
@@ -964,11 +970,14 @@ export default function PortfolioPage() {
       prev.map((p) => {
         if (p.id !== positionId) return p;
         const newTrades = p.trades.filter((t) => t.id !== tradeId);
+        const qty = calcQuantity(newTrades, p.initialQty);
         return {
           ...p,
           trades: newTrades,
-          quantity: calcQuantity(newTrades, p.initialQty),
+          quantity: qty,
           costPrice: recalcCostPrice(newTrades),
+          archived: qty === 0 ? true : p.archived,
+          closedPnl: qty === 0 ? calcDerived({ ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades) }).profitAmount : p.closedPnl,
         };
       })
     );
@@ -1137,11 +1146,14 @@ export default function PortfolioPage() {
                 prev.map((p) => {
                   if (p.id !== modal.positionId) return p;
                   const newTrades = [...p.trades, newTrade];
+                  const qty = calcQuantity(newTrades, p.initialQty);
                   return {
                     ...p,
                     trades: newTrades,
-                    quantity: calcQuantity(newTrades, p.initialQty),
+                    quantity: qty,
                     costPrice: recalcCostPrice(newTrades),
+                    archived: qty === 0 ? true : p.archived,
+                    closedPnl: qty === 0 ? calcDerived({ ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades) }).profitAmount : p.closedPnl,
                   };
                 })
               );
@@ -1161,11 +1173,14 @@ export default function PortfolioPage() {
                 prev.map((p) => {
                   if (p.id !== modal.positionId) return p;
                   const newTrades = p.trades.map((t) => t.id === modal.trade.id ? { ...t, ...data } : t);
+                  const qty = calcQuantity(newTrades, p.initialQty);
                   return {
                     ...p,
                     trades: newTrades,
-                    quantity: calcQuantity(newTrades, p.initialQty),
+                    quantity: qty,
                     costPrice: recalcCostPrice(newTrades),
+                    archived: qty === 0 ? true : p.archived,
+                    closedPnl: qty === 0 ? calcDerived({ ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades) }).profitAmount : p.closedPnl,
                   };
                 })
               );
