@@ -607,7 +607,6 @@ function ArchivedRightPanel({ position }: { position: Position }) {
 
   return (
     <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-semibold text-gray-900">{position.code} {position.name}</h3>
@@ -617,7 +616,6 @@ function ArchivedRightPanel({ position }: { position: Position }) {
         </div>
       </div>
 
-      {/* Closed PnL */}
       <div className="mb-6">
         <span className="text-xs text-gray-500">清仓盈亏</span>
         <p className={`text-lg font-bold tabular-nums ${pnlColor}`}>
@@ -625,7 +623,6 @@ function ArchivedRightPanel({ position }: { position: Position }) {
         </p>
       </div>
 
-      {/* Trade records (read-only) */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-b border-gray-100">
           <div className="w-1 h-4 rounded-full bg-slate-400" />
