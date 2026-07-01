@@ -16,6 +16,7 @@ const (
 	FieldCategoryName      = "name"
 	FieldCategoryType      = "type"
 	FieldCategorySortOrder = "sort_order"
+	FieldCategoryDate      = "date"
 	FieldCategoryDeletedAt = "deleted_at"
 	FieldCategoryCreatedAt = "created_at"
 	FieldCategoryUpdatedAt = "updated_at"
@@ -27,6 +28,7 @@ type Category struct {
 	Name      string
 	Type      int
 	SortOrder int
+	Date      string
 	DeletedAt int64
 	CreatedAt int64
 	UpdatedAt int64
@@ -34,14 +36,14 @@ type Category struct {
 
 var CategoryColumns = []string{
 	FieldCategoryAccountID, FieldCategoryName, FieldCategoryType, FieldCategorySortOrder,
-	FieldCategoryDeletedAt, FieldCategoryCreatedAt, FieldCategoryUpdatedAt,
+	FieldCategoryDate, FieldCategoryDeletedAt, FieldCategoryCreatedAt, FieldCategoryUpdatedAt,
 }
 
 var CategoryColumnsWithID = append([]string{"id"}, CategoryColumns...)
 
 func scanCategory(row *sql.Row) (*Category, error) {
 	c := &Category{}
-	err := row.Scan(&c.ID, &c.AccountID, &c.Name, &c.Type, &c.SortOrder, &c.DeletedAt, &c.CreatedAt, &c.UpdatedAt)
+	err := row.Scan(&c.ID, &c.AccountID, &c.Name, &c.Type, &c.SortOrder, &c.Date, &c.DeletedAt, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +54,7 @@ func scanCategories(rows *sql.Rows) ([]*Category, error) {
 	var list []*Category
 	for rows.Next() {
 		c := &Category{}
-		err := rows.Scan(&c.ID, &c.AccountID, &c.Name, &c.Type, &c.SortOrder, &c.DeletedAt, &c.CreatedAt, &c.UpdatedAt)
+		err := rows.Scan(&c.ID, &c.AccountID, &c.Name, &c.Type, &c.SortOrder, &c.Date, &c.DeletedAt, &c.CreatedAt, &c.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -67,6 +69,7 @@ func InsertCategory(ctx context.Context, exec dbmysql.Exec, c *Category) (int64,
 		FieldCategoryName:      c.Name,
 		FieldCategoryType:      c.Type,
 		FieldCategorySortOrder: c.SortOrder,
+		FieldCategoryDate:      c.Date,
 		FieldCategoryDeletedAt: c.DeletedAt,
 		FieldCategoryCreatedAt: c.CreatedAt,
 		FieldCategoryUpdatedAt: c.UpdatedAt,
@@ -79,6 +82,28 @@ func SelectCategoriesByAccountID(ctx context.Context, exec dbmysql.Exec, account
 		Columns(CategoryColumnsWithID).
 		Table(TableNameCategories).
 		Where(sqlutil.WithEq(FieldCategoryAccountID, accountID), sqlutil.WithEq(FieldCategoryDeletedAt, 0)).
+		OrderBy(sqlutil.ASC(FieldCategorySortOrder)).
+		QueryCtx(ctx, func(rows *sql.Rows) error {
+			var err error
+			list, err = scanCategories(rows)
+			return err
+		})
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+func SelectCategoriesByAccountIDAndDate(ctx context.Context, exec dbmysql.Exec, accountID string, date string) ([]*Category, error) {
+	var list []*Category
+	err := sqlutil.NewQuery(exec).
+		Columns(CategoryColumnsWithID).
+		Table(TableNameCategories).
+		Where(
+			sqlutil.WithEq(FieldCategoryAccountID, accountID),
+			sqlutil.WithEq(FieldCategoryDate, date),
+			sqlutil.WithEq(FieldCategoryDeletedAt, 0),
+		).
 		OrderBy(sqlutil.ASC(FieldCategorySortOrder)).
 		QueryCtx(ctx, func(rows *sql.Rows) error {
 			var err error

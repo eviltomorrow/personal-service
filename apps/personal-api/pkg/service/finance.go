@@ -6,7 +6,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
 
@@ -48,8 +47,11 @@ func financeTypeFromProto(t pb.FinanceType) model.FinanceType {
 	}
 }
 
-func (s *FinanceService) ListCategories(ctx context.Context, accountID string) ([]model.Category, error) {
-	pbResp, err := s.client.ListCategories(withAccountID(ctx, accountID), &emptypb.Empty{})
+func (s *FinanceService) ListCategories(ctx context.Context, accountID string, year int, month int) ([]model.Category, error) {
+	pbResp, err := s.client.ListCategories(withAccountID(ctx, accountID), &pb.ListCategoriesRequest{
+		Year:  int32(year),
+		Month: int32(month),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +63,7 @@ func (s *FinanceService) ListCategories(ctx context.Context, accountID string) (
 			Name:      c.Name,
 			Type:      financeTypeFromProto(c.Type),
 			SortOrder: int(c.SortOrder),
+			Date:      c.Date,
 			CreatedAt: c.CreatedAt,
 			UpdatedAt: c.UpdatedAt,
 		})
@@ -77,6 +80,7 @@ func (s *FinanceService) CreateCategory(ctx context.Context, accountID string, r
 		Name:      req.Name,
 		Type:      pbType,
 		SortOrder: int32(req.SortOrder),
+		Date:      req.Date,
 	})
 	if err != nil {
 		return nil, err
@@ -87,6 +91,7 @@ func (s *FinanceService) CreateCategory(ctx context.Context, accountID string, r
 		Name:      pbResp.Name,
 		Type:      financeTypeFromProto(pbResp.Type),
 		SortOrder: int(pbResp.SortOrder),
+		Date:      pbResp.Date,
 		CreatedAt: pbResp.CreatedAt,
 		UpdatedAt: pbResp.UpdatedAt,
 	}, nil
@@ -102,6 +107,7 @@ func (s *FinanceService) UpdateCategory(ctx context.Context, accountID string, r
 		Name:      req.Name,
 		Type:      pbType,
 		SortOrder: int32(req.SortOrder),
+		Date:      req.Date,
 	})
 	if err != nil {
 		return nil, err
@@ -112,6 +118,7 @@ func (s *FinanceService) UpdateCategory(ctx context.Context, accountID string, r
 		Name:      pbResp.Name,
 		Type:      financeTypeFromProto(pbResp.Type),
 		SortOrder: int(pbResp.SortOrder),
+		Date:      pbResp.Date,
 		CreatedAt: pbResp.CreatedAt,
 		UpdatedAt: pbResp.UpdatedAt,
 	}, nil
@@ -144,6 +151,7 @@ func (s *FinanceService) ListTransactions(ctx context.Context, accountID string,
 			Amount:     t.Amount,
 			Date:       t.Date,
 			Note:       t.Note,
+			SortOrder:  int(t.SortOrder),
 			CreatedAt:  t.CreatedAt,
 			UpdatedAt:  t.UpdatedAt,
 		})
@@ -166,6 +174,7 @@ func (s *FinanceService) CreateTransaction(ctx context.Context, accountID string
 		Amount:     req.Amount,
 		Date:       req.Date,
 		Note:       req.Note,
+		SortOrder:  int32(req.SortOrder),
 	})
 	if err != nil {
 		return nil, err
@@ -179,6 +188,7 @@ func (s *FinanceService) CreateTransaction(ctx context.Context, accountID string
 		Amount:     pbResp.Amount,
 		Date:       pbResp.Date,
 		Note:       pbResp.Note,
+		SortOrder:  int(pbResp.SortOrder),
 		CreatedAt:  pbResp.CreatedAt,
 		UpdatedAt:  pbResp.UpdatedAt,
 	}, nil
@@ -197,6 +207,7 @@ func (s *FinanceService) UpdateTransaction(ctx context.Context, accountID string
 		Amount:     req.Amount,
 		Date:       req.Date,
 		Note:       req.Note,
+		SortOrder:  int32(req.SortOrder),
 	})
 	if err != nil {
 		return nil, err
@@ -210,6 +221,7 @@ func (s *FinanceService) UpdateTransaction(ctx context.Context, accountID string
 		Amount:     pbResp.Amount,
 		Date:       pbResp.Date,
 		Note:       pbResp.Note,
+		SortOrder:  int(pbResp.SortOrder),
 		CreatedAt:  pbResp.CreatedAt,
 		UpdatedAt:  pbResp.UpdatedAt,
 	}, nil

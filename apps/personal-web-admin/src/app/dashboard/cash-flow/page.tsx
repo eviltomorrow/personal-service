@@ -29,6 +29,7 @@ interface Category {
   name: string;
   type: "income" | "expense";
   sort_order: number;
+  date: string;
   created_at: number;
   updated_at: number;
 }
@@ -42,6 +43,7 @@ interface Transaction {
   amount: number;
   date: string;
   note: string;
+  sort_order: number;
   created_at: number;
   updated_at: number;
 }
@@ -68,6 +70,8 @@ export default function CashFlowPage() {
   const [modalNote, setModalNote] = useState("");
   const [modalItemId, setModalItemId] = useState<number | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const [prevTransactions, setPrevTransactions] = useState<Transaction[]>([]);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const monthPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,19 +84,32 @@ export default function CashFlowPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  function displayAmount(cents: number) {
+    return displayAmount(cents / 100);
+  }
+
+  function prevMonth(y: number, m: number): [number, number] {
+    if (m === 1) return [y - 1, 12];
+    return [y, m - 1];
+  }
+
   async function loadData(year: number, month: number) {
     setLoading(true);
     try {
-      const [catRes, txRes] = await Promise.all([
-        api("/api/v1/finance/categories"),
+      const [py, pm] = prevMonth(year, month);
+      const [catRes, txRes, prevTxRes] = await Promise.all([
+        api(`/api/v1/finance/categories?year=${year}&month=${month}`),
         api(`/api/v1/finance/transactions?year=${year}&month=${month}`),
+        api(`/api/v1/finance/transactions?year=${py}&month=${pm}`),
       ]);
       const catJson = await catRes.json();
       const txJson = await txRes.json();
+      const prevTxJson = await prevTxRes.json();
       if (catJson.code === 0) setCategories(catJson.data);
       if (txJson.code === 0) setTransactions(txJson.data.transactions);
+      if (prevTxJson.code === 0) setPrevTransactions(prevTxJson.data.transactions);
     } catch {
-      // ignore
+      setToast({ type: "error", message: "加载数据失败" });
     } finally {
       setLoading(false);
     }
@@ -102,15 +119,20 @@ export default function CashFlowPage() {
     loadData(year, month);
   }, [year, month]);
 
+  function itemsOfCategory(ts: Transaction[], catId: number): CashFlowItem[] {
+    return ts
+      .filter((t) => t.category_id === catId)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((t) => ({ id: t.id, name: t.name, amount: t.amount, date: t.date, note: t.note, sortOrder: t.sort_order }));
+  }
+
   const incomeCategories = useMemo(
     () => categories
       .filter((c) => c.type === "income")
       .map((c) => ({
         id: c.id,
         category: c.name,
-        items: transactions
-          .filter((t) => t.category_id === c.id)
-          .map((t) => ({ id: t.id, name: t.name, amount: t.amount, date: t.date, note: t.note })),
+        items: itemsOfCategory(transactions, c.id),
       })),
     [categories, transactions]
   );
@@ -121,9 +143,7 @@ export default function CashFlowPage() {
       .map((c) => ({
         id: c.id,
         category: c.name,
-        items: transactions
-          .filter((t) => t.category_id === c.id)
-          .map((t) => ({ id: t.id, name: t.name, amount: t.amount, date: t.date, note: t.note })),
+        items: itemsOfCategory(transactions, c.id),
       })),
     [categories, transactions]
   );
@@ -140,8 +160,14 @@ export default function CashFlowPage() {
 
   const netBalance = totalIncome - totalExpense;
 
-  const prevTotalIncome = 0;
-  const prevTotalExpense = 0;
+  const prevTotalIncome = useMemo(
+    () => prevTransactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
+    [prevTransactions]
+  );
+  const prevTotalExpense = useMemo(
+    () => prevTransactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0),
+    [prevTransactions]
+  );
 
   function navigateMonth(delta: number) {
     const d = new Date(year, month - 1 + delta, 1);
@@ -170,7 +196,7 @@ export default function CashFlowPage() {
     const cat = section === "income" ? incomeCategories[catIndex] : expenseCategories[catIndex];
     const item = cat.items[itemIndex];
     setModalName(item.name);
-    setModalAmount(String(item.amount));
+    setModalAmount((item.amount / 100).toFixed(2));
     setModalDate(item.date);
     setModalNote(item.note ?? "");
     setModalCatId(cat.id);
@@ -191,11 +217,15 @@ export default function CashFlowPage() {
 
   async function handleSave() {
     const name = modalName.trim();
-    const amt = parseFloat(modalAmount);
+    const amt = Math.round(parseFloat(modalAmount) * 100);
     if (modal?.type === "add-category") {
-      if (!name) return;
+      if (!name) {
+        setToast({ type: "error", message: "请输入分类名称" });
+        return;
+      }
+      const catDate = `${year}-${String(month).padStart(2, "0")}`;
       try {
-        const res = await api("/api/v1/finance/categories", {
+        const res = await api(`/api/v1/finance/categories?date=${catDate}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, type: modal.section === "income" ? "income" : "expense", sort_order: 0 }),
@@ -203,13 +233,19 @@ export default function CashFlowPage() {
         const json = await res.json();
         if (json.code === 0 && json.data) {
           setCategories((prev) => [...prev, json.data]);
+          setToast({ type: "success", message: "分类已添加" });
+        } else {
+          setToast({ type: "error", message: json.message || "添加分类失败" });
         }
-      } catch { /* ignore */ }
+      } catch {
+        setToast({ type: "error", message: "网络错误，请重试" });
+      }
       setModal(null);
       return;
     }
     if (modal?.type === "add-item") {
-      if (!name || isNaN(amt) || amt <= 0) return;
+      if (!name) { setToast({ type: "error", message: "请输入项目名称" }); return; }
+      if (isNaN(amt) || amt <= 0) { setToast({ type: "error", message: "请输入有效的金额" }); return; }
       try {
         const res = await api("/api/v1/finance/transactions", {
           method: "POST",
@@ -226,13 +262,19 @@ export default function CashFlowPage() {
         const json = await res.json();
         if (json.code === 0 && json.data) {
           setTransactions((prev) => [...prev, json.data]);
+          setToast({ type: "success", message: "记录已添加" });
+        } else {
+          setToast({ type: "error", message: json.message || "添加失败" });
         }
-      } catch { /* ignore */ }
+      } catch {
+        setToast({ type: "error", message: "网络错误，请重试" });
+      }
       setModal(null);
       return;
     }
     if (modal?.type === "edit-item") {
-      if (!name || isNaN(amt) || amt <= 0) return;
+      if (!name) { setToast({ type: "error", message: "请输入项目名称" }); return; }
+      if (isNaN(amt) || amt <= 0) { setToast({ type: "error", message: "请输入有效的金额" }); return; }
       try {
         const res = await api(`/api/v1/finance/transactions/${modalItemId}`, {
           method: "PUT",
@@ -249,8 +291,13 @@ export default function CashFlowPage() {
         const json = await res.json();
         if (json.code === 0 && json.data) {
           setTransactions((prev) => prev.map((t) => t.id === json.data.id ? json.data : t));
+          setToast({ type: "success", message: "记录已更新" });
+        } else {
+          setToast({ type: "error", message: json.message || "更新失败" });
         }
-      } catch { /* ignore */ }
+      } catch {
+        setToast({ type: "error", message: "网络错误，请重试" });
+      }
       setModal(null);
       return;
     }
@@ -261,17 +308,34 @@ export default function CashFlowPage() {
     if (!modal) return;
     if (modal.type === "delete-category" && modalCatId !== null) {
       try {
-        await api(`/api/v1/finance/categories/${modalCatId}`, { method: "DELETE" });
-        setCategories((prev) => prev.filter((c) => c.id !== modalCatId));
-      } catch { /* ignore */ }
+        const res = await api(`/api/v1/finance/categories/${modalCatId}`, { method: "DELETE" });
+        const json = await res.json();
+        if (json.code === 0) {
+          setCategories((prev) => prev.filter((c) => c.id !== modalCatId));
+          setTransactions((prev) => prev.filter((t) => t.category_id !== modalCatId));
+          setToast({ type: "success", message: "分类已删除" });
+        } else {
+          setToast({ type: "error", message: json.message || "删除失败" });
+        }
+      } catch {
+        setToast({ type: "error", message: "网络错误，请重试" });
+      }
       setModal(null);
       return;
     }
     if (modal.type === "delete-item" && modalItemId !== null) {
       try {
-        await api(`/api/v1/finance/transactions/${modalItemId}`, { method: "DELETE" });
-        setTransactions((prev) => prev.filter((t) => t.id !== modalItemId));
-      } catch { /* ignore */ }
+        const res = await api(`/api/v1/finance/transactions/${modalItemId}`, { method: "DELETE" });
+        const json = await res.json();
+        if (json.code === 0) {
+          setTransactions((prev) => prev.filter((t) => t.id !== modalItemId));
+          setToast({ type: "success", message: "记录已删除" });
+        } else {
+          setToast({ type: "error", message: json.message || "删除失败" });
+        }
+      } catch {
+        setToast({ type: "error", message: "网络错误，请重试" });
+      }
       setModal(null);
       return;
     }
@@ -338,6 +402,27 @@ export default function CashFlowPage() {
         }
       />
 
+      {toast && (
+        <div className={`flex items-center gap-3 rounded-lg border px-5 py-3 text-sm anim-in anim-fade anim-down ${
+          toast.type === "success"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : "border-red-200 bg-red-50 text-red-700"
+        }`}>
+          <span className="flex-1">{toast.message}</span>
+          <button type="button" onClick={() => setToast(null)}
+            className="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100 transition-opacity">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center py-12 text-sm text-gray-400">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600 mr-2" />
+          加载中...
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="h-1 bg-emerald-500" />
@@ -363,7 +448,7 @@ export default function CashFlowPage() {
               })()}
             </div>
             <p className="text-2xl font-bold text-emerald-700 tabular-nums">
-              {totalIncome > 0 ? formatCNY(totalIncome) : "¥ 0.00"}
+              {totalIncome > 0 ? displayAmount(totalIncome) : "¥ 0.00"}
             </p>
             <p className="mt-0.5 text-sm text-gray-500">总收入</p>
           </div>
@@ -392,7 +477,7 @@ export default function CashFlowPage() {
               })()}
             </div>
             <p className="text-2xl font-bold text-red-700 tabular-nums">
-              {totalExpense > 0 ? formatCNY(totalExpense) : "¥ 0.00"}
+              {totalExpense > 0 ? displayAmount(totalExpense) : "¥ 0.00"}
             </p>
             <p className="mt-0.5 text-sm text-gray-500">总支出</p>
           </div>
@@ -422,7 +507,7 @@ export default function CashFlowPage() {
               })()}
             </div>
             <p className={`text-2xl font-bold tabular-nums ${netBalance >= 0 ? "text-blue-700" : "text-red-700"}`}>
-              {formatCNY(netBalance)}
+              {displayAmount(netBalance)}
             </p>
             <p className="mt-0.5 text-sm text-gray-500">净结余</p>
           </div>
@@ -452,7 +537,7 @@ export default function CashFlowPage() {
                   <div className="group flex items-center justify-between px-5 py-2.5 bg-gray-50/50">
                     <span className="text-sm font-semibold text-gray-700">{cat.category}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-emerald-600 tabular-nums w-24 text-right">{formatCNY(catTotal)}</span>
+                      <span className="text-sm font-semibold text-emerald-600 tabular-nums w-24 text-right">{displayAmount(catTotal)}</span>
                       <div className="w-[34px] flex items-center justify-center">
                         <button type="button" onClick={() => openAddItem("income", ci)}
                           className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors">
@@ -470,11 +555,11 @@ export default function CashFlowPage() {
                     <p className="px-8 py-2 text-xs text-gray-400">暂无记录</p>
                   )}
                   {cat.items.map((item, ii) => (
-                    <div key={item.id}
+                    <div key={`${cat.id}-${item.id}`}
                       className="group flex items-center justify-between pl-8 pr-5 py-2 hover:bg-gray-50/50 transition-colors">
                       <span className="text-sm text-gray-600">{item.name}</span>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-emerald-600 tabular-nums w-24 text-right">{formatCNY(item.amount)}</span>
+                        <span className="text-sm font-medium text-emerald-600 tabular-nums w-24 text-right">{displayAmount(item.amount)}</span>
                         <div className="w-[34px] flex items-center justify-center">
                           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button type="button" onClick={() => openEditItem("income", ci, ii)}
@@ -497,7 +582,7 @@ export default function CashFlowPage() {
           <div className="px-5 py-2.5 flex items-center justify-between bg-emerald-50/80 border-t border-gray-100">
             <span className="text-sm font-semibold text-emerald-700">小计</span>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-emerald-700 tabular-nums w-24 text-right">{formatCNY(totalIncome)}</span>
+              <span className="text-sm font-semibold text-emerald-700 tabular-nums w-24 text-right">{displayAmount(totalIncome)}</span>
               <div className="w-[34px]" />
             </div>
           </div>
@@ -525,7 +610,7 @@ export default function CashFlowPage() {
                   <div className="group flex items-center justify-between px-5 py-2.5 bg-gray-50/50">
                     <span className="text-sm font-semibold text-gray-700">{cat.category}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-red-600 tabular-nums w-24 text-right">{formatCNY(catTotal)}</span>
+                      <span className="text-sm font-semibold text-red-600 tabular-nums w-24 text-right">{displayAmount(catTotal)}</span>
                       <div className="w-[34px] flex items-center justify-center">
                         <button type="button" onClick={() => openAddItem("expense", ci)}
                           className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors">
@@ -543,11 +628,11 @@ export default function CashFlowPage() {
                     <p className="px-8 py-2 text-xs text-gray-400">暂无记录</p>
                   )}
                   {cat.items.map((item, ii) => (
-                    <div key={item.id}
+                    <div key={`${cat.id}-${item.id}`}
                       className="group flex items-center justify-between pl-8 pr-5 py-2 hover:bg-gray-50/50 transition-colors">
                       <span className="text-sm text-gray-600">{item.name}</span>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-red-600 tabular-nums w-24 text-right">{formatCNY(item.amount)}</span>
+                        <span className="text-sm font-medium text-red-600 tabular-nums w-24 text-right">{displayAmount(item.amount)}</span>
                         <div className="w-[34px] flex items-center justify-center">
                           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button type="button" onClick={() => openEditItem("expense", ci, ii)}
@@ -570,7 +655,7 @@ export default function CashFlowPage() {
           <div className="px-5 py-2.5 flex items-center justify-between bg-red-50/80 border-t border-gray-100">
             <span className="text-sm font-semibold text-red-700">小计</span>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-red-700 tabular-nums w-24 text-right">{formatCNY(totalExpense)}</span>
+              <span className="text-sm font-semibold text-red-700 tabular-nums w-24 text-right">{displayAmount(totalExpense)}</span>
               <div className="w-[34px]" />
             </div>
           </div>
@@ -622,6 +707,15 @@ export default function CashFlowPage() {
               </button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">分类</label>
+                <select value={modalCatId ?? ""} onChange={(e) => setModalCatId(Number(e.target.value))}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none">
+                  {categories.filter(c => c.type === modal.section).map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">项目名称</label>
                 <input type="text" value={modalName} onChange={(e) => setModalName(e.target.value)} placeholder="请输入项目名称" autoFocus

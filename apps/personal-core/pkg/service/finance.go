@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -19,17 +20,19 @@ import (
 )
 
 var (
-	insertCategory           = model.InsertCategory
-	selectCategoriesByAcctID = model.SelectCategoriesByAccountID
-	selectCategoryByID       = model.SelectCategoryByID
-	updateCategoryByID       = model.UpdateCategoryByID
-	softDeleteCategoryByID   = model.SoftDeleteCategoryByID
+	insertCategory               = model.InsertCategory
+	selectCategoriesByAcctID     = model.SelectCategoriesByAccountID
+	selectCategoriesByAcctIDDate = model.SelectCategoriesByAccountIDAndDate
+	selectCategoryByID           = model.SelectCategoryByID
+	updateCategoryByID           = model.UpdateCategoryByID
+	softDeleteCategoryByID       = model.SoftDeleteCategoryByID
 
-	insertTransaction         = model.InsertTransaction
-	selectTransactions        = model.SelectTransactions
-	selectTransactionByID     = model.SelectTransactionByID
-	updateTransactionByID     = model.UpdateTransactionByID
-	softDeleteTransactionByID = model.SoftDeleteTransactionByID
+	insertTransaction               = model.InsertTransaction
+	selectTransactions              = model.SelectTransactions
+	selectTransactionByID           = model.SelectTransactionByID
+	updateTransactionByID           = model.UpdateTransactionByID
+	softDeleteTransactionByID       = model.SoftDeleteTransactionByID
+	softDeleteTransactionsByCatID   = model.SoftDeleteTransactionsByCategoryID
 )
 
 var selectDB = func(ctx context.Context) dbmysql.Exec {
@@ -58,13 +61,14 @@ func now() int64 {
 
 // --- Categories ---
 
-func (s *Finance) ListCategories(ctx context.Context, _ *emptypb.Empty) (*pb.ListCategoriesResponse, error) {
+func (s *Finance) ListCategories(ctx context.Context, req *pb.ListCategoriesRequest) (*pb.ListCategoriesResponse, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	cats, err := selectCategoriesByAcctID(ctx, selectDB(ctx), accountID)
+	date := fmt.Sprintf("%04d-%02d", req.Year, req.Month)
+	cats, err := selectCategoriesByAcctIDDate(ctx, selectDB(ctx), accountID, date)
 	if err != nil {
 		zlog.Error("list categories failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "internal server error")
@@ -78,6 +82,7 @@ func (s *Finance) ListCategories(ctx context.Context, _ *emptypb.Empty) (*pb.Lis
 			Name:      c.Name,
 			Type:      pb.FinanceType(c.Type),
 			SortOrder: int32(c.SortOrder),
+			Date:      c.Date,
 			CreatedAt: c.CreatedAt,
 			UpdatedAt: c.UpdatedAt,
 		})
@@ -99,6 +104,9 @@ func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequ
 	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
 		return nil, status.Error(codes.InvalidArgument, "invalid type")
 	}
+	if req.Date == "" {
+		return nil, status.Error(codes.InvalidArgument, "date is required")
+	}
 
 	n := now()
 	c := &model.Category{
@@ -106,6 +114,7 @@ func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequ
 		Name:      req.Name,
 		Type:      int(req.Type),
 		SortOrder: int(req.SortOrder),
+		Date:      req.Date,
 		DeletedAt: 0,
 		CreatedAt: n,
 		UpdatedAt: n,
@@ -122,6 +131,7 @@ func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequ
 		Name:      c.Name,
 		Type:      pb.FinanceType(c.Type),
 		SortOrder: int32(c.SortOrder),
+		Date:      c.Date,
 		CreatedAt: c.CreatedAt,
 		UpdatedAt: c.UpdatedAt,
 	}, nil
@@ -157,12 +167,16 @@ func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequ
 	}
 
 	n := now()
-	_, err = updateCategoryByID(ctx, selectDB(ctx), req.Id, map[string]interface{}{
+	updates := map[string]interface{}{
 		model.FieldCategoryName:      req.Name,
 		model.FieldCategoryType:      int(req.Type),
 		model.FieldCategorySortOrder: int(req.SortOrder),
 		model.FieldCategoryUpdatedAt: n,
-	})
+	}
+	if req.Date != "" {
+		updates[model.FieldCategoryDate] = req.Date
+	}
+	_, err = updateCategoryByID(ctx, selectDB(ctx), req.Id, updates)
 	if err != nil {
 		zlog.Error("update category failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "internal server error")
@@ -172,12 +186,16 @@ func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequ
 	existing.Type = int(req.Type)
 	existing.SortOrder = int(req.SortOrder)
 	existing.UpdatedAt = n
+	if req.Date != "" {
+		existing.Date = req.Date
+	}
 	return &pb.Category{
 		Id:        existing.ID,
 		AccountId: existing.AccountID,
 		Name:      existing.Name,
 		Type:      pb.FinanceType(existing.Type),
 		SortOrder: int32(existing.SortOrder),
+		Date:      existing.Date,
 		CreatedAt: existing.CreatedAt,
 		UpdatedAt: existing.UpdatedAt,
 	}, nil
@@ -200,11 +218,18 @@ func (s *Finance) DeleteCategory(ctx context.Context, req *pb.DeleteCategoryRequ
 		return &emptypb.Empty{}, nil
 	}
 
-	_, err = softDeleteCategoryByID(ctx, selectDB(ctx), req.Id, now())
+	n := now()
+	_, err = softDeleteCategoryByID(ctx, selectDB(ctx), req.Id, n)
 	if err != nil {
 		zlog.Error("delete category failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
+
+	_, err = softDeleteTransactionsByCatID(ctx, selectDB(ctx), accountID, req.Id, n)
+	if err != nil {
+		zlog.Error("delete category transactions failure", zap.Error(err))
+	}
+
 	return &emptypb.Empty{}, nil
 }
 
@@ -248,6 +273,7 @@ func (s *Finance) ListTransactions(ctx context.Context, req *pb.ListTransactions
 			Amount:     t.Amount,
 			Date:       t.Date,
 			Note:       t.Note,
+			SortOrder:  int32(t.SortOrder),
 			CreatedAt:  t.CreatedAt,
 			UpdatedAt:  t.UpdatedAt,
 		})
@@ -288,6 +314,7 @@ func (s *Finance) CreateTransaction(ctx context.Context, req *pb.CreateTransacti
 		Amount:     req.Amount,
 		Date:       req.Date,
 		Note:       req.Note,
+		SortOrder:  int(req.SortOrder),
 		DeletedAt:  0,
 		CreatedAt:  n,
 		UpdatedAt:  n,
@@ -307,6 +334,7 @@ func (s *Finance) CreateTransaction(ctx context.Context, req *pb.CreateTransacti
 		Amount:     t.Amount,
 		Date:       t.Date,
 		Note:       t.Note,
+		SortOrder:  int32(t.SortOrder),
 		CreatedAt:  t.CreatedAt,
 		UpdatedAt:  t.UpdatedAt,
 	}, nil
@@ -352,9 +380,10 @@ func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransacti
 		model.FieldTransactionCategoryID: req.CategoryId,
 		model.FieldTransactionType:       int(req.Type),
 		model.FieldTransactionName:       req.Name,
-		model.FieldTransactionAmount:     req.Amount,
+		model.FieldTransactionAmount:     float64(req.Amount) / 100.0,
 		model.FieldTransactionDate:       req.Date,
 		model.FieldTransactionNote:       req.Note,
+		model.FieldTransactionSortOrder:  int(req.SortOrder),
 		model.FieldTransactionUpdatedAt:  n,
 	})
 	if err != nil {
@@ -371,6 +400,7 @@ func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransacti
 		Amount:     req.Amount,
 		Date:       req.Date,
 		Note:       req.Note,
+		SortOrder:  int32(req.SortOrder),
 		CreatedAt:  existing.CreatedAt,
 		UpdatedAt:  n,
 	}, nil

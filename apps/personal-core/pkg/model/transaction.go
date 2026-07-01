@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	dbmysql "github.com/eviltomorrow/personal-service/lib/db/mysql"
@@ -21,6 +22,7 @@ const (
 	FieldTransactionAmount     = "amount"
 	FieldTransactionDate       = "date"
 	FieldTransactionNote       = "note"
+	FieldTransactionSortOrder  = "sort_order"
 	FieldTransactionDeletedAt  = "deleted_at"
 	FieldTransactionCreatedAt  = "created_at"
 	FieldTransactionUpdatedAt  = "updated_at"
@@ -32,9 +34,10 @@ type Transaction struct {
 	CategoryID int64
 	Type       int
 	Name       string
-	Amount     float64
+	Amount     int64
 	Date       string
 	Note       string
+	SortOrder  int
 	DeletedAt  int64
 	CreatedAt  int64
 	UpdatedAt  int64
@@ -52,18 +55,20 @@ type TransactionFilter struct {
 var TransactionColumns = []string{
 	FieldTransactionAccountID, FieldTransactionCategoryID, FieldTransactionType,
 	FieldTransactionName, FieldTransactionAmount, FieldTransactionDate,
-	FieldTransactionNote, FieldTransactionDeletedAt, FieldTransactionCreatedAt, FieldTransactionUpdatedAt,
+	FieldTransactionNote, FieldTransactionSortOrder, FieldTransactionDeletedAt, FieldTransactionCreatedAt, FieldTransactionUpdatedAt,
 }
 
 var TransactionColumnsWithID = append([]string{"id"}, TransactionColumns...)
 
 func scanTransaction(row *sql.Row) (*Transaction, error) {
 	t := &Transaction{}
-	err := row.Scan(&t.ID, &t.AccountID, &t.CategoryID, &t.Type, &t.Name, &t.Amount, &t.Date, &t.Note,
+	var amountDec float64
+	err := row.Scan(&t.ID, &t.AccountID, &t.CategoryID, &t.Type, &t.Name, &amountDec, &t.Date, &t.Note, &t.SortOrder,
 		&t.DeletedAt, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
+	t.Amount = int64(math.Round(amountDec * 100))
 	return t, nil
 }
 
@@ -71,11 +76,13 @@ func scanTransactions(rows *sql.Rows) ([]*Transaction, error) {
 	var list []*Transaction
 	for rows.Next() {
 		t := &Transaction{}
-		err := rows.Scan(&t.ID, &t.AccountID, &t.CategoryID, &t.Type, &t.Name, &t.Amount, &t.Date, &t.Note,
+		var amountDec float64
+		err := rows.Scan(&t.ID, &t.AccountID, &t.CategoryID, &t.Type, &t.Name, &amountDec, &t.Date, &t.Note, &t.SortOrder,
 			&t.DeletedAt, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
+		t.Amount = int64(math.Round(amountDec * 100))
 		list = append(list, t)
 	}
 	return list, nil
@@ -87,9 +94,10 @@ func InsertTransaction(ctx context.Context, exec dbmysql.Exec, t *Transaction) (
 		FieldTransactionCategoryID: t.CategoryID,
 		FieldTransactionType:       t.Type,
 		FieldTransactionName:       t.Name,
-		FieldTransactionAmount:     t.Amount,
+		FieldTransactionAmount:     float64(t.Amount) / 100.0,
 		FieldTransactionDate:       t.Date,
 		FieldTransactionNote:       t.Note,
+		FieldTransactionSortOrder:  t.SortOrder,
 		FieldTransactionDeletedAt:  t.DeletedAt,
 		FieldTransactionCreatedAt:  t.CreatedAt,
 		FieldTransactionUpdatedAt:  t.UpdatedAt,
@@ -131,7 +139,7 @@ func SelectTransactions(ctx context.Context, exec dbmysql.Exec, filter *Transact
 		Columns(TransactionColumnsWithID).
 		Table(TableNameTransactions).
 		Where(conds...).
-		OrderBy(sqlutil.DESC(FieldTransactionDate), sqlutil.DESC("id"))
+		OrderBy(sqlutil.ASC(FieldTransactionSortOrder), sqlutil.DESC(FieldTransactionDate), sqlutil.DESC("id"))
 
 	if filter.PageSize > 0 {
 		offset := (filter.Page - 1) * filter.PageSize
@@ -186,5 +194,17 @@ func SoftDeleteTransactionByID(ctx context.Context, exec dbmysql.Exec, id int64,
 		Table(TableNameTransactions).
 		Field(map[string]interface{}{FieldTransactionDeletedAt: deletedAt, FieldTransactionUpdatedAt: deletedAt}).
 		Where(sqlutil.WithEq("id", id), sqlutil.WithEq(FieldTransactionDeletedAt, 0)).
+		UpdateCtx(ctx)
+}
+
+func SoftDeleteTransactionsByCategoryID(ctx context.Context, exec dbmysql.Exec, accountID string, categoryID int64, deletedAt int64) (int64, error) {
+	return sqlutil.NewUpdate(exec).
+		Table(TableNameTransactions).
+		Field(map[string]interface{}{FieldTransactionDeletedAt: deletedAt, FieldTransactionUpdatedAt: deletedAt}).
+		Where(
+			sqlutil.WithEq(FieldTransactionAccountID, accountID),
+			sqlutil.WithEq(FieldTransactionCategoryID, categoryID),
+			sqlutil.WithEq(FieldTransactionDeletedAt, 0),
+		).
 		UpdateCtx(ctx)
 }

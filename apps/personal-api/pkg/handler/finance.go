@@ -48,7 +48,9 @@ func tokenCtx(c echo.Context) context.Context {
 }
 
 func (h *FinanceHandler) ListCategories(c echo.Context) error {
-	resp, err := h.client.ListCategories(tokenCtx(c), accountID(c))
+	year, _ := strconv.Atoi(c.QueryParam("year"))
+	month, _ := strconv.Atoi(c.QueryParam("month"))
+	resp, err := h.client.ListCategories(tokenCtx(c), accountID(c), year, month)
 	if err != nil {
 		zlog.Error("finance list categories failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)
@@ -62,6 +64,7 @@ func (h *FinanceHandler) CreateCategory(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
+	req.Date = c.QueryParam("date")
 	resp, err := h.client.CreateCategory(tokenCtx(c), accountID(c), &req)
 	if err != nil {
 		zlog.Error("finance create category failure", zap.Error(err))

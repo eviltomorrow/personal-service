@@ -4,10 +4,12 @@ CREATE TABLE IF NOT EXISTS categories (
     name          VARCHAR(64)     NOT NULL COMMENT 'category name',
     type          TINYINT         NOT NULL COMMENT '1=income 2=expense',
     sort_order    INT             NOT NULL DEFAULT 0,
+    date          VARCHAR(7)      NOT NULL DEFAULT '' COMMENT 'YYYY-MM',
     deleted_at    BIGINT UNSIGNED NOT NULL DEFAULT 0,
     created_at    BIGINT UNSIGNED NOT NULL DEFAULT 0,
     updated_at    BIGINT UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
     KEY idx_account_deleted (account_id, deleted_at),
-    KEY idx_account_type (account_id, type, deleted_at)
+    KEY idx_account_type (account_id, type, deleted_at),
+    KEY idx_account_date (account_id, date, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

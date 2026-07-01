@@ -20,6 +20,7 @@ message Category {
   int32 sort_order = 5;
   int64 created_at = 6;
   int64 updated_at = 7;
+  string date = 8;
 }
 
 message Transaction {
@@ -28,11 +29,17 @@ message Transaction {
   int64 category_id = 3;
   FinanceType type = 4;
   string name = 5;
-  double amount = 6;
+  int64 amount = 6;
   string date = 7;
   string note = 8;
   int64 created_at = 9;
   int64 updated_at = 10;
+  int32 sort_order = 11;
+}
+
+message ListCategoriesRequest {
+  int32 year = 1;
+  int32 month = 2;
 }
 
 message ListCategoriesResponse {
@@ -43,6 +50,7 @@ message CreateCategoryRequest {
   string name = 1;
   FinanceType type = 2;
   int32 sort_order = 3;
+  string date = 4;
 }
 
 message UpdateCategoryRequest {
@@ -50,6 +58,7 @@ message UpdateCategoryRequest {
   string name = 2;
   FinanceType type = 3;
   int32 sort_order = 4;
+  string date = 5;
 }
 
 message DeleteCategoryRequest {
@@ -73,9 +82,10 @@ message CreateTransactionRequest {
   int64 category_id = 1;
   FinanceType type = 2;
   string name = 3;
-  double amount = 4;
+  int64 amount = 4;
   string date = 5;
   string note = 6;
+  int32 sort_order = 7;
 }
 
 message UpdateTransactionRequest {
@@ -83,9 +93,10 @@ message UpdateTransactionRequest {
   int64 category_id = 2;
   FinanceType type = 3;
   string name = 4;
-  double amount = 5;
+  int64 amount = 5;
   string date = 6;
   string note = 7;
+  int32 sort_order = 8;
 }
 
 message DeleteTransactionRequest {
@@ -93,7 +104,7 @@ message DeleteTransactionRequest {
 }
 
 service Finance {
-  rpc ListCategories(google.protobuf.Empty) returns (ListCategoriesResponse);
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
   rpc CreateCategory(CreateCategoryRequest) returns (Category);
   rpc UpdateCategory(UpdateCategoryRequest) returns (Category);
   rpc DeleteCategory(DeleteCategoryRequest) returns (google.protobuf.Empty);
