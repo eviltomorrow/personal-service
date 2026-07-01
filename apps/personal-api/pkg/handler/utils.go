@@ -49,3 +49,35 @@ func GrpcStatusToHTTP(err error) (int, string) {
 		return http.StatusInternalServerError, "internal server error"
 	}
 }
+
+func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn int64) {
+	accessMaxAge := int(expiresIn)
+	c.SetCookie(&http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Path:     "/api",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   accessMaxAge,
+	})
+	refreshMaxAge := 7 * 24 * 3600 // 7 days default
+	c.SetCookie(&http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/api",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   refreshMaxAge,
+	})
+}
+
+func clearTokenCookies(c echo.Context) {
+	c.SetCookie(&http.Cookie{
+		Name: "access_token", Path: "/api", HttpOnly: true,
+		SameSite: http.SameSiteStrictMode, MaxAge: -1,
+	})
+	c.SetCookie(&http.Cookie{
+		Name: "refresh_token", Path: "/api", HttpOnly: true,
+		SameSite: http.SameSiteStrictMode, MaxAge: -1,
+	})
+}

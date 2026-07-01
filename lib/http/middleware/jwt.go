@@ -1,12 +1,17 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/eviltomorrow/personal-service/lib/auth"
 	"github.com/labstack/echo/v4"
 )
+
+type TokenRefresher interface {
+	Refresh(ctx context.Context, refreshToken string) (accessToken, newRefreshToken string, expiresIn int64, err error)
+}
 
 const (
 	ContextKeyAccountID = "account_id"
