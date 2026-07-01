@@ -219,26 +219,4 @@ func (s *FinanceService) DeleteTransaction(ctx context.Context, accountID string
 	return err
 }
 
-func (s *FinanceService) GetMonthlySummary(ctx context.Context, accountID string, year, month int) (*model.MonthlySummary, error) {
-	pbResp, err := s.client.GetMonthlySummary(withAccountID(ctx, accountID), &pb.GetMonthlySummaryRequest{
-		Year:  int32(year),
-		Month: int32(month),
-	})
-	if err != nil {
-		return nil, err
-	}
-	catSummaries := make([]model.CategorySummary, 0, len(pbResp.CategorySummaries))
-	for _, cs := range pbResp.CategorySummaries {
-		catSummaries = append(catSummaries, model.CategorySummary{
-			CategoryID:   cs.CategoryId,
-			CategoryName: cs.CategoryName,
-			TotalAmount:  cs.TotalAmount,
-		})
-	}
-	return &model.MonthlySummary{
-		TotalIncome:       pbResp.TotalIncome,
-		TotalExpense:      pbResp.TotalExpense,
-		NetBalance:        pbResp.NetBalance,
-		CategorySummaries: catSummaries,
-	}, nil
-}
+

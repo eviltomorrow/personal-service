@@ -92,24 +92,6 @@ message DeleteTransactionRequest {
   int64 id = 1;
 }
 
-message GetMonthlySummaryRequest {
-  int32 year = 1;
-  int32 month = 2;
-}
-
-message CategorySummary {
-  int64 category_id = 1;
-  string category_name = 2;
-  double total_amount = 3;
-}
-
-message MonthlySummary {
-  double total_income = 1;
-  double total_expense = 2;
-  double net_balance = 3;
-  repeated CategorySummary category_summaries = 4;
-}
-
 service Finance {
   rpc ListCategories(google.protobuf.Empty) returns (ListCategoriesResponse);
   rpc CreateCategory(CreateCategoryRequest) returns (Category);
@@ -120,6 +102,4 @@ service Finance {
   rpc CreateTransaction(CreateTransactionRequest) returns (Transaction);
   rpc UpdateTransaction(UpdateTransactionRequest) returns (Transaction);
   rpc DeleteTransaction(DeleteTransactionRequest) returns (google.protobuf.Empty);
-
-  rpc GetMonthlySummary(GetMonthlySummaryRequest) returns (MonthlySummary);
 }

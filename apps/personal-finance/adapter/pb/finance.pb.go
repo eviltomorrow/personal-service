@@ -843,186 +843,6 @@ func (x *DeleteTransactionRequest) GetId() int64 {
 	return 0
 }
 
-type GetMonthlySummaryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Year          int32                  `protobuf:"varint,1,opt,name=year,proto3" json:"year,omitempty"`
-	Month         int32                  `protobuf:"varint,2,opt,name=month,proto3" json:"month,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetMonthlySummaryRequest) Reset() {
-	*x = GetMonthlySummaryRequest{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetMonthlySummaryRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetMonthlySummaryRequest) ProtoMessage() {}
-
-func (x *GetMonthlySummaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetMonthlySummaryRequest.ProtoReflect.Descriptor instead.
-func (*GetMonthlySummaryRequest) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *GetMonthlySummaryRequest) GetYear() int32 {
-	if x != nil {
-		return x.Year
-	}
-	return 0
-}
-
-func (x *GetMonthlySummaryRequest) GetMonth() int32 {
-	if x != nil {
-		return x.Month
-	}
-	return 0
-}
-
-type CategorySummary struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CategoryId    int64                  `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	CategoryName  string                 `protobuf:"bytes,2,opt,name=category_name,json=categoryName,proto3" json:"category_name,omitempty"`
-	TotalAmount   float64                `protobuf:"fixed64,3,opt,name=total_amount,json=totalAmount,proto3" json:"total_amount,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CategorySummary) Reset() {
-	*x = CategorySummary{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CategorySummary) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CategorySummary) ProtoMessage() {}
-
-func (x *CategorySummary) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CategorySummary.ProtoReflect.Descriptor instead.
-func (*CategorySummary) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *CategorySummary) GetCategoryId() int64 {
-	if x != nil {
-		return x.CategoryId
-	}
-	return 0
-}
-
-func (x *CategorySummary) GetCategoryName() string {
-	if x != nil {
-		return x.CategoryName
-	}
-	return ""
-}
-
-func (x *CategorySummary) GetTotalAmount() float64 {
-	if x != nil {
-		return x.TotalAmount
-	}
-	return 0
-}
-
-type MonthlySummary struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	TotalIncome       float64                `protobuf:"fixed64,1,opt,name=total_income,json=totalIncome,proto3" json:"total_income,omitempty"`
-	TotalExpense      float64                `protobuf:"fixed64,2,opt,name=total_expense,json=totalExpense,proto3" json:"total_expense,omitempty"`
-	NetBalance        float64                `protobuf:"fixed64,3,opt,name=net_balance,json=netBalance,proto3" json:"net_balance,omitempty"`
-	CategorySummaries []*CategorySummary     `protobuf:"bytes,4,rep,name=category_summaries,json=categorySummaries,proto3" json:"category_summaries,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
-}
-
-func (x *MonthlySummary) Reset() {
-	*x = MonthlySummary{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MonthlySummary) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MonthlySummary) ProtoMessage() {}
-
-func (x *MonthlySummary) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MonthlySummary.ProtoReflect.Descriptor instead.
-func (*MonthlySummary) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *MonthlySummary) GetTotalIncome() float64 {
-	if x != nil {
-		return x.TotalIncome
-	}
-	return 0
-}
-
-func (x *MonthlySummary) GetTotalExpense() float64 {
-	if x != nil {
-		return x.TotalExpense
-	}
-	return 0
-}
-
-func (x *MonthlySummary) GetNetBalance() float64 {
-	if x != nil {
-		return x.NetBalance
-	}
-	return 0
-}
-
-func (x *MonthlySummary) GetCategorySummaries() []*CategorySummary {
-	if x != nil {
-		return x.CategorySummaries
-	}
-	return nil
-}
-
 var File_apps_personal_finance_adapter_finance_proto protoreflect.FileDescriptor
 
 const file_apps_personal_finance_adapter_finance_proto_rawDesc = "" +
@@ -1101,25 +921,11 @@ const file_apps_personal_finance_adapter_finance_proto_rawDesc = "" +
 	"\x04date\x18\x06 \x01(\tR\x04date\x12\x12\n" +
 	"\x04note\x18\a \x01(\tR\x04note\"*\n" +
 	"\x18DeleteTransactionRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\"D\n" +
-	"\x18GetMonthlySummaryRequest\x12\x12\n" +
-	"\x04year\x18\x01 \x01(\x05R\x04year\x12\x14\n" +
-	"\x05month\x18\x02 \x01(\x05R\x05month\"z\n" +
-	"\x0fCategorySummary\x12\x1f\n" +
-	"\vcategory_id\x18\x01 \x01(\x03R\n" +
-	"categoryId\x12#\n" +
-	"\rcategory_name\x18\x02 \x01(\tR\fcategoryName\x12!\n" +
-	"\ftotal_amount\x18\x03 \x01(\x01R\vtotalAmount\"\xcb\x01\n" +
-	"\x0eMonthlySummary\x12!\n" +
-	"\ftotal_income\x18\x01 \x01(\x01R\vtotalIncome\x12#\n" +
-	"\rtotal_expense\x18\x02 \x01(\x01R\ftotalExpense\x12\x1f\n" +
-	"\vnet_balance\x18\x03 \x01(\x01R\n" +
-	"netBalance\x12P\n" +
-	"\x12category_summaries\x18\x04 \x03(\v2!.personal.finance.CategorySummaryR\x11categorySummaries*^\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id*^\n" +
 	"\vFinanceType\x12\x1c\n" +
 	"\x18FINANCE_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13FINANCE_TYPE_INCOME\x10\x01\x12\x18\n" +
-	"\x14FINANCE_TYPE_EXPENSE\x10\x022\xc5\x06\n" +
+	"\x14FINANCE_TYPE_EXPENSE\x10\x022\xe2\x05\n" +
 	"\aFinance\x12R\n" +
 	"\x0eListCategories\x12\x16.google.protobuf.Empty\x1a(.personal.finance.ListCategoriesResponse\x12U\n" +
 	"\x0eCreateCategory\x12'.personal.finance.CreateCategoryRequest\x1a\x1a.personal.finance.Category\x12U\n" +
@@ -1128,8 +934,7 @@ const file_apps_personal_finance_adapter_finance_proto_rawDesc = "" +
 	"\x10ListTransactions\x12).personal.finance.ListTransactionsRequest\x1a*.personal.finance.ListTransactionsResponse\x12^\n" +
 	"\x11CreateTransaction\x12*.personal.finance.CreateTransactionRequest\x1a\x1d.personal.finance.Transaction\x12^\n" +
 	"\x11UpdateTransaction\x12*.personal.finance.UpdateTransactionRequest\x1a\x1d.personal.finance.Transaction\x12W\n" +
-	"\x11DeleteTransaction\x12*.personal.finance.DeleteTransactionRequest\x1a\x16.google.protobuf.Empty\x12a\n" +
-	"\x11GetMonthlySummary\x12*.personal.finance.GetMonthlySummaryRequest\x1a .personal.finance.MonthlySummaryBKZIgithub.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pbb\x06proto3"
+	"\x11DeleteTransaction\x12*.personal.finance.DeleteTransactionRequest\x1a\x16.google.protobuf.EmptyBKZIgithub.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pbb\x06proto3"
 
 var (
 	file_apps_personal_finance_adapter_finance_proto_rawDescOnce sync.Once
@@ -1144,7 +949,7 @@ func file_apps_personal_finance_adapter_finance_proto_rawDescGZIP() []byte {
 }
 
 var file_apps_personal_finance_adapter_finance_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_apps_personal_finance_adapter_finance_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_apps_personal_finance_adapter_finance_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_apps_personal_finance_adapter_finance_proto_goTypes = []any{
 	(FinanceType)(0),                 // 0: personal.finance.FinanceType
 	(*Category)(nil),                 // 1: personal.finance.Category
@@ -1158,10 +963,7 @@ var file_apps_personal_finance_adapter_finance_proto_goTypes = []any{
 	(*CreateTransactionRequest)(nil), // 9: personal.finance.CreateTransactionRequest
 	(*UpdateTransactionRequest)(nil), // 10: personal.finance.UpdateTransactionRequest
 	(*DeleteTransactionRequest)(nil), // 11: personal.finance.DeleteTransactionRequest
-	(*GetMonthlySummaryRequest)(nil), // 12: personal.finance.GetMonthlySummaryRequest
-	(*CategorySummary)(nil),          // 13: personal.finance.CategorySummary
-	(*MonthlySummary)(nil),           // 14: personal.finance.MonthlySummary
-	(*emptypb.Empty)(nil),            // 15: google.protobuf.Empty
+	(*emptypb.Empty)(nil),            // 12: google.protobuf.Empty
 }
 var file_apps_personal_finance_adapter_finance_proto_depIdxs = []int32{
 	0,  // 0: personal.finance.Category.type:type_name -> personal.finance.FinanceType
@@ -1172,30 +974,27 @@ var file_apps_personal_finance_adapter_finance_proto_depIdxs = []int32{
 	2,  // 5: personal.finance.ListTransactionsResponse.transactions:type_name -> personal.finance.Transaction
 	0,  // 6: personal.finance.CreateTransactionRequest.type:type_name -> personal.finance.FinanceType
 	0,  // 7: personal.finance.UpdateTransactionRequest.type:type_name -> personal.finance.FinanceType
-	13, // 8: personal.finance.MonthlySummary.category_summaries:type_name -> personal.finance.CategorySummary
-	15, // 9: personal.finance.Finance.ListCategories:input_type -> google.protobuf.Empty
-	4,  // 10: personal.finance.Finance.CreateCategory:input_type -> personal.finance.CreateCategoryRequest
-	5,  // 11: personal.finance.Finance.UpdateCategory:input_type -> personal.finance.UpdateCategoryRequest
-	6,  // 12: personal.finance.Finance.DeleteCategory:input_type -> personal.finance.DeleteCategoryRequest
-	7,  // 13: personal.finance.Finance.ListTransactions:input_type -> personal.finance.ListTransactionsRequest
-	9,  // 14: personal.finance.Finance.CreateTransaction:input_type -> personal.finance.CreateTransactionRequest
-	10, // 15: personal.finance.Finance.UpdateTransaction:input_type -> personal.finance.UpdateTransactionRequest
-	11, // 16: personal.finance.Finance.DeleteTransaction:input_type -> personal.finance.DeleteTransactionRequest
-	12, // 17: personal.finance.Finance.GetMonthlySummary:input_type -> personal.finance.GetMonthlySummaryRequest
-	3,  // 18: personal.finance.Finance.ListCategories:output_type -> personal.finance.ListCategoriesResponse
-	1,  // 19: personal.finance.Finance.CreateCategory:output_type -> personal.finance.Category
-	1,  // 20: personal.finance.Finance.UpdateCategory:output_type -> personal.finance.Category
-	15, // 21: personal.finance.Finance.DeleteCategory:output_type -> google.protobuf.Empty
-	8,  // 22: personal.finance.Finance.ListTransactions:output_type -> personal.finance.ListTransactionsResponse
-	2,  // 23: personal.finance.Finance.CreateTransaction:output_type -> personal.finance.Transaction
-	2,  // 24: personal.finance.Finance.UpdateTransaction:output_type -> personal.finance.Transaction
-	15, // 25: personal.finance.Finance.DeleteTransaction:output_type -> google.protobuf.Empty
-	14, // 26: personal.finance.Finance.GetMonthlySummary:output_type -> personal.finance.MonthlySummary
-	18, // [18:27] is the sub-list for method output_type
-	9,  // [9:18] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	12, // 8: personal.finance.Finance.ListCategories:input_type -> google.protobuf.Empty
+	4,  // 9: personal.finance.Finance.CreateCategory:input_type -> personal.finance.CreateCategoryRequest
+	5,  // 10: personal.finance.Finance.UpdateCategory:input_type -> personal.finance.UpdateCategoryRequest
+	6,  // 11: personal.finance.Finance.DeleteCategory:input_type -> personal.finance.DeleteCategoryRequest
+	7,  // 12: personal.finance.Finance.ListTransactions:input_type -> personal.finance.ListTransactionsRequest
+	9,  // 13: personal.finance.Finance.CreateTransaction:input_type -> personal.finance.CreateTransactionRequest
+	10, // 14: personal.finance.Finance.UpdateTransaction:input_type -> personal.finance.UpdateTransactionRequest
+	11, // 15: personal.finance.Finance.DeleteTransaction:input_type -> personal.finance.DeleteTransactionRequest
+	3,  // 16: personal.finance.Finance.ListCategories:output_type -> personal.finance.ListCategoriesResponse
+	1,  // 17: personal.finance.Finance.CreateCategory:output_type -> personal.finance.Category
+	1,  // 18: personal.finance.Finance.UpdateCategory:output_type -> personal.finance.Category
+	12, // 19: personal.finance.Finance.DeleteCategory:output_type -> google.protobuf.Empty
+	8,  // 20: personal.finance.Finance.ListTransactions:output_type -> personal.finance.ListTransactionsResponse
+	2,  // 21: personal.finance.Finance.CreateTransaction:output_type -> personal.finance.Transaction
+	2,  // 22: personal.finance.Finance.UpdateTransaction:output_type -> personal.finance.Transaction
+	12, // 23: personal.finance.Finance.DeleteTransaction:output_type -> google.protobuf.Empty
+	16, // [16:24] is the sub-list for method output_type
+	8,  // [8:16] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_apps_personal_finance_adapter_finance_proto_init() }
@@ -1209,7 +1008,7 @@ func file_apps_personal_finance_adapter_finance_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_apps_personal_finance_adapter_finance_proto_rawDesc), len(file_apps_personal_finance_adapter_finance_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

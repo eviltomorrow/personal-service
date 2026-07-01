@@ -30,9 +30,6 @@ var (
 	selectTransactionByID     = model.SelectTransactionByID
 	updateTransactionByID     = model.UpdateTransactionByID
 	softDeleteTransactionByID = model.SoftDeleteTransactionByID
-
-	selectMonthlySummary  = model.SelectMonthlySummary
-	selectCategorySummary = model.SelectCategorySummary
 )
 
 var selectDB = func(ctx context.Context) dbmysql.Exec {
@@ -408,60 +405,4 @@ func (s *Finance) DeleteTransaction(ctx context.Context, req *pb.DeleteTransacti
 	return &emptypb.Empty{}, nil
 }
 
-// --- Summary ---
 
-func (s *Finance) GetMonthlySummary(ctx context.Context, req *pb.GetMonthlySummaryRequest) (*pb.MonthlySummary, error) {
-	accountID, err := accountIDFromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	year, month := int(req.Year), int(req.Month)
-
-	typeRows, err := selectMonthlySummary(ctx, selectDB(ctx), accountID, year, month)
-	if err != nil {
-		zlog.Error("get monthly summary failure", zap.Error(err))
-		return nil, status.Error(codes.Internal, "internal server error")
-	}
-
-	var totalIncome, totalExpense float64
-	for _, r := range typeRows {
-		if r.Type == int(pb.FinanceType_FINANCE_TYPE_INCOME) {
-			totalIncome = r.Amount
-		} else {
-			totalExpense = r.Amount
-		}
-	}
-
-	cats, err := selectCategoriesByAcctID(ctx, selectDB(ctx), accountID)
-	if err != nil {
-		zlog.Error("get categories failure", zap.Error(err))
-		return nil, status.Error(codes.Internal, "internal server error")
-	}
-	catName := make(map[int64]string)
-	for _, c := range cats {
-		catName[c.ID] = c.Name
-	}
-
-	catRows, err := selectCategorySummary(ctx, selectDB(ctx), accountID, year, month)
-	if err != nil {
-		zlog.Error("get monthly summary failure", zap.Error(err))
-		return nil, status.Error(codes.Internal, "internal server error")
-	}
-
-	catSummaries := make([]*pb.CategorySummary, 0, len(catRows))
-	for _, r := range catRows {
-		catSummaries = append(catSummaries, &pb.CategorySummary{
-			CategoryId:   r.CategoryID,
-			CategoryName: catName[r.CategoryID],
-			TotalAmount:  r.Amount,
-		})
-	}
-
-	return &pb.MonthlySummary{
-		TotalIncome:       totalIncome,
-		TotalExpense:      totalExpense,
-		NetBalance:        totalIncome - totalExpense,
-		CategorySummaries: catSummaries,
-	}, nil
-}

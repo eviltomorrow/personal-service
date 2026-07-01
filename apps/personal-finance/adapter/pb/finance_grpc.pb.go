@@ -28,7 +28,6 @@ const (
 	Finance_CreateTransaction_FullMethodName = "/personal.finance.Finance/CreateTransaction"
 	Finance_UpdateTransaction_FullMethodName = "/personal.finance.Finance/UpdateTransaction"
 	Finance_DeleteTransaction_FullMethodName = "/personal.finance.Finance/DeleteTransaction"
-	Finance_GetMonthlySummary_FullMethodName = "/personal.finance.Finance/GetMonthlySummary"
 )
 
 // FinanceClient is the client API for Finance service.
@@ -43,7 +42,6 @@ type FinanceClient interface {
 	CreateTransaction(ctx context.Context, in *CreateTransactionRequest, opts ...grpc.CallOption) (*Transaction, error)
 	UpdateTransaction(ctx context.Context, in *UpdateTransactionRequest, opts ...grpc.CallOption) (*Transaction, error)
 	DeleteTransaction(ctx context.Context, in *DeleteTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetMonthlySummary(ctx context.Context, in *GetMonthlySummaryRequest, opts ...grpc.CallOption) (*MonthlySummary, error)
 }
 
 type financeClient struct {
@@ -134,16 +132,6 @@ func (c *financeClient) DeleteTransaction(ctx context.Context, in *DeleteTransac
 	return out, nil
 }
 
-func (c *financeClient) GetMonthlySummary(ctx context.Context, in *GetMonthlySummaryRequest, opts ...grpc.CallOption) (*MonthlySummary, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MonthlySummary)
-	err := c.cc.Invoke(ctx, Finance_GetMonthlySummary_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // FinanceServer is the server API for Finance service.
 // All implementations must embed UnimplementedFinanceServer
 // for forward compatibility.
@@ -156,7 +144,6 @@ type FinanceServer interface {
 	CreateTransaction(context.Context, *CreateTransactionRequest) (*Transaction, error)
 	UpdateTransaction(context.Context, *UpdateTransactionRequest) (*Transaction, error)
 	DeleteTransaction(context.Context, *DeleteTransactionRequest) (*emptypb.Empty, error)
-	GetMonthlySummary(context.Context, *GetMonthlySummaryRequest) (*MonthlySummary, error)
 	mustEmbedUnimplementedFinanceServer()
 }
 
@@ -190,9 +177,6 @@ func (UnimplementedFinanceServer) UpdateTransaction(context.Context, *UpdateTran
 }
 func (UnimplementedFinanceServer) DeleteTransaction(context.Context, *DeleteTransactionRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteTransaction not implemented")
-}
-func (UnimplementedFinanceServer) GetMonthlySummary(context.Context, *GetMonthlySummaryRequest) (*MonthlySummary, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetMonthlySummary not implemented")
 }
 func (UnimplementedFinanceServer) mustEmbedUnimplementedFinanceServer() {}
 func (UnimplementedFinanceServer) testEmbeddedByValue()                 {}
@@ -359,24 +343,6 @@ func _Finance_DeleteTransaction_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Finance_GetMonthlySummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetMonthlySummaryRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FinanceServer).GetMonthlySummary(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Finance_GetMonthlySummary_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FinanceServer).GetMonthlySummary(ctx, req.(*GetMonthlySummaryRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Finance_ServiceDesc is the grpc.ServiceDesc for Finance service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -415,10 +381,6 @@ var Finance_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteTransaction",
 			Handler:    _Finance_DeleteTransaction_Handler,
-		},
-		{
-			MethodName: "GetMonthlySummary",
-			Handler:    _Finance_GetMonthlySummary_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

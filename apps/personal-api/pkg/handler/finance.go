@@ -29,9 +29,6 @@ func init() {
 		r.POST("/finance/transactions", h.CreateTransaction)
 		r.PUT("/finance/transactions/:id", h.UpdateTransaction)
 		r.DELETE("/finance/transactions/:id", h.DeleteTransaction)
-
-		// Summary
-		r.GET("/finance/summary", h.GetMonthlySummary)
 	})
 }
 
@@ -164,15 +161,4 @@ func (h *FinanceHandler) DeleteTransaction(c echo.Context) error {
 	return Respond(c, http.StatusOK, 0, "success", nil)
 }
 
-func (h *FinanceHandler) GetMonthlySummary(c echo.Context) error {
-	year, _ := strconv.Atoi(c.QueryParam("year"))
-	month, _ := strconv.Atoi(c.QueryParam("month"))
 
-	resp, err := h.client.GetMonthlySummary(c.Request().Context(), accountID(c), year, month)
-	if err != nil {
-		zlog.Error("finance get monthly summary failure", zap.Error(err))
-		httpStatus, msg := GrpcStatusToHTTP(err)
-		return Respond(c, httpStatus, httpStatus, msg, nil)
-	}
-	return Respond(c, http.StatusOK, 0, "success", resp)
-}

@@ -72,19 +72,6 @@ type UpdateTransactionRequest struct {
 	Note       string      `json:"note"`
 }
 
-type CategorySummary struct {
-	CategoryID   int64   `json:"category_id"`
-	CategoryName string  `json:"category_name"`
-	TotalAmount  float64 `json:"total_amount"`
-}
-
-type MonthlySummary struct {
-	TotalIncome       float64           `json:"total_income"`
-	TotalExpense      float64           `json:"total_expense"`
-	NetBalance        float64           `json:"net_balance"`
-	CategorySummaries []CategorySummary `json:"category_summaries"`
-}
-
 type ListTransactionsResult struct {
 	Transactions []Transaction `json:"transactions"`
 	Total        int           `json:"total"`
@@ -100,6 +87,4 @@ type FinanceClient interface {
 	CreateTransaction(ctx context.Context, accountID string, req *CreateTransactionRequest) (*Transaction, error)
 	UpdateTransaction(ctx context.Context, accountID string, req *UpdateTransactionRequest) (*Transaction, error)
 	DeleteTransaction(ctx context.Context, accountID string, id int64) error
-
-	GetMonthlySummary(ctx context.Context, accountID string, year, month int) (*MonthlySummary, error)
 }
