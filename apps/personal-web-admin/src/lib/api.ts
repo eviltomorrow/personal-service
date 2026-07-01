@@ -1,3 +1,22 @@
+let refreshing: Promise<boolean> | null = null;
+
+async function doRefresh(): Promise<boolean> {
+  if (refreshing) return refreshing;
+  refreshing = (async () => {
+    try {
+      const res = await fetch("/api/v1/auth/token/refresh", { method: "POST" });
+      if (!res.ok) return false;
+      const json = await res.json();
+      return json.code === 0;
+    } catch {
+      return false;
+    }
+  })();
+  const result = await refreshing;
+  refreshing = null;
+  return result;
+}
+
 export async function api(url: string, options: RequestInit = {}): Promise<Response> {
   const headers: Record<string, string> = {};
   if (options.headers) {
@@ -10,16 +29,8 @@ export async function api(url: string, options: RequestInit = {}): Promise<Respo
   const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401) {
-    try {
-      const refreshRes = await fetch("/api/v1/auth/token/refresh", { method: "POST" });
-      if (refreshRes.ok) {
-        const json = await refreshRes.json();
-        if (json.code === 0) {
-          return fetch(url, { ...options, headers });
-        }
-      }
-    } catch {
-      // refresh failed, return original 401 response
+    if (await doRefresh()) {
+      return fetch(url, { ...options, headers });
     }
   }
 
