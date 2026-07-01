@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setTokens } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Eye, EyeOff, Loader2, Mail, Lock, Sparkles, Shield, Zap, Feather, UserPlus } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, Sparkles, Shield, Zap, Feather, UserPlus, X } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [passwordMismatch, setPasswordMismatch] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,11 +41,13 @@ export default function RegisterPage() {
       });
       const json = await res.json();
       if (json.code !== 0) {
+        setToast(json.message || "注册失败");
         return;
       }
       setTokens(json.data.access_token, json.data.refresh_token, json.data.expires_in);
       router.push("/dashboard");
     } catch {
+      setToast("网络错误，请稍后重试");
     } finally {
       setLoading(false);
     }
@@ -113,6 +116,16 @@ export default function RegisterPage() {
                 创建您的账户以开始使用。
               </p>
             </div>
+
+            {toast && (
+              <div className="mt-5 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 anim-in anim-fade anim-down">
+                <span className="flex-1">{toast}</span>
+                <button type="button" onClick={() => setToast(null)}
+                  className="text-red-400 hover:text-red-600 transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
               <div className="group">
