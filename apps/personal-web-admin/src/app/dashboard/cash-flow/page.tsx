@@ -63,6 +63,7 @@ export default function CashFlowPage() {
   } | null>(null);
   const [modalName, setModalName] = useState("");
   const [modalAmount, setModalAmount] = useState("");
+  const [modalCatId, setModalCatId] = useState<number | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const monthPickerRef = useRef<HTMLDivElement>(null);
 
@@ -171,15 +172,42 @@ export default function CashFlowPage() {
     setModalAmount("");
   }
 
-  function openDeleteCategory(section: "income" | "expense", catIndex: number) {
-    setModal({ type: "delete-category", section, catIndex });
+  function openDeleteCategory(section: "income" | "expense", categoryId: number) {
+    setModalCatId(categoryId);
+    setModal({ type: "delete-category", section });
   }
 
-  function handleSave() {
+  async function handleSave() {
+    if (modal?.type === "add-category") {
+      const name = modalName.trim();
+      if (!name) return;
+      try {
+        const res = await fetch("/api/v1/finance/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, type: modal.section === "income" ? "income" : "expense", sort_order: 0 }),
+        });
+        const json = await res.json();
+        if (json.code === 0 && json.data) {
+          setCategories((prev) => [...prev, json.data]);
+        }
+      } catch { /* ignore */ }
+      setModal(null);
+      return;
+    }
     setModal(null);
   }
 
-  function handleDelete() {
+  async function handleDelete() {
+    if (!modal) return;
+    if (modal.type === "delete-category" && modalCatId !== null) {
+      try {
+        await fetch(`/api/v1/finance/categories/${modalCatId}`, { method: "DELETE" });
+        setCategories((prev) => prev.filter((c) => c.id !== modalCatId));
+      } catch { /* ignore */ }
+      setModal(null);
+      return;
+    }
     setModal(null);
   }
 
@@ -364,7 +392,7 @@ export default function CashFlowPage() {
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <button type="button" onClick={() => openDeleteCategory("income", ci)}
+                        <button type="button" onClick={() => openDeleteCategory("income", incomeCategories[ci].id)}
                         className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 transition-opacity">
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -437,7 +465,7 @@ export default function CashFlowPage() {
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <button type="button" onClick={() => openDeleteCategory("expense", ci)}
+                        <button type="button" onClick={() => openDeleteCategory("expense", expenseCategories[ci].id)}
                         className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 transition-opacity">
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -560,7 +588,7 @@ export default function CashFlowPage() {
               <h3 className="mt-4 text-center text-base font-semibold text-gray-900">确认删除</h3>
               <p className="mt-2 text-center text-sm text-gray-500">
                 {modal.type === "delete-category"
-                  ? `确定要删除分类「${getCategoryList(modal.section)[modal.catIndex!]?.category}」及其所有记录吗？`
+                  ? `确定要删除分类「${categories.find(c => c.id === modalCatId)?.name}」及其所有记录吗？`
                   : `确定要删除「${getCategoryList(modal.section)[modal.catIndex!]?.items[modal.itemIndex!]?.name}」吗？`
                 }
               </p>
