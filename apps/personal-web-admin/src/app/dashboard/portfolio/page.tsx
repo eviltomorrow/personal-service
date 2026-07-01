@@ -1006,12 +1006,11 @@ export default function PortfolioPage() {
     }
 
     // Same-list drag: reorder only within the same list
-    const sameList = positions.filter(
-      (p) => p.archived === activeItem.archived
-    );
-    if (!sameList) return;
-
     setPositions((prev) => {
+      const sameList = prev.filter(
+        (p) => p.archived === activeItem.archived
+      );
+
       const oldIndex = sameList.findIndex((p) => p.id === active.id);
       const newIndex = sameList.findIndex((p) => p.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return prev;
@@ -1022,9 +1021,9 @@ export default function PortfolioPage() {
 
       const otherItems = prev.filter((p) => p.archived !== movedItem.archived);
       const reorderedList = sameListIds.filter((id) => id !== active.id);
-      reorderedList.splice(newIndex, 0, active.id as string);
+      reorderedList.splice(newIndex, 0, String(active.id));
 
-      const newList = reorderedList.map((id) => prev.find((p) => p.id === id)!).filter(Boolean);
+      const newList = reorderedList.map((id) => prev.find((p) => p.id === id)).filter((x): x is Position => x != null);
       const merged = movedItem.archived
         ? [...otherItems, ...newList]
         : [...newList, ...otherItems];
