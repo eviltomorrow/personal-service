@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { formatCNY } from "@/lib/format";
 import {
   Plus, Pencil, Trash2, X, AlertTriangle,
-  Layers, DollarSign, TrendingUp, Percent, ArrowUpDown, GripVertical,
+  DollarSign, TrendingUp, Percent, ArrowUpDown, GripVertical,
 } from "lucide-react";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -20,7 +20,7 @@ function genId() { return crypto.randomUUID(); }
 
 interface TradeRecord {
   id: string;
-  type: "买入" | "卖出";
+  type: "建仓" | "买入" | "卖出" | "清仓";
   date: string;
   price: number;
   quantity: number;
@@ -48,28 +48,24 @@ interface ValueSnapshot {
   totalValue: number;
 }
 
+function calcTradeTotalCost(trades: TradeRecord[]): number {
+  return trades.reduce((cost, t) => {
+    return t.type === "买入" || t.type === "建仓"
+      ? cost + t.price * t.quantity
+      : cost - t.price * t.quantity;
+  }, 0);
+}
+
 function recalcCostPrice(trades: TradeRecord[]): number {
-  let totalQty = 0;
-  let totalCost = 0;
-  for (const t of trades) {
-    if (t.type === "买入") {
-      totalQty += t.quantity;
-      totalCost += t.price * t.quantity;
-    } else {
-      if (totalQty > 0) {
-        totalCost -= (totalCost / totalQty) * t.quantity;
-      }
-      totalQty -= t.quantity;
-    }
-    if (totalQty < 0) totalQty = 0;
-  }
+  const totalCost = calcTradeTotalCost(trades);
+  const totalQty = calcQuantity(trades, 0);
   if (totalQty <= 0) return 0;
   return totalCost / totalQty;
 }
 
 function calcQuantity(trades: TradeRecord[], initialQty: number): number {
   return Math.max(0, trades.reduce((qty, t) => {
-    return t.type === "买入" ? qty + t.quantity : qty - t.quantity;
+    return t.type === "买入" || t.type === "建仓" ? qty + t.quantity : qty - t.quantity;
   }, Math.max(0, initialQty)));
 }
 
@@ -87,16 +83,18 @@ function calcDerived(p: Position) {
   return { marketValue, profitAmount, profitPct, marginUsed, leverage };
 }
 
-function StatCards({ positions, totalCapital, onCapitalChange }: {
+function StatCards({ positions, totalCapital, realizedPnl, onCapitalChange }: {
   positions: Position[];
   totalCapital: number;
+  realizedPnl: number;
   onCapitalChange: (v: number) => void;
 }) {
   const [editingCapital, setEditingCapital] = useState(false);
   const [capitalDraft, setCapitalDraft] = useState("");
 
-  const count = positions.length;
   const totalValue = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0);
+  const totalCost = positions.reduce((s, p) => s + calcTradeTotalCost(p.trades), 0);
+  const availableFunds = totalCapital - totalCost + realizedPnl;
   const totalProfit = positions.reduce((s, p) => {
     const d = calcDerived(p);
     return s + d.profitAmount;
@@ -110,7 +108,7 @@ function StatCards({ positions, totalCapital, onCapitalChange }: {
 
   const cards = [
     { icon: DollarSign, label: "总本金", value: formatCNY(totalCapital), bar: "slate", editable: true },
-    { icon: Layers, label: "总品种数", value: String(count), bar: "blue" },
+    { icon: DollarSign, label: "可用资金", value: formatCNY(availableFunds), bar: "blue" },
     { icon: TrendingUp, label: "总市值", value: formatCNY(totalValue), bar: "emerald" },
     { icon: TrendingUp, label: "总盈亏", value: `${profitSign}${formatCNY(Math.abs(totalProfit))}`, bar: profitColor, text: profitColor },
     { icon: Percent, label: "总收益率", value: `${profitSign}${totalProfitPct.toFixed(2)}%`, bar: "amber", text: profitColor },
@@ -241,13 +239,20 @@ function SortablePositionItem({
               {(position.marginRatio * 100).toFixed(1)}%
             </span>
           )}
-          {position.direction === "做空" && (
-            <span className="shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset bg-orange-50 text-orange-700 ring-orange-600/20">
-              空
+          <span className={`shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset ${
+            position.direction === "做多"
+              ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+              : "bg-orange-50 text-orange-700 ring-orange-600/20"
+          }`}>
+            {position.direction === "做多" ? "多" : "空"}
+          </span>
+          {position.archived && (
+            <span className="shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset bg-gray-100 text-gray-500 ring-gray-500/20">
+              归档
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-500 tabular-nums pl-0.5">{formatCNY(mv)}</p>
+        <p className="text-xs text-gray-500 tabular-nums pl-0.5">{position.archived ? formatCNY(position.closedPnl ?? 0) : formatCNY(mv)}</p>
       </button>
     </div>
   );
@@ -267,7 +272,13 @@ function LeftPanel({
       {/* Active positions section */}
       <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-b border-gray-100">
         <div className="w-1 h-4 rounded-full bg-slate-500" />
-        <span className="text-sm font-semibold text-gray-800">📋 持仓列表</span>
+        <span className="text-sm font-semibold text-gray-800">📋 持仓列表 ({activePositions.length})</span>
+        <button onClick={onAdd}
+          className="ml-auto flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          新增品种
+        </button>
       </div>
       <div className="overflow-y-auto custom-scrollbar max-h-[300px]">
         <SortableContext items={activePositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -281,14 +292,6 @@ function LeftPanel({
             </div>
           )}
         </SortableContext>
-      </div>
-      <div className="px-4 py-3 border-t border-gray-100">
-        <button onClick={onAdd}
-          className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          新增品种
-        </button>
       </div>
 
       {/* Archived positions section */}
@@ -330,7 +333,7 @@ function RightPanel({
     () => calcDerived(position),
     [position]
   );
-  const totalCost = position.costPrice * position.quantity;
+  const totalCost = calcTradeTotalCost(position.trades);
   const positionPct = totalValue > 0 ? (position.currentPrice * position.quantity / totalValue) * 100 : 0;
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceDraft, setPriceDraft] = useState(String(position.currentPrice));
@@ -564,7 +567,7 @@ function RightPanel({
             {sortedTrades.map((t) => (
               <div key={t.id} className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white px-4 py-3 hover:border-gray-200 hover:shadow-sm transition-all">
                 <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded ${
-                  t.type === "买入" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                  t.type === "买入" || t.type === "建仓" ? "bg-emerald-50 text-emerald-700" : t.type === "清仓" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
                 }`}>
                   {t.type}
                 </span>
@@ -577,6 +580,7 @@ function RightPanel({
                 ) : (
                   <span className="flex-1 min-w-0" />
                 )}
+                {!position.archived && (
                 <div className="flex items-center gap-0.5 shrink-0">
                   <button onClick={() => onEditTrade(position.id, t)}
                     className="rounded p-1 text-gray-300 hover:text-gray-500 transition-colors">
@@ -587,6 +591,7 @@ function RightPanel({
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
+                )}
               </div>
             ))}
           </div>
@@ -602,27 +607,98 @@ function ArchivedRightPanel({ position }: { position: Position }) {
     [position.trades]
   );
 
+  const totalBuyAmount = useMemo(
+    () => position.trades
+      .filter((t) => t.type === "买入" || t.type === "建仓")
+      .reduce((s, t) => s + t.price * t.quantity, 0),
+    [position.trades]
+  );
+
+  const totalSellAmount = useMemo(
+    () => position.trades
+      .filter((t) => t.type === "卖出" || t.type === "清仓")
+      .reduce((s, t) => s + t.price * t.quantity, 0),
+    [position.trades]
+  );
+
   const rawPnl = position.closedPnl ?? 0;
   const pnlColor = rawPnl >= 0 ? "text-emerald-600" : "text-red-600";
   const pnlSign = rawPnl > 0 ? "+" : rawPnl < 0 ? "-" : "";
   const displayPnl = rawPnl === 0 ? "0.00" : `${pnlSign}${formatCNY(Math.abs(rawPnl))}`;
+  const returnRate = totalBuyAmount > 0 ? (rawPnl / totalBuyAmount) * 100 : 0;
+
+  const dates = useMemo(
+    () => position.trades.map((t) => t.date).sort(),
+    [position.trades]
+  );
+  const openDate = dates[0] ?? "-";
+  const closeDate = dates[dates.length - 1] ?? "-";
+  const holdingDays = dates.length >= 2
+    ? Math.max(0, Math.ceil((new Date(closeDate).getTime() - new Date(openDate).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
 
   return (
     <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-semibold text-gray-900">{position.code} {position.name}</h3>
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+            position.type === "股票"
+              ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+              : "bg-blue-50 text-blue-700 ring-blue-600/20"
+          }`}>
+            {position.type}
+          </span>
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+            position.direction === "做多"
+              ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+              : "bg-orange-50 text-orange-700 ring-orange-600/20"
+          }`}>
+            {position.direction === "做多" ? "多" : "空"}
+          </span>
           <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset bg-gray-100 text-gray-600 ring-gray-500/20">
             已归档
           </span>
         </div>
       </div>
 
-      <div className="mb-6">
-        <span className="text-xs text-gray-500">清仓盈亏</span>
-        <p className={`text-lg font-bold tabular-nums ${pnlColor}`}>
-          {displayPnl}
-        </p>
+      <div className="grid grid-cols-4 gap-x-6 gap-y-4 mb-6">
+        <div>
+          <span className="text-xs text-gray-500">清仓盈亏</span>
+          <p className={`text-lg font-bold tabular-nums ${pnlColor}`}>
+            {displayPnl}
+          </p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">收益率</span>
+          <p className={`text-lg font-bold tabular-nums ${rawPnl >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            {returnRate >= 0 ? "+" : ""}{returnRate.toFixed(2)}%
+          </p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">总买入</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">{formatCNY(totalBuyAmount)}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">总卖出</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">{formatCNY(totalSellAmount)}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">持仓天数</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">{holdingDays} 天</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">建仓日期</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">{openDate}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">清仓日期</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">{closeDate}</p>
+        </div>
+        <div>
+          <span className="text-xs text-gray-500">交易次数</span>
+          <p className="text-sm font-medium text-gray-900 tabular-nums">{position.trades.length} 笔</p>
+        </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -637,7 +713,7 @@ function ArchivedRightPanel({ position }: { position: Position }) {
             {sortedTrades.map((t) => (
               <div key={t.id} className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white px-4 py-3">
                 <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded ${
-                  t.type === "买入" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                  t.type === "买入" || t.type === "建仓" ? "bg-emerald-50 text-emerald-700" : t.type === "清仓" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
                 }`}>
                   {t.type}
                 </span>
@@ -704,10 +780,10 @@ function AddPositionForm({ initial, onSave, onClose }: {
   function handleSubmit() {
     if (!code.trim()) { setError("请输入代码"); return; }
     if (!name.trim()) { setError("请输入名称"); return; }
-    const iq = parseFloat(initialQty) || 0;
-    const p = parseFloat(price) || 0;
-    if (iq < 0) { setError("持仓量不能为负数"); return; }
-    if (p < 0) { setError("价格不能为负数"); return; }
+    const iq = parseFloat(initialQty);
+    const p = parseFloat(price);
+    if (isNaN(iq) || iq <= 0) { setError("持仓量必须大于 0"); return; }
+    if (isNaN(p) || p <= 0) { setError("现价必须大于 0"); return; }
     onSave({
       code: code.trim(),
       name: name.trim(),
@@ -754,16 +830,16 @@ function AddPositionForm({ initial, onSave, onClose }: {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">持仓量（可选）</label>
-          <input type="number" min="0" step="1" value={initialQty} onChange={(e) => setInitialQty(e.target.value)}
+          <label className="block text-sm font-medium text-gray-700 mb-1">持仓量</label>
+          <input type="number" min="1" step="1" value={initialQty} onChange={(e) => setInitialQty(e.target.value)}
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
-            placeholder="0" />
+            placeholder="100" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">现价（可选）</label>
-          <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
+          <label className="block text-sm font-medium text-gray-700 mb-1">现价</label>
+          <input type="number" min="0.01" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
             className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
-            placeholder="0.00" />
+            placeholder="1500.00" />
         </div>
       </div>
       {type === "期货" && (
@@ -786,13 +862,14 @@ function AddPositionForm({ initial, onSave, onClose }: {
 }
 
 function TradeForm({
-  initial, onSave, onClose,
+  initial, currentQty, onSave, onClose,
 }: {
   initial?: TradeRecord;
+  currentQty?: number;
   onSave: (t: Omit<TradeRecord, "id">) => void;
   onClose: () => void;
 }) {
-  const [type, setType] = useState<"买入" | "卖出">(initial?.type ?? "买入");
+  const [type, setType] = useState<"建仓" | "买入" | "卖出" | "清仓">(initial?.type ?? "买入");
   const [date, setDate] = useState(initial?.date ?? new Date().toISOString().slice(0, 10));
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
   const [quantity, setQuantity] = useState(initial ? String(initial.quantity) : "");
@@ -805,6 +882,10 @@ function TradeForm({
     const q = parseFloat(quantity);
     if (isNaN(p) || p <= 0) { setError("价格必须大于 0"); return; }
     if (isNaN(q) || q <= 0) { setError("数量必须大于 0"); return; }
+    if ((type === "卖出" || type === "清仓") && currentQty !== undefined && q > currentQty) {
+      setError(`卖出量不能大于当前持仓量（${currentQty}）`);
+      return;
+    }
     onSave({ type, date, price: p, quantity: q, note: note.trim() || undefined });
   }
 
@@ -813,10 +894,12 @@ function TradeForm({
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">方向</label>
-        <select value={type} onChange={(e) => setType(e.target.value as "买入" | "卖出")}
+        <select value={type} onChange={(e) => setType(e.target.value as "建仓" | "买入" | "卖出" | "清仓")}
           className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none">
+          <option value="建仓">建仓</option>
           <option value="买入">买入</option>
           <option value="卖出">卖出</option>
+          <option value="清仓">清仓</option>
         </select>
       </div>
       <div>
@@ -984,6 +1067,11 @@ export default function PortfolioPage() {
     [activePositions]
   );
 
+  const realizedPnl = useMemo(
+    () => archivedPositions.reduce((sum, p) => sum + (p.closedPnl ?? 0), 0),
+    [archivedPositions]
+  );
+
   type ModalType =
     | { type: "addPosition" }
     | { type: "editPosition"; positionId: string }
@@ -1054,48 +1142,28 @@ export default function PortfolioPage() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const activeItem = positions.find((p) => p.id === active.id);
-    const overItem = positions.find((p) => p.id === over.id);
-    if (!activeItem || !overItem) return;
-
-    // Cross-list drag: toggle archived status + snapshot PnL
-    if (activeItem.archived !== overItem.archived) {
-      setPositions((prev) =>
-        prev.map((p) => {
-          if (p.id !== activeItem.id) return p;
-          const nextArchived = !p.archived;
-          const d = calcDerived(p);
-          return {
-            ...p,
-            archived: nextArchived,
-            closedPnl: nextArchived ? d.profitAmount : undefined,
-          };
-        })
-      );
-      return;
-    }
-
-    // Same-list drag: reorder only within the same list
     setPositions((prev) => {
       const movedItem = prev.find((p) => p.id === active.id);
-      if (!movedItem) return prev;
+      const overItem = prev.find((p) => p.id === over.id);
+      if (!movedItem || !overItem) return prev;
 
-      const sameList = prev.filter((p) => p.archived === movedItem.archived);
+      const crossList = movedItem.archived !== overItem.archived;
+      const targetArchived = crossList ? !movedItem.archived : movedItem.archived;
 
-      const oldIndex = sameList.findIndex((p) => p.id === active.id);
-      const newIndex = sameList.findIndex((p) => p.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return prev;
+      const withoutMoved = prev.filter((p) => p.id !== active.id);
+      const targetItems = withoutMoved.filter((p) => p.archived === targetArchived);
+      const otherItems = withoutMoved.filter((p) => p.archived !== targetArchived);
 
-      const sameListIds = sameList.map((p) => p.id);
-      const otherItems = prev.filter((p) => p.archived !== movedItem.archived);
-      const reorderedList = sameListIds.filter((id) => id !== active.id);
-      reorderedList.splice(newIndex, 0, String(active.id));
+      const insertIdx = targetItems.findIndex((p) => p.id === over.id);
+      if (insertIdx === -1) return prev;
 
-      const newList = reorderedList.map((id) => prev.find((p) => p.id === id)).filter((x): x is Position => x != null);
-      const merged = movedItem.archived
-        ? [...otherItems, ...newList]
-        : [...newList, ...otherItems];
-      return merged.map((p) => ({ ...p }));
+      const updatedMoved = crossList
+        ? { ...movedItem, archived: targetArchived, closedPnl: targetArchived ? calcDerived(movedItem).profitAmount : undefined }
+        : movedItem;
+
+      targetItems.splice(insertIdx, 0, updatedMoved);
+
+      return targetArchived ? [...otherItems, ...targetItems] : [...targetItems, ...otherItems];
     });
   }
 
@@ -1106,7 +1174,7 @@ export default function PortfolioPage() {
   return (
     <div className="flex flex-col h-full space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="投资组合" description="股票与期货持仓监控" />
-      <StatCards positions={activePositions} totalCapital={totalCapital} onCapitalChange={setTotalCapital} />
+      <StatCards positions={activePositions} totalCapital={totalCapital} realizedPnl={realizedPnl} onCapitalChange={setTotalCapital} />
 
       <TrendChart snapshots={snapshots} />
 
@@ -1153,7 +1221,10 @@ export default function PortfolioPage() {
             onSave={(data) => {
               const id = genId();
               const qty = calcQuantity([], data.initialQty);
-              setPositions((prev) => [...prev, { ...data, id, quantity: qty, costPrice: data.currentPrice, trades: [], archived: false }]);
+              const trades = data.initialQty > 0 && data.currentPrice > 0
+                ? [{ id: genId(), type: "建仓" as const, date: new Date().toISOString().slice(0, 10), price: data.currentPrice, quantity: data.initialQty }]
+                : [];
+              setPositions((prev) => [...prev, { ...data, id, quantity: qty, costPrice: recalcCostPrice(trades), trades, initialQty: 0, archived: false }]);
               setSnapshots((prev) => {
                 const today = new Date().toISOString().slice(0, 10);
                 const newTotal = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0) + data.currentPrice * qty;
@@ -1200,11 +1271,15 @@ export default function PortfolioPage() {
         </Modal>
       )}
 
-      {modal?.type === "addTrade" && (
+      {modal?.type === "addTrade" && (() => {
+        const pos = positions.find((p) => p.id === modal.positionId);
+        return (
         <Modal title="新增记录" onClose={() => setModal(null)}>
           <TradeForm
+            currentQty={pos?.quantity}
             onSave={(data) => {
-              const newTrade = { id: genId(), ...data };
+              const type = data.type === "卖出" && pos && data.quantity >= pos.quantity ? "清仓" : data.type;
+              const newTrade = { id: genId(), ...data, type };
               setPositions((prev) =>
                 prev.map((p) => {
                   if (p.id !== modal.positionId) return p;
@@ -1216,7 +1291,7 @@ export default function PortfolioPage() {
                     quantity: qty,
                     costPrice: recalcCostPrice(newTrades),
                     archived: qty === 0 ? true : p.archived,
-                    closedPnl: qty === 0 ? calcDerived({ ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades) }).profitAmount : p.closedPnl,
+                    closedPnl: qty === 0 ? -calcTradeTotalCost(newTrades) : p.closedPnl,
                   };
                 })
               );
@@ -1224,8 +1299,8 @@ export default function PortfolioPage() {
             }}
             onClose={() => setModal(null)}
           />
-        </Modal>
-      )}
+        </Modal>);
+      })()}
 
       {modal?.type === "editTrade" && (
         <Modal title="编辑记录" onClose={() => setModal(null)}>
@@ -1243,7 +1318,7 @@ export default function PortfolioPage() {
                     quantity: qty,
                     costPrice: recalcCostPrice(newTrades),
                     archived: qty === 0 ? true : p.archived,
-                    closedPnl: qty === 0 ? calcDerived({ ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades) }).profitAmount : p.closedPnl,
+                    closedPnl: qty === 0 ? -calcTradeTotalCost(newTrades) : p.closedPnl,
                   };
                 })
               );
