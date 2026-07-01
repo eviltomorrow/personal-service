@@ -160,5 +160,3 @@ func (h *FinanceHandler) DeleteTransaction(c echo.Context) error {
 	}
 	return Respond(c, http.StatusOK, 0, "success", nil)
 }
-
-

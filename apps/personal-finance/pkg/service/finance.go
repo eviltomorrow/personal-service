@@ -404,5 +404,3 @@ func (s *Finance) DeleteTransaction(ctx context.Context, req *pb.DeleteTransacti
 	}
 	return &emptypb.Empty{}, nil
 }
-
-

@@ -218,5 +218,3 @@ func (s *FinanceService) DeleteTransaction(ctx context.Context, accountID string
 	_, err := s.client.DeleteTransaction(withAccountID(ctx, accountID), &pb.DeleteTransactionRequest{Id: id})
 	return err
 }
-
-
