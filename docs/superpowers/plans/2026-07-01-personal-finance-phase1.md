@@ -572,7 +572,7 @@ func New(cfg *config.Config) (*Server, error) {
 
 In `Makefile`, add personal-finance to build targets. In `build/app_build.sh`, add the personal-finance app name to the build loop.
 
-Run: `make build app=personal-finance` to verify compilation.
+Note: `go build ./apps/personal-finance/...` at this point will fail because `service.NewFinance()` in server.go references the `service` package created in Task 3. This is expected — full compilation verified in Task 5.
 
 ---
 
@@ -837,10 +837,9 @@ func buildTransactionFilter(filter *TransactionFilter) []sqlutil.Condition {
 		sqlutil.WithEq(FieldTransactionDeletedAt, 0),
 	}
 	if filter.Year > 0 && filter.Month > 0 {
-		datePrefix := fmt.Sprintf("%04d-%02d", filter.Year, filter.Month)
-		conds = append(conds, sqlutil.WithParentheses(
-			sqlutil.WithEq(FieldTransactionDate, datePrefix+"-%"),
-		))
+		firstDay := fmt.Sprintf("%04d-%02d-01", filter.Year, filter.Month)
+		lastDay := time.Date(filter.Year, time.Month(filter.Month)+1, 0, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+		conds = append(conds, sqlutil.WithBetweenAnd(FieldTransactionDate, firstDay, lastDay))
 	}
 	if filter.CategoryID > 0 {
 		conds = append(conds, sqlutil.WithEq(FieldTransactionCategoryID, filter.CategoryID))
