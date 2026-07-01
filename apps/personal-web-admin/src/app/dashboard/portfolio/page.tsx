@@ -254,45 +254,60 @@ function SortablePositionItem({
 }
 
 function LeftPanel({
-  positions, selectedId, onSelect, onAdd,
+  activePositions, archivedPositions, selectedId, onSelect, onAdd,
 }: {
-  positions: Position[];
+  activePositions: Position[];
+  archivedPositions: Position[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onAdd: () => void;
 }) {
   return (
     <div className="w-[320px] shrink-0 self-start rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col overflow-hidden">
+      {/* Active positions section */}
       <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-b border-gray-100">
         <div className="w-1 h-4 rounded-full bg-slate-500" />
         <span className="text-sm font-semibold text-gray-800">📋 持仓列表</span>
       </div>
-      <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[400px]">
-        {positions.length === 0 ? (
+      <div className="overflow-y-auto custom-scrollbar max-h-[300px]">
+        {activePositions.length === 0 ? (
           <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无持仓</p>
         ) : (
-          <SortableContext items={positions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={activePositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
             <div className="divide-y divide-gray-100">
-              {positions.map((p) => (
-                <SortablePositionItem
-                  key={p.id}
-                  position={p}
-                  isSelected={p.id === selectedId}
-                  onSelect={onSelect}
-                />
+              {activePositions.map((p) => (
+                <SortablePositionItem key={p.id} position={p} isSelected={p.id === selectedId} onSelect={onSelect} />
               ))}
             </div>
           </SortableContext>
         )}
       </div>
       <div className="px-4 py-3 border-t border-gray-100">
-        <button
-          onClick={onAdd}
+        <button onClick={onAdd}
           className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-500 transition-colors"
         >
           <Plus className="h-4 w-4" />
           新增品种
         </button>
+      </div>
+
+      {/* Archived positions section */}
+      <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-t border-gray-100">
+        <div className="w-1 h-4 rounded-full bg-slate-400" />
+        <span className="text-sm font-semibold text-gray-800">🗄️ 归档列表 ({archivedPositions.length})</span>
+      </div>
+      <div className="overflow-y-auto custom-scrollbar max-h-[300px]">
+        {archivedPositions.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无归档</p>
+        ) : (
+          <SortableContext items={archivedPositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            <div className="divide-y divide-gray-100">
+              {archivedPositions.map((p) => (
+                <SortablePositionItem key={p.id} position={p} isSelected={p.id === selectedId} onSelect={onSelect} />
+              ))}
+            </div>
+          </SortableContext>
+        )}
       </div>
     </div>
   );
@@ -995,7 +1010,8 @@ export default function PortfolioPage() {
         {/* Left panel */}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <LeftPanel
-            positions={positions}
+            activePositions={activePositions}
+            archivedPositions={archivedPositions}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onAdd={() => setModal({ type: "addPosition" })}
