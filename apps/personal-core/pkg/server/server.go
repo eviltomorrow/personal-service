@@ -11,7 +11,6 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/finalizer"
 	"github.com/eviltomorrow/personal-service/lib/fsutil"
 	lb "github.com/eviltomorrow/personal-service/lib/grpc/lb"
-	"github.com/eviltomorrow/personal-service/lib/grpc/middleware"
 	grpcserver "github.com/eviltomorrow/personal-service/lib/grpc/server"
 	"github.com/eviltomorrow/personal-service/lib/opentrace"
 	"github.com/eviltomorrow/personal-service/lib/redis"
@@ -90,7 +89,7 @@ func New(cfg *config.Config) (*Server, error) {
 		func(s *grpc.Server) {
 			pb.RegisterFinanceServer(s, financeSrv)
 		},
-	).WithUnaryInterceptors(middleware.UnaryServerAuthInterceptor(nil))
+	)
 
 	return &Server{GRPC: grpc}, nil
 }
