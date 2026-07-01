@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setTokens } from "@/lib/auth";
-import { api } from "@/lib/api";
 import { Eye, EyeOff, Loader2, Mail, Lock, Sparkles, Shield, Zap, Feather, UserPlus, X } from "lucide-react";
 
 export default function RegisterPage() {
@@ -35,8 +34,9 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await api("/api/v1/auth/register", {
+      const res = await fetch("/api/v1/auth/register", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ auth_type: "email", identifier: email, password }),
       });
       const json = await res.json();

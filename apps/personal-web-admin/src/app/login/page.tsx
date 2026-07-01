@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setTokens } from "@/lib/auth";
-import { api } from "@/lib/api";
 import { CheckCircle2, Eye, EyeOff, Loader2, LogIn, Mail, Lock, Sparkles, Shield, X, Zap, Feather } from "lucide-react";
 
 export default function LoginPage() {
@@ -25,8 +24,9 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await api("/api/v1/auth/login", {
+      const res = await fetch("/api/v1/auth/login", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ auth_type: "email", identifier: email, password }),
       });
       const json = await res.json();

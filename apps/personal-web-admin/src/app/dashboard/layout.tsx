@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearTokens, getRefreshToken } from "@/lib/auth";
+import { clearTokens, getAccessToken, getRefreshToken } from "@/lib/auth";
 import {
   LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
   HelpCircle, Sparkles, User, LogOut,
@@ -43,6 +43,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     } catch     { /* ignore */ }
   }, []);
+
+  useEffect(() => {
+    if (!getAccessToken()) {
+      router.push("/login");
+    }
+  }, [router]);
 
   async function handleLogout() {
     const refreshToken = getRefreshToken();
