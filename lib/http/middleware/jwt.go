@@ -78,7 +78,6 @@ func ServerJWTInterceptor(skipper func(c echo.Context) bool, refresher TokenRefr
 func doRefresh(c echo.Context, refresher TokenRefresher, refreshToken string, next echo.HandlerFunc) error {
 	newAccess, newRefresh, expiresIn, refreshErr := refresher.Refresh(c.Request().Context(), refreshToken)
 	if refreshErr != nil {
-		clearTokenCookies(c)
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 			"code":    http.StatusUnauthorized,
 			"message": "token expired",
@@ -126,10 +125,18 @@ func resolveRefreshToken(c echo.Context) string {
 }
 
 func isTokenNearExpiry(claims *auth.JwtClaims) bool {
-	if claims == nil {
+	if claims == nil || claims.IssuedAt == nil || claims.ExpiresAt == nil {
 		return false
 	}
-	return time.Until(claims.ExpiresAt.Time) < tokenExpiryThreshold
+	totalValidity := claims.ExpiresAt.Time.Sub(claims.IssuedAt.Time)
+	threshold := totalValidity / 10
+	if threshold < 10*time.Second {
+		threshold = 10 * time.Second
+	}
+	if threshold > 5*time.Minute {
+		threshold = 5 * time.Minute
+	}
+	return time.Until(claims.ExpiresAt.Time) < threshold
 }
 
 func setContext(c echo.Context, claims *auth.JwtClaims, tokenStr string) {
