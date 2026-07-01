@@ -150,9 +150,9 @@ syntax = "proto3";
 package personal.finance;
 option go_package = "apps/personal-finance/adapter/pb;pb";
 
-// --- Messages ---
+import "google/protobuf/empty.proto";
 
-message Empty {}
+// --- Messages ---
 
 enum FinanceType {
   FINANCE_TYPE_UNSPECIFIED = 0;
@@ -262,16 +262,16 @@ message CategorySummary {
 
 service Finance {
   // 分类管理
-  rpc ListCategories(Empty) returns (ListCategoriesResponse);
+  rpc ListCategories(google.protobuf.Empty) returns (ListCategoriesResponse);
   rpc CreateCategory(CreateCategoryRequest) returns (Category);
   rpc UpdateCategory(UpdateCategoryRequest) returns (Category);
-  rpc DeleteCategory(DeleteCategoryRequest) returns (Empty);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (google.protobuf.Empty);
 
   // 交易管理
   rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
   rpc CreateTransaction(CreateTransactionRequest) returns (Transaction);
   rpc UpdateTransaction(UpdateTransactionRequest) returns (Transaction);
-  rpc DeleteTransaction(DeleteTransactionRequest) returns (Empty);
+  rpc DeleteTransaction(DeleteTransactionRequest) returns (google.protobuf.Empty);
 
   // 月度汇总
   rpc GetMonthlySummary(GetMonthlySummaryRequest) returns (MonthlySummary);
