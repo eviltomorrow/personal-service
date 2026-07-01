@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { setTokens } from "@/lib/auth";
 import { CheckCircle2, Eye, EyeOff, Loader2, LogIn, Mail, Lock, Sparkles, Shield, X, Zap, Feather } from "lucide-react";
 
 export default function LoginPage() {
@@ -30,11 +29,7 @@ export default function LoginPage() {
         body: JSON.stringify({ auth_type: "email", identifier: email, password }),
       });
       const json = await res.json();
-      if (json.code !== 0) {
-        setToast(json.message || "登录失败");
-        return;
-      }
-      setTokens(json.data.access_token, json.data.refresh_token, json.data.expires_in);
+      if (json.code !== 0) { setToast(json.message || "登录失败"); return; }
       router.push("/dashboard");
     } catch {
       setToast("网络错误，请稍后重试");

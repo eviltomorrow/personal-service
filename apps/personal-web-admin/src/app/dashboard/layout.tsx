@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearTokens, getAccessToken, getRefreshToken, isTokenExpired, refreshAccessToken } from "@/lib/auth";
+import { redirectToLogin } from "@/lib/auth";
 import {
   LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
   HelpCircle, Sparkles, User, LogOut,
@@ -36,37 +36,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let cancelled = false;
-
     async function checkAuth() {
-      const accessToken = getAccessToken();
-      const refreshToken = getRefreshToken();
-
-      if (!accessToken && !refreshToken) {
-        if (!cancelled) router.replace("/login");
-        return;
-      }
-
-      if (accessToken && !isTokenExpired()) {
-        if (!cancelled) setAuthed(true);
-        return;
-      }
-
-      // Token expired or missing but refresh token exists — try refresh
-      const ok = await refreshAccessToken();
-      if (!cancelled) {
-        if (ok) {
-          setAuthed(true);
-        } else {
-          clearTokens();
-          router.replace("/login");
-        }
+      try {
+        const res = await fetch("/api/v1/auth/token/validate", { method: "POST" });
+        if (!res.ok) { redirectToLogin(); return; }
+        const json = await res.json();
+        if (json.code !== 0) { redirectToLogin(); return; }
+        setAuthed(true);
+      } catch {
+        redirectToLogin();
       }
     }
-
     checkAuth();
-    return () => { cancelled = true; };
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -91,17 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (authed !== true) return null;
 
   async function handleLogout() {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      try {
-        await fetch("/api/v1/auth/token/revoke", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-      } catch { /* ignore */ }
-    }
-    clearTokens();
+    await fetch("/api/v1/auth/token/revoke", { method: "POST" });
     router.push("/login");
   }
 

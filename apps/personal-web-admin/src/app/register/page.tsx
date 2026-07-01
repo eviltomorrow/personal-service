@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { setTokens } from "@/lib/auth";
 import { Eye, EyeOff, Loader2, Mail, Lock, Sparkles, Shield, Zap, Feather, UserPlus, X } from "lucide-react";
 
 export default function RegisterPage() {
@@ -44,7 +43,6 @@ export default function RegisterPage() {
         setToast(json.message || "注册失败");
         return;
       }
-      setTokens(json.data.access_token, json.data.refresh_token, json.data.expires_in);
       router.push("/dashboard");
     } catch {
       setToast("网络错误，请稍后重试");
