@@ -70,7 +70,7 @@ endif
 .PHONY: compile	
 compile:
 	@echo "$(CGREEN)=> Compile protobuf ...$(CEND)"
-	@rm -rf lib/grpc/pb/*
+	@rm -rf lib/grpc/pb/* apps/personal-finance/adapter/pb/*
 	@bash scripts/protobuf_compile.sh
 
 # clear
