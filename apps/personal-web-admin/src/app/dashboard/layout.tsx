@@ -30,11 +30,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [authed, setAuthed] = useState(() => !!getAccessToken());
   const [profile, setProfile] = useState({ nickname: "管理员", avatarDataUrl: "" });
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!authed) router.replace("/login");
+  }, []);
+
+  useEffect(() => {
+    if (!authed) return;
     try {
       const data = localStorage.getItem("settings-profile");
       if (data) {
@@ -44,11 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } catch     { /* ignore */ }
   }, []);
 
-  useEffect(() => {
-    if (!getAccessToken()) {
-      router.push("/login");
-    }
-  }, [router]);
+  if (!authed) return null;
 
   async function handleLogout() {
     const refreshToken = getRefreshToken();
