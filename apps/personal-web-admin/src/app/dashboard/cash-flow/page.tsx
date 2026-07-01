@@ -64,6 +64,9 @@ export default function CashFlowPage() {
   const [modalName, setModalName] = useState("");
   const [modalAmount, setModalAmount] = useState("");
   const [modalCatId, setModalCatId] = useState<number | null>(null);
+  const [modalDate, setModalDate] = useState("");
+  const [modalNote, setModalNote] = useState("");
+  const [modalItemId, setModalItemId] = useState<number | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const monthPickerRef = useRef<HTMLDivElement>(null);
 
@@ -153,16 +156,25 @@ export default function CashFlowPage() {
   }
 
   function openAddItem(section: "income" | "expense", catIndex: number) {
+    const cat = section === "income" ? incomeCategories[catIndex] : expenseCategories[catIndex];
     setModalName("");
     setModalAmount("");
+    setModalDate(new Date().toISOString().slice(0, 10));
+    setModalNote("");
+    setModalCatId(cat?.id ?? null);
+    setModalItemId(null);
     setModal({ type: "add-item", section, catIndex });
   }
 
   function openEditItem(section: "income" | "expense", catIndex: number, itemIndex: number) {
-    const list = section === "income" ? incomeCategories : expenseCategories;
-    const item = list[catIndex].items[itemIndex];
+    const cat = section === "income" ? incomeCategories[catIndex] : expenseCategories[catIndex];
+    const item = cat.items[itemIndex];
     setModalName(item.name);
     setModalAmount(String(item.amount));
+    setModalDate(item.date);
+    setModalNote(item.note ?? "");
+    setModalCatId(cat.id);
+    setModalItemId(item.id);
     setModal({ type: "edit-item", section, catIndex, itemIndex });
   }
 
@@ -178,8 +190,9 @@ export default function CashFlowPage() {
   }
 
   async function handleSave() {
+    const name = modalName.trim();
+    const amt = parseFloat(modalAmount);
     if (modal?.type === "add-category") {
-      const name = modalName.trim();
       if (!name) return;
       try {
         const res = await fetch("/api/v1/finance/categories", {
@@ -195,6 +208,52 @@ export default function CashFlowPage() {
       setModal(null);
       return;
     }
+    if (modal?.type === "add-item") {
+      if (!name || isNaN(amt) || amt <= 0) return;
+      try {
+        const res = await fetch("/api/v1/finance/transactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category_id: modalCatId,
+            type: modal.section === "income" ? "income" : "expense",
+            name,
+            amount: amt,
+            date: modalDate,
+            note: modalNote || undefined,
+          }),
+        });
+        const json = await res.json();
+        if (json.code === 0 && json.data) {
+          setTransactions((prev) => [...prev, json.data]);
+        }
+      } catch { /* ignore */ }
+      setModal(null);
+      return;
+    }
+    if (modal?.type === "edit-item") {
+      if (!name || isNaN(amt) || amt <= 0) return;
+      try {
+        const res = await fetch(`/api/v1/finance/transactions/${modalItemId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category_id: modalCatId,
+            type: modal.section === "income" ? "income" : "expense",
+            name,
+            amount: amt,
+            date: modalDate,
+            note: modalNote || undefined,
+          }),
+        });
+        const json = await res.json();
+        if (json.code === 0 && json.data) {
+          setTransactions((prev) => prev.map((t) => t.id === json.data.id ? json.data : t));
+        }
+      } catch { /* ignore */ }
+      setModal(null);
+      return;
+    }
     setModal(null);
   }
 
@@ -204,6 +263,14 @@ export default function CashFlowPage() {
       try {
         await fetch(`/api/v1/finance/categories/${modalCatId}`, { method: "DELETE" });
         setCategories((prev) => prev.filter((c) => c.id !== modalCatId));
+      } catch { /* ignore */ }
+      setModal(null);
+      return;
+    }
+    if (modal.type === "delete-item" && modalItemId !== null) {
+      try {
+        await fetch(`/api/v1/finance/transactions/${modalItemId}`, { method: "DELETE" });
+        setTransactions((prev) => prev.filter((t) => t.id !== modalItemId));
       } catch { /* ignore */ }
       setModal(null);
       return;
@@ -414,7 +481,7 @@ export default function CashFlowPage() {
                               className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors">
                               <Pencil className="h-3 w-3" />
                             </button>
-                            <button type="button" onClick={() => setModal({ type: "delete-item", section: "income", catIndex: ci, itemIndex: ii })}
+                            <button type="button" onClick={() => { setModalItemId(incomeCategories[ci].items[ii].id); setModal({ type: "delete-item", section: "income", catIndex: ci, itemIndex: ii }); }}
                               className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors">
                               <Trash2 className="h-3 w-3" />
                             </button>
@@ -487,7 +554,7 @@ export default function CashFlowPage() {
                               className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors">
                               <Pencil className="h-3 w-3" />
                             </button>
-                            <button type="button" onClick={() => setModal({ type: "delete-item", section: "expense", catIndex: ci, itemIndex: ii })}
+                            <button type="button" onClick={() => { setModalItemId(expenseCategories[ci].items[ii].id); setModal({ type: "delete-item", section: "expense", catIndex: ci, itemIndex: ii }); }}
                               className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors">
                               <Trash2 className="h-3 w-3" />
                             </button>
@@ -567,6 +634,16 @@ export default function CashFlowPage() {
                   <input type="number" value={modalAmount} onChange={(e) => setModalAmount(e.target.value)} placeholder="0.00" min="0" step="0.01"
                     className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-8 pr-3.5 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none transition-all" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">日期</label>
+                <input type="date" value={modalDate} onChange={(e) => setModalDate(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">备注（可选）</label>
+                <input type="text" value={modalNote} onChange={(e) => setModalNote(e.target.value)} placeholder="备注信息"
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
               </div>
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
