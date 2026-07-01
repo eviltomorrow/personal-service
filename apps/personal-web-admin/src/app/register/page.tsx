@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { setTokens } from "@/lib/auth";
+import { api } from "@/lib/api";
 import { Eye, EyeOff, Loader2, Mail, Lock, Sparkles, Shield, Zap, Feather, UserPlus } from "lucide-react";
 
 export default function RegisterPage() {
@@ -31,9 +33,21 @@ export default function RegisterPage() {
     setPasswordMismatch(false);
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    router.push("/login?registered=true");
+    try {
+      const res = await api("/api/v1/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ auth_type: "email", identifier: email, password }),
+      });
+      const json = await res.json();
+      if (json.code !== 0) {
+        return;
+      }
+      setTokens(json.data.access_token, json.data.refresh_token, json.data.expires_in);
+      router.push("/dashboard");
+    } catch {
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

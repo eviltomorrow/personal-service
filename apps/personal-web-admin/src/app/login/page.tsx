@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { setTokens } from "@/lib/auth";
+import { api } from "@/lib/api";
 import { CheckCircle2, Eye, EyeOff, Loader2, LogIn, Mail, Lock, Sparkles, Shield, X, Zap, Feather } from "lucide-react";
 
 export default function LoginPage() {
@@ -13,18 +15,6 @@ export default function LoginPage() {
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    const search = window.location.search;
-    if (search.includes("registered=true")) {
-      setToast("注册成功，请登录");
-    } else if (search.includes("reset=true")) {
-      setToast("密码重置成功，请登录");
-    }
-    if (search.includes("registered=true") || search.includes("reset=true")) {
-      window.history.replaceState({}, "", "/login");
-    }
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const empty: string[] = [];
@@ -32,10 +22,25 @@ export default function LoginPage() {
     if (!password) empty.push("password");
     setMissingFields(empty);
     if (empty.length > 0) return;
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    router.push("/dashboard");
+    try {
+      const res = await api("/api/v1/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ auth_type: "email", identifier: email, password }),
+      });
+      const json = await res.json();
+      if (json.code !== 0) {
+        setToast(json.message || "登录失败");
+        return;
+      }
+      setTokens(json.data.access_token, json.data.refresh_token, json.data.expires_in);
+      router.push("/dashboard");
+    } catch {
+      setToast("网络错误，请稍后重试");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
