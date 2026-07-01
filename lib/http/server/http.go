@@ -63,7 +63,7 @@ func (h *HTTP) Serve() error {
 
 	h.handler.Use(middleware.ServerJWTInterceptor(func(c echo.Context) bool {
 		path := c.Request().URL.Path
-		if path == "/api/v1/auth/register" || path == "/api/v1/auth/login" {
+		if path == "/api/v1/auth/register" || path == "/api/v1/auth/login" || path == "/api/v1/auth/token/refresh" {
 			return true
 		}
 		return false

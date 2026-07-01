@@ -74,8 +74,8 @@ var DefaultConfig = Config{
 		ConnectTimeout: 10 * time.Second,
 	},
 	Auth: AuthConfig{
-		AccessTokenExpire:   5 * time.Minute,
-		RefreshTokenExpire:  30 * time.Minute,
+		AccessTokenExpire:   1 * time.Hour,
+		RefreshTokenExpire:  7 * 24 * time.Hour,
 		SigningKey:          "",
 		MaxLoginAttempts:    5,
 		LoginLockDuration:   2 * time.Minute,

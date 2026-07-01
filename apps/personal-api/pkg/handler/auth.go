@@ -144,6 +144,7 @@ func (h *AuthHandler) DeleteAccount(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
+	req.AccountID = c.Get("account_id").(string)
 
 	err := h.client.DeleteAccount(c.Request().Context(), &req)
 	if err != nil {
@@ -160,6 +161,7 @@ func (h *AuthHandler) UpdatePassword(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
+	req.AccountID = c.Get("account_id").(string)
 
 	if err := h.client.UpdatePassword(c.Request().Context(), &req); err != nil {
 		zlog.Error("auth update password failure", zap.Error(err))
@@ -175,6 +177,7 @@ func (h *AuthHandler) UpdateIdentifier(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
+	req.AccountID = c.Get("account_id").(string)
 
 	if err := h.client.UpdateIdentifier(c.Request().Context(), &req); err != nil {
 		zlog.Error("auth update identifier failure", zap.Error(err))
