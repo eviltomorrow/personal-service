@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package personal.finance;
+package personal.core;
 
-option go_package = "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb";
+option go_package = "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb";
 
 import "google/protobuf/empty.proto";
 

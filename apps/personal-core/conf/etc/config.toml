@@ -7,10 +7,16 @@ disable_tls = true
 level = "info"
 
 [mysql]
-dsn = "root:root@tcp(127.0.0.1:3306)/personal_finance?charset=utf8mb4&parseTime=True&loc=Local"
+dsn = "root:root@tcp(127.0.0.1:3306)/personal_core?charset=utf8mb4&parseTime=True&loc=Local"
 min_open = 3
 max_open = 10
 max_lifetime = "300s"
+connect_timeout = "10s"
+startup_retry_times = 3
+startup_retry_period = "3s"
+
+[redis]
+dsn = "redis://127.0.0.1:6379/1"
 connect_timeout = "10s"
 startup_retry_times = 3
 startup_retry_period = "3s"

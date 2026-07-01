@@ -7,7 +7,7 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/buildinfo"
 	"github.com/eviltomorrow/personal-service/lib/system"
 
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/cmd"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/cmd"
 )
 
 var (

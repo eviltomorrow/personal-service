@@ -12,7 +12,7 @@ import (
 var financeCli model.FinanceClient
 
 func initFinance(cfg *config.Config) error {
-	pbFinance, cleanup, err := grpcclient.NewFinanceClient(cfg.Service.FinanceServiceTarget)
+	pbFinance, cleanup, err := grpcclient.NewFinanceClient(cfg.Service.CoreServiceTarget)
 	if err != nil {
 		return err
 	}

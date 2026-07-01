@@ -4,7 +4,7 @@
 
 **Goal:** 将 cash-flow 页面从本地 mock 数据改为通过 `personal-api` HTTP 接口读写后端数据。
 
-**Architecture:** Next.js 前端 → `api()` fetch 封装 → personal-api HTTP → personal-finance gRPC → MySQL。前端用 `GET /finance/categories` 和 `GET /finance/transactions` 加载数据，所有 CRUD 操作调用对应 API。
+**Architecture:** Next.js 前端 → `api()` fetch 封装 → personal-api HTTP → personal-core gRPC → MySQL。前端用 `GET /finance/categories` 和 `GET /finance/transactions` 加载数据，所有 CRUD 操作调用对应 API。
 
 **Tech Stack:** Next.js 15, React 19, TypeScript
 

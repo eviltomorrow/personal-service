@@ -35,6 +35,27 @@ export function clearTokens() {
   s.removeItem(EXPIRE_KEY)
 }
 
+export async function refreshAccessToken(): Promise<boolean> {
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) return false
+
+  try {
+    const res = await fetch("/api/v1/auth/token/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    })
+    if (!res.ok) return false
+
+    const json = await res.json()
+    if (json.code !== 0) return false
+
+    setTokens(json.data.access_token, json.data.refresh_token, json.data.expires_in)
+    return true
+  } catch {
+    return false
+  }
+}
 
 export function redirectToLogin() {
   clearTokens()

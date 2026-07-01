@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             v7.35.1
-// source: apps/personal-finance/adapter/finance.proto
+// source: apps/personal-core/adapter/finance.proto
 
 package pb
 
@@ -20,14 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Finance_ListCategories_FullMethodName    = "/personal.finance.Finance/ListCategories"
-	Finance_CreateCategory_FullMethodName    = "/personal.finance.Finance/CreateCategory"
-	Finance_UpdateCategory_FullMethodName    = "/personal.finance.Finance/UpdateCategory"
-	Finance_DeleteCategory_FullMethodName    = "/personal.finance.Finance/DeleteCategory"
-	Finance_ListTransactions_FullMethodName  = "/personal.finance.Finance/ListTransactions"
-	Finance_CreateTransaction_FullMethodName = "/personal.finance.Finance/CreateTransaction"
-	Finance_UpdateTransaction_FullMethodName = "/personal.finance.Finance/UpdateTransaction"
-	Finance_DeleteTransaction_FullMethodName = "/personal.finance.Finance/DeleteTransaction"
+	Finance_ListCategories_FullMethodName    = "/personal.core.Finance/ListCategories"
+	Finance_CreateCategory_FullMethodName    = "/personal.core.Finance/CreateCategory"
+	Finance_UpdateCategory_FullMethodName    = "/personal.core.Finance/UpdateCategory"
+	Finance_DeleteCategory_FullMethodName    = "/personal.core.Finance/DeleteCategory"
+	Finance_ListTransactions_FullMethodName  = "/personal.core.Finance/ListTransactions"
+	Finance_CreateTransaction_FullMethodName = "/personal.core.Finance/CreateTransaction"
+	Finance_UpdateTransaction_FullMethodName = "/personal.core.Finance/UpdateTransaction"
+	Finance_DeleteTransaction_FullMethodName = "/personal.core.Finance/DeleteTransaction"
 )
 
 // FinanceClient is the client API for Finance service.
@@ -347,7 +347,7 @@ func _Finance_DeleteTransaction_Handler(srv interface{}, ctx context.Context, de
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Finance_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "personal.finance.Finance",
+	ServiceName: "personal.core.Finance",
 	HandlerType: (*FinanceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -384,5 +384,5 @@ var Finance_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "apps/personal-finance/adapter/finance.proto",
+	Metadata: "apps/personal-core/adapter/finance.proto",
 }

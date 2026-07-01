@@ -6,7 +6,7 @@
 
 ## 1. 概述
 
-为现有 admin dashboard 的财务功能提供后端支持。新增 `personal-finance` gRPC 微服务，为每个用户提供三段独立的财务数据管理。
+为现有 admin dashboard 的财务功能提供后端支持。新增 `personal-core` gRPC 微服务，为每个用户提供三段独立的财务数据管理。
 
 ### 范围（分阶段）
 
@@ -23,14 +23,14 @@
 ### 2.1 服务拓扑
 
 ```
-Client → personal-api (HTTP :8080) → personal-finance (gRPC :50002) → MySQL
+Client → personal-api (HTTP :8080) → personal-core (gRPC :50002) → MySQL
                                       personal-auth  (gRPC :50001)
 ```
 
 ### 2.2 服务目录
 
 ```
-apps/personal-finance/
+apps/personal-core/
 ├── main.go
 ├── cmd/
 │   └── root.go              # 启动编排（同 personal-auth 模式）
@@ -148,7 +148,7 @@ CREATE TABLE transactions (
 ```protobuf
 syntax = "proto3";
 package personal.finance;
-option go_package = "apps/personal-finance/adapter/pb;pb";
+option go_package = "apps/personal-core/adapter/pb;pb";
 
 import "google/protobuf/empty.proto";
 
@@ -357,7 +357,7 @@ CRUD: InsertTransaction, SelectTransactions, SelectTransactionByID, UpdateTransa
 ## 8. 后续阶段（非当前范围）
 
 ### Phase 2: 投资组合
-- 单独的服务扩展或合入 personal-finance
+- 单独的服务扩展或合入 personal-core
 - 表：positions, trades, value_snapshots
 - 需处理持仓计算、盈亏计算等业务逻辑
 

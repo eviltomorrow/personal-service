@@ -28,7 +28,13 @@ type GRPC struct {
 	cancel     func()
 	revokeFunc func() error
 
-	RegisteredAPI []func(*grpc.Server)
+	RegisteredAPI     []func(*grpc.Server)
+	unaryInterceptors []grpc.UnaryServerInterceptor
+}
+
+func (g *GRPC) WithUnaryInterceptors(interceptors ...grpc.UnaryServerInterceptor) *GRPC {
+	g.unaryInterceptors = append(g.unaryInterceptors, interceptors...)
+	return g
 }
 
 func NewGRPC(network *netutil.Config, log *log.Config, supported ...func(*grpc.Server)) *GRPC {
@@ -66,11 +72,14 @@ func (g *GRPC) Serve() error {
 		return err
 	}
 
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		middleware.UnaryServerRecoveryInterceptor,
+		middleware.UnaryServerLogInterceptor,
+	}
+	unaryInterceptors = append(unaryInterceptors, g.unaryInterceptors...)
+
 	g.server = grpc.NewServer(
-		grpc.ChainUnaryInterceptor(
-			middleware.UnaryServerRecoveryInterceptor,
-			middleware.UnaryServerLogInterceptor,
-		),
+		grpc.ChainUnaryInterceptor(unaryInterceptors...),
 		grpc.ChainStreamInterceptor(
 			middleware.StreamServerRecoveryInterceptor,
 		),

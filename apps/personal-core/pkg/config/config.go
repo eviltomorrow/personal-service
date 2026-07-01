@@ -12,6 +12,7 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/log"
 	"github.com/eviltomorrow/personal-service/lib/netutil"
 	"github.com/eviltomorrow/personal-service/lib/opentrace"
+	"github.com/eviltomorrow/personal-service/lib/redis"
 	"github.com/eviltomorrow/personal-service/lib/system"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/spf13/viper"
@@ -21,6 +22,7 @@ type Config struct {
 	Network   netutil.Config   `json:"network" toml:"network" mapstructure:"network"`
 	Log       log.Config       `json:"log" toml:"log" mapstructure:"log"`
 	MySQL     mysql.Config     `json:"mysql" toml:"mysql" mapstructure:"mysql"`
+	Redis     redis.Config     `json:"redis" toml:"redis" mapstructure:"redis"`
 	Etcd      etcd.Config      `json:"etcd" toml:"etcd" mapstructure:"etcd"`
 	Opentrace opentrace.Config `json:"opentrace" toml:"opentrace" mapstructure:"opentrace"`
 }
@@ -35,10 +37,16 @@ var DefaultConfig = Config{
 		Level: "info",
 	},
 	MySQL: mysql.Config{
-		DSN:                "root:root@tcp(127.0.0.1:3306)/personal_finance?charset=utf8mb4&parseTime=True&loc=Local",
+		DSN:                "root:root@tcp(127.0.0.1:3306)/personal_core?charset=utf8mb4&parseTime=True&loc=Local",
 		MinOpen:            3,
 		MaxOpen:            10,
 		MaxLifetime:        300 * time.Second,
+		ConnectTimeout:     10 * time.Second,
+		StartupRetryTimes:  3,
+		StartupRetryPeriod: 3 * time.Second,
+	},
+	Redis: redis.Config{
+		DSN:                "redis://127.0.0.1:6379/1",
 		ConnectTimeout:     10 * time.Second,
 		StartupRetryTimes:  3,
 		StartupRetryPeriod: 3 * time.Second,
@@ -68,6 +76,12 @@ func (c *Config) String() string {
 			"connect_timeout":      c.MySQL.ConnectTimeout.String(),
 			"startup_retry_times":  c.MySQL.StartupRetryTimes,
 			"startup_retry_period": c.MySQL.StartupRetryPeriod.String(),
+		},
+		"redis": map[string]interface{}{
+			"dsn":                  c.Redis.DSN,
+			"connect_timeout":      c.Redis.ConnectTimeout.String(),
+			"startup_retry_times":  c.Redis.StartupRetryTimes,
+			"startup_retry_period": c.Redis.StartupRetryPeriod.String(),
 		},
 		"etcd": map[string]interface{}{
 			"endpoints":            c.Etcd.Endpoints,

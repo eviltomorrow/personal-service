@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearTokens, getAccessToken, getRefreshToken } from "@/lib/auth";
+import { clearTokens, getAccessToken, getRefreshToken, isTokenExpired, refreshAccessToken } from "@/lib/auth";
 import {
   LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
   HelpCircle, Sparkles, User, LogOut,
@@ -30,17 +30,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [authed, setAuthed] = useState(() => !!getAccessToken());
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [profile, setProfile] = useState({ nickname: "管理员", avatarDataUrl: "" });
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!authed) router.replace("/login");
+    let cancelled = false;
+
+    async function checkAuth() {
+      const accessToken = getAccessToken();
+      const refreshToken = getRefreshToken();
+
+      if (!accessToken && !refreshToken) {
+        if (!cancelled) router.replace("/login");
+        return;
+      }
+
+      if (accessToken && !isTokenExpired()) {
+        if (!cancelled) setAuthed(true);
+        return;
+      }
+
+      // Token expired or missing but refresh token exists — try refresh
+      const ok = await refreshAccessToken();
+      if (!cancelled) {
+        if (ok) {
+          setAuthed(true);
+        } else {
+          clearTokens();
+          router.replace("/login");
+        }
+      }
+    }
+
+    checkAuth();
+    return () => { cancelled = true; };
+  }, [router]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
-    if (!authed) return;
+    if (authed !== true) return;
     try {
       const data = localStorage.getItem("settings-profile");
       if (data) {
@@ -48,9 +86,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setProfile({ nickname: p.nickname || "管理员", avatarDataUrl: p.avatarDataUrl || "" });
       }
     } catch     { /* ignore */ }
-  }, []);
+  }, [authed]);
 
-  if (!authed) return null;
+  if (authed !== true) return null;
 
   async function handleLogout() {
     const refreshToken = getRefreshToken();
@@ -66,15 +104,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     clearTokens();
     router.push("/login");
   }
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const notifications = [
     { icon: ShoppingCart, text: "订单 #3821 已完成", time: "2分钟前", color: "text-emerald-600" },

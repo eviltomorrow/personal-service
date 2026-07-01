@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
 	"github.com/eviltomorrow/personal-service/apps/personal-api/pkg/model"
+	"github.com/eviltomorrow/personal-service/lib/auth"
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -37,8 +39,16 @@ func accountID(c echo.Context) string {
 	return v
 }
 
+func tokenCtx(c echo.Context) context.Context {
+	token, _ := c.Get("token").(string)
+	if token == "" {
+		return c.Request().Context()
+	}
+	return auth.WithToken(c.Request().Context(), token)
+}
+
 func (h *FinanceHandler) ListCategories(c echo.Context) error {
-	resp, err := h.client.ListCategories(c.Request().Context(), accountID(c))
+	resp, err := h.client.ListCategories(tokenCtx(c), accountID(c))
 	if err != nil {
 		zlog.Error("finance list categories failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)
@@ -52,7 +62,7 @@ func (h *FinanceHandler) CreateCategory(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
-	resp, err := h.client.CreateCategory(c.Request().Context(), accountID(c), &req)
+	resp, err := h.client.CreateCategory(tokenCtx(c), accountID(c), &req)
 	if err != nil {
 		zlog.Error("finance create category failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)
@@ -71,7 +81,7 @@ func (h *FinanceHandler) UpdateCategory(c echo.Context) error {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
 	req.ID = id
-	resp, err := h.client.UpdateCategory(c.Request().Context(), accountID(c), &req)
+	resp, err := h.client.UpdateCategory(tokenCtx(c), accountID(c), &req)
 	if err != nil {
 		zlog.Error("finance update category failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)
@@ -85,7 +95,7 @@ func (h *FinanceHandler) DeleteCategory(c echo.Context) error {
 	if err != nil {
 		return Respond(c, http.StatusBadRequest, 400, "invalid id", nil)
 	}
-	if err := h.client.DeleteCategory(c.Request().Context(), accountID(c), id); err != nil {
+	if err := h.client.DeleteCategory(tokenCtx(c), accountID(c), id); err != nil {
 		zlog.Error("finance delete category failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)
 		return Respond(c, httpStatus, httpStatus, msg, nil)
@@ -100,7 +110,7 @@ func (h *FinanceHandler) ListTransactions(c echo.Context) error {
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	pageSize, _ := strconv.Atoi(c.QueryParam("page_size"))
 
-	resp, err := h.client.ListTransactions(c.Request().Context(), accountID(c), &model.ListTransactionsRequest{
+	resp, err := h.client.ListTransactions(tokenCtx(c), accountID(c), &model.ListTransactionsRequest{
 		Year:       year,
 		Month:      month,
 		CategoryID: catID,
@@ -120,7 +130,7 @@ func (h *FinanceHandler) CreateTransaction(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
-	resp, err := h.client.CreateTransaction(c.Request().Context(), accountID(c), &req)
+	resp, err := h.client.CreateTransaction(tokenCtx(c), accountID(c), &req)
 	if err != nil {
 		zlog.Error("finance create transaction failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)
@@ -139,7 +149,7 @@ func (h *FinanceHandler) UpdateTransaction(c echo.Context) error {
 		return Respond(c, http.StatusBadRequest, 400, "invalid request body", nil)
 	}
 	req.ID = id
-	resp, err := h.client.UpdateTransaction(c.Request().Context(), accountID(c), &req)
+	resp, err := h.client.UpdateTransaction(tokenCtx(c), accountID(c), &req)
 	if err != nil {
 		zlog.Error("finance update transaction failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)
@@ -153,7 +163,7 @@ func (h *FinanceHandler) DeleteTransaction(c echo.Context) error {
 	if err != nil {
 		return Respond(c, http.StatusBadRequest, 400, "invalid id", nil)
 	}
-	if err := h.client.DeleteTransaction(c.Request().Context(), accountID(c), id); err != nil {
+	if err := h.client.DeleteTransaction(tokenCtx(c), accountID(c), id); err != nil {
 		zlog.Error("finance delete transaction failure", zap.Error(err))
 		httpStatus, msg := GrpcStatusToHTTP(err)
 		return Respond(c, httpStatus, httpStatus, msg, nil)

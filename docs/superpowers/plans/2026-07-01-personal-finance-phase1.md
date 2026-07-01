@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build `personal-finance` gRPC microservice + `personal-api` HTTP routes for Income & Expense recording.
+**Goal:** Build `personal-core` gRPC microservice + `personal-api` HTTP routes for Income & Expense recording.
 
-**Architecture:** New `personal-finance` gRPC service (port 50002) registered in etcd. `personal-api` proxies HTTP → gRPC. Two MySQL tables (`categories`, `transactions`), per-user data isolation via `account_id` from JWT.
+**Architecture:** New `personal-core` gRPC service (port 50002) registered in etcd. `personal-api` proxies HTTP → gRPC. Two MySQL tables (`categories`, `transactions`), per-user data isolation via `account_id` from JWT.
 
 **Tech Stack:** Go 1.26.3, gRPC + Protobuf, Echo v4, etcd, MySQL (via `lib/sqlutil`)
 
@@ -12,23 +12,23 @@
 
 ## File Map
 
-### personal-finance service (new)
+### personal-core service (new)
 
 | File | Responsibility |
 |------|---------------|
-| `apps/personal-finance/main.go` | `package main`, calls `cmd.Run()` |
-| `apps/personal-finance/cmd/root.go` | Flag → config → log → server → sigterm (same pattern as personal-auth) |
-| `apps/personal-finance/adapter/finance.proto` | 9 RPCs: List/Create/Update/Delete categories + transactions + GetMonthlySummary. Uses `google.protobuf.Empty` |
-| `apps/personal-finance/pkg/config/config.go` | Viper TOML config struct (no Redis, no Auth fields) |
-| `apps/personal-finance/conf/etc/config.toml` | Default config with port 50002 |
-| `apps/personal-finance/scripts/fs.go` | `//go:embed init-sql/*.sql` |
-| `apps/personal-finance/scripts/init-sql/01_categories.sql` | CREATE TABLE categories |
-| `apps/personal-finance/scripts/init-sql/02_transactions.sql` | CREATE TABLE transactions |
-| `apps/personal-finance/pkg/model/errors.go` | `ErrNotFound` sentinel |
-| `apps/personal-finance/pkg/model/category.go` | Category struct + CRUD via sqlutil |
-| `apps/personal-finance/pkg/model/transaction.go` | Transaction struct + CRUD via sqlutil |
-| `apps/personal-finance/pkg/service/finance.go` | 9 gRPC handler methods |
-| `apps/personal-finance/pkg/server/server.go` | DI: embed SQL → migrate → MySQL → etcd → resolver → service → gRPC |
+| `apps/personal-core/main.go` | `package main`, calls `cmd.Run()` |
+| `apps/personal-core/cmd/root.go` | Flag → config → log → server → sigterm (same pattern as personal-auth) |
+| `apps/personal-core/adapter/finance.proto` | 9 RPCs: List/Create/Update/Delete categories + transactions + GetMonthlySummary. Uses `google.protobuf.Empty` |
+| `apps/personal-core/pkg/config/config.go` | Viper TOML config struct (no Redis, no Auth fields) |
+| `apps/personal-core/conf/etc/config.toml` | Default config with port 50002 |
+| `apps/personal-core/scripts/fs.go` | `//go:embed init-sql/*.sql` |
+| `apps/personal-core/scripts/init-sql/01_categories.sql` | CREATE TABLE categories |
+| `apps/personal-core/scripts/init-sql/02_transactions.sql` | CREATE TABLE transactions |
+| `apps/personal-core/pkg/model/errors.go` | `ErrNotFound` sentinel |
+| `apps/personal-core/pkg/model/category.go` | Category struct + CRUD via sqlutil |
+| `apps/personal-core/pkg/model/transaction.go` | Transaction struct + CRUD via sqlutil |
+| `apps/personal-core/pkg/service/finance.go` | 9 gRPC handler methods |
+| `apps/personal-core/pkg/server/server.go` | DI: embed SQL → migrate → MySQL → etcd → resolver → service → gRPC |
 
 ### personal-api additions
 
@@ -45,22 +45,22 @@
 
 | File | Change |
 |------|--------|
-| `Makefile` | Add personal-finance target |
-| `build/app_build.sh` | Add personal-finance to build loop |
+| `Makefile` | Add personal-core target |
+| `build/app_build.sh` | Add personal-core to build loop |
 
 ---
 
 ## Task 1: Project Skeleton + Proto + SQL
 
 **Files:**
-- Create: `apps/personal-finance/main.go`
-- Create: `apps/personal-finance/cmd/root.go`
-- Create: `apps/personal-finance/adapter/finance.proto`
-- Create: `apps/personal-finance/pkg/config/config.go`
-- Create: `apps/personal-finance/conf/etc/config.toml`
-- Create: `apps/personal-finance/scripts/fs.go`
-- Create: `apps/personal-finance/scripts/init-sql/01_categories.sql`
-- Create: `apps/personal-finance/scripts/init-sql/02_transactions.sql`
+- Create: `apps/personal-core/main.go`
+- Create: `apps/personal-core/cmd/root.go`
+- Create: `apps/personal-core/adapter/finance.proto`
+- Create: `apps/personal-core/pkg/config/config.go`
+- Create: `apps/personal-core/conf/etc/config.toml`
+- Create: `apps/personal-core/scripts/fs.go`
+- Create: `apps/personal-core/scripts/init-sql/01_categories.sql`
+- Create: `apps/personal-core/scripts/init-sql/02_transactions.sql`
 - Modify: `Makefile`
 - Modify: `build/app_build.sh`
 
@@ -75,7 +75,7 @@ syntax = "proto3";
 
 package personal.finance;
 
-option go_package = "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb";
+option go_package = "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb";
 
 import "google/protobuf/empty.proto";
 
@@ -288,7 +288,7 @@ var DefaultConfig = Config{
 		Level: "info",
 	},
 	MySQL: mysql.Config{
-		DSN:                "root:root@tcp(127.0.0.1:3306)/personal_finance?charset=utf8mb4&parseTime=True&loc=Local",
+		DSN:                "root:root@tcp(127.0.0.1:3306)/personal_core?charset=utf8mb4&parseTime=True&loc=Local",
 		MinOpen:            3,
 		MaxOpen:            10,
 		MaxLifetime:        300 * time.Second,
@@ -413,7 +413,7 @@ disable_tls = true
 level = "info"
 
 [mysql]
-dsn = "root:root@tcp(127.0.0.1:3306)/personal_finance?charset=utf8mb4&parseTime=True&loc=Local"
+dsn = "root:root@tcp(127.0.0.1:3306)/personal_core?charset=utf8mb4&parseTime=True&loc=Local"
 min_open = 3
 max_open = 10
 max_lifetime = "300s"
@@ -436,8 +436,8 @@ connect_timeout = "10s"
 - [ ] **Step 7: Create `cmd/root.go`**
 
 Copy from `apps/personal-auth/cmd/root.go`. Replace imports:
-- `appconfig "github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/config"`
-- `appserver "github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/server"`
+- `appconfig "github.com/eviltomorrow/personal-service/apps/personal-core/pkg/config"`
+- `appserver "github.com/eviltomorrow/personal-service/apps/personal-core/pkg/server"`
 
 Everything else is identical (3-phase bootstrap: flag → config → log → server → sigterm).
 
@@ -450,11 +450,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/cmd"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/cmd"
 )
 
 var (
-	AppName    = "personal-finance"
+	AppName    = "personal-core"
 	MainVersion = "7.0.5"
 	GitSha     = "0000000"
 	BuildTime  = "0000-00-00T00:00:00Z"
@@ -496,10 +496,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/resolver"
 
-	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/config"
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/service"
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/scripts"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/pkg/config"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/pkg/service"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/scripts"
 )
 
 type Server struct {
@@ -570,18 +570,18 @@ func New(cfg *config.Config) (*Server, error) {
 
 - [ ] **Step 11: Update build scripts**
 
-In `Makefile`, add personal-finance to build targets. In `build/app_build.sh`, add the personal-finance app name to the build loop.
+In `Makefile`, add personal-core to build targets. In `build/app_build.sh`, add the personal-core app name to the build loop.
 
-Note: `go build ./apps/personal-finance/...` at this point will fail because `service.NewFinance()` in server.go references the `service` package created in Task 3. This is expected — full compilation verified in Task 5.
+Note: `go build ./apps/personal-core/...` at this point will fail because `service.NewFinance()` in server.go references the `service` package created in Task 3. This is expected — full compilation verified in Task 5.
 
 ---
 
 ## Task 2: Data Model Layer
 
 **Files:**
-- Create: `apps/personal-finance/pkg/model/errors.go`
-- Create: `apps/personal-finance/pkg/model/category.go`
-- Create: `apps/personal-finance/pkg/model/transaction.go`
+- Create: `apps/personal-core/pkg/model/errors.go`
+- Create: `apps/personal-core/pkg/model/category.go`
+- Create: `apps/personal-core/pkg/model/transaction.go`
 
 **Interfaces:**
 - Consumes: `lib/sqlutil`, `lib/db/mysql`
@@ -928,14 +928,14 @@ func SoftDeleteTransactionByID(ctx context.Context, exec dbmysql.Exec, id int64,
 
 - [ ] **Step 4: Compile verify**
 
-Run: `go build ./apps/personal-finance/...` to confirm model package compiles.
+Run: `go build ./apps/personal-core/...` to confirm model package compiles.
 
 ---
 
 ## Task 3: gRPC Service Layer
 
 **Files:**
-- Create: `apps/personal-finance/pkg/service/finance.go`
+- Create: `apps/personal-core/pkg/service/finance.go`
 
 **Interfaces:**
 - Consumes: `model.Category`, `model.Transaction`, protobuf types from `adapter/pb`
@@ -960,8 +960,8 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"go.uber.org/zap"
 
-	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/model"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/pkg/model"
 )
 
 var (
@@ -1383,7 +1383,7 @@ func (s *Finance) GetMonthlySummary(ctx context.Context, req *pb.GetMonthlySumma
 
 - [ ] **Step 2: Compile verify**
 
-Run: `go build ./apps/personal-finance/...`
+Run: `go build ./apps/personal-core/...`
 
 ---
 
@@ -1406,7 +1406,7 @@ package client
 import (
 	"fmt"
 
-	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
 )
 
 func NewFinanceClient(target string) (pb.FinanceClient, func() error, error) {
@@ -1540,7 +1540,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
 
 	"github.com/eviltomorrow/personal-service/apps/personal-api/pkg/model"
 )
@@ -1830,7 +1830,7 @@ type ServiceConfig struct {
 
 Add default:
 ```go
-FinanceServiceTarget: "etcd:///grpclb/personal-finance",
+FinanceServiceTarget: "etcd:///grpclb/personal-core",
 ```
 
 Add to `String()`:
@@ -1840,7 +1840,7 @@ Add to `String()`:
 
 Add to config.toml template:
 ```toml
-finance_service_target = "etcd:///grpclb/personal-finance"
+finance_service_target = "etcd:///grpclb/personal-core"
 ```
 
 - [ ] **Step 7: Update `server/server.go` — add FinanceClient to Dependencies**
@@ -2045,25 +2045,25 @@ func (h *FinanceHandler) GetMonthlySummary(c echo.Context) error {
 
 - [ ] **Step 9: Verify compilation**
 
-Run: `go build ./apps/personal-api/...` and `go build ./apps/personal-finance/...`
+Run: `go build ./apps/personal-api/...` and `go build ./apps/personal-core/...`
 
 ---
 
 ## Task 5: End-to-End Integration + Build
 
 **Files:**
-- Modify: `Makefile` — add personal-finance build target
+- Modify: `Makefile` — add personal-core build target
 
 - [ ] **Step 1: Update Makefile**
 
-Add personal-finance to the default build targets loop (alongside personal-api and personal-auth):
+Add personal-core to the default build targets loop (alongside personal-api and personal-auth):
 ```makefile
-APPS = personal-api personal-auth personal-finance
+APPS = personal-api personal-auth personal-core
 ```
 
 - [ ] **Step 2: Full build verification**
 
-Run: `make build` or `make build app=personal-finance`
+Run: `make build` or `make build app=personal-core`
 
 - [ ] **Step 3: Final compile check for whole project**
 

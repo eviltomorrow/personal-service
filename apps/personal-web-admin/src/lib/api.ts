@@ -1,6 +1,6 @@
-import { getAccessToken, getRefreshToken, setTokens, isTokenExpired, redirectToLogin } from "./auth"
+import { getAccessToken, getRefreshToken, isTokenExpired, redirectToLogin, refreshAccessToken } from "./auth"
 
-let refreshing: Promise<void> | null = null
+let refreshing: Promise<boolean> | null = null
 
 function headersToRecord(headers: RequestInit["headers"]): Record<string, string> {
   if (!headers) return {}
@@ -15,28 +15,12 @@ function headersToRecord(headers: RequestInit["headers"]): Record<string, string
   return headers
 }
 
-async function doRefresh(): Promise<void> {
-  const refreshToken = getRefreshToken()
-  if (!refreshToken) { redirectToLogin(); return }
-
-  const res = await fetch("/api/v1/auth/token/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  })
-  if (!res.ok) { redirectToLogin(); return }
-
-  const json = await res.json()
-  if (json.code !== 0) { redirectToLogin(); return }
-
-  setTokens(json.data.access_token, json.data.refresh_token, json.data.expires_in)
-}
-
 async function ensureToken(): Promise<void> {
-  if (!getAccessToken()) return
-  if (!isTokenExpired()) return
-  if (!refreshing) refreshing = doRefresh().finally(() => { refreshing = null })
-  await refreshing
+  if (getAccessToken() && !isTokenExpired()) return
+  if (!getRefreshToken()) { redirectToLogin(); return }
+  if (!refreshing) refreshing = refreshAccessToken().finally(() => { refreshing = null })
+  const ok = await refreshing
+  if (!ok) redirectToLogin()
 }
 
 export async function api(url: string, options: RequestInit = {}): Promise<Response> {
@@ -50,10 +34,9 @@ export async function api(url: string, options: RequestInit = {}): Promise<Respo
 
   const res = await fetch(url, { ...options, headers })
   if (res.status === 401) {
-    await doRefresh()
-    const newToken = getAccessToken()
-    if (newToken) {
-      headers["Authorization"] = `Bearer ${newToken}`
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      headers["Authorization"] = `Bearer ${getAccessToken()}`
       return fetch(url, { ...options, headers })
     }
     redirectToLogin()

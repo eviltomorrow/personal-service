@@ -195,7 +195,7 @@ export default function CashFlowPage() {
     if (modal?.type === "add-category") {
       if (!name) return;
       try {
-        const res = await fetch("/api/v1/finance/categories", {
+        const res = await api("/api/v1/finance/categories", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, type: modal.section === "income" ? "income" : "expense", sort_order: 0 }),
@@ -211,7 +211,7 @@ export default function CashFlowPage() {
     if (modal?.type === "add-item") {
       if (!name || isNaN(amt) || amt <= 0) return;
       try {
-        const res = await fetch("/api/v1/finance/transactions", {
+        const res = await api("/api/v1/finance/transactions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -234,7 +234,7 @@ export default function CashFlowPage() {
     if (modal?.type === "edit-item") {
       if (!name || isNaN(amt) || amt <= 0) return;
       try {
-        const res = await fetch(`/api/v1/finance/transactions/${modalItemId}`, {
+        const res = await api(`/api/v1/finance/transactions/${modalItemId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -261,7 +261,7 @@ export default function CashFlowPage() {
     if (!modal) return;
     if (modal.type === "delete-category" && modalCatId !== null) {
       try {
-        await fetch(`/api/v1/finance/categories/${modalCatId}`, { method: "DELETE" });
+        await api(`/api/v1/finance/categories/${modalCatId}`, { method: "DELETE" });
         setCategories((prev) => prev.filter((c) => c.id !== modalCatId));
       } catch { /* ignore */ }
       setModal(null);
@@ -269,7 +269,7 @@ export default function CashFlowPage() {
     }
     if (modal.type === "delete-item" && modalItemId !== null) {
       try {
-        await fetch(`/api/v1/finance/transactions/${modalItemId}`, { method: "DELETE" });
+        await api(`/api/v1/finance/transactions/${modalItemId}`, { method: "DELETE" });
         setTransactions((prev) => prev.filter((t) => t.id !== modalItemId));
       } catch { /* ignore */ }
       setModal(null);

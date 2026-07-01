@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
 )
 
 func NewFinanceClient(target string) (pb.FinanceClient, func() error, error) {

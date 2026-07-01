@@ -14,6 +14,7 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/snowflake"
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"github.com/go-sql-driver/mysql"
+	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -366,7 +367,11 @@ func (s *Auth) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*
 
 	val, err := redisGet(ctx, oldKey)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, "refresh token not found")
+		if errors.Is(err, goredis.Nil) {
+			return nil, status.Error(codes.Unauthenticated, "refresh token not found or revoked")
+		}
+		zlog.Error("get refresh token from redis failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
 	parts := strings.SplitN(val, ":", 2)

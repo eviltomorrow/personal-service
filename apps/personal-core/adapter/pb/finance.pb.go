@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v7.35.1
-// source: apps/personal-finance/adapter/finance.proto
+// source: apps/personal-core/adapter/finance.proto
 
 package pb
 
@@ -55,11 +55,11 @@ func (x FinanceType) String() string {
 }
 
 func (FinanceType) Descriptor() protoreflect.EnumDescriptor {
-	return file_apps_personal_finance_adapter_finance_proto_enumTypes[0].Descriptor()
+	return file_apps_personal_core_adapter_finance_proto_enumTypes[0].Descriptor()
 }
 
 func (FinanceType) Type() protoreflect.EnumType {
-	return &file_apps_personal_finance_adapter_finance_proto_enumTypes[0]
+	return &file_apps_personal_core_adapter_finance_proto_enumTypes[0]
 }
 
 func (x FinanceType) Number() protoreflect.EnumNumber {
@@ -68,7 +68,7 @@ func (x FinanceType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FinanceType.Descriptor instead.
 func (FinanceType) EnumDescriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{0}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{0}
 }
 
 type Category struct {
@@ -76,7 +76,7 @@ type Category struct {
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	AccountId     string                 `protobuf:"bytes,2,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Type          FinanceType            `protobuf:"varint,4,opt,name=type,proto3,enum=personal.finance.FinanceType" json:"type,omitempty"`
+	Type          FinanceType            `protobuf:"varint,4,opt,name=type,proto3,enum=personal.core.FinanceType" json:"type,omitempty"`
 	SortOrder     int32                  `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     int64                  `protobuf:"varint,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
@@ -86,7 +86,7 @@ type Category struct {
 
 func (x *Category) Reset() {
 	*x = Category{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[0]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -98,7 +98,7 @@ func (x *Category) String() string {
 func (*Category) ProtoMessage() {}
 
 func (x *Category) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[0]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -111,7 +111,7 @@ func (x *Category) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Category.ProtoReflect.Descriptor instead.
 func (*Category) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{0}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Category) GetId() int64 {
@@ -168,7 +168,7 @@ type Transaction struct {
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	AccountId     string                 `protobuf:"bytes,2,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Type          FinanceType            `protobuf:"varint,4,opt,name=type,proto3,enum=personal.finance.FinanceType" json:"type,omitempty"`
+	Type          FinanceType            `protobuf:"varint,4,opt,name=type,proto3,enum=personal.core.FinanceType" json:"type,omitempty"`
 	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	Amount        float64                `protobuf:"fixed64,6,opt,name=amount,proto3" json:"amount,omitempty"`
 	Date          string                 `protobuf:"bytes,7,opt,name=date,proto3" json:"date,omitempty"`
@@ -181,7 +181,7 @@ type Transaction struct {
 
 func (x *Transaction) Reset() {
 	*x = Transaction{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[1]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +193,7 @@ func (x *Transaction) String() string {
 func (*Transaction) ProtoMessage() {}
 
 func (x *Transaction) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[1]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,7 +206,7 @@ func (x *Transaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Transaction.ProtoReflect.Descriptor instead.
 func (*Transaction) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{1}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Transaction) GetId() int64 {
@@ -288,7 +288,7 @@ type ListCategoriesResponse struct {
 
 func (x *ListCategoriesResponse) Reset() {
 	*x = ListCategoriesResponse{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[2]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -300,7 +300,7 @@ func (x *ListCategoriesResponse) String() string {
 func (*ListCategoriesResponse) ProtoMessage() {}
 
 func (x *ListCategoriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[2]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -313,7 +313,7 @@ func (x *ListCategoriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCategoriesResponse.ProtoReflect.Descriptor instead.
 func (*ListCategoriesResponse) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{2}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ListCategoriesResponse) GetCategories() []*Category {
@@ -326,7 +326,7 @@ func (x *ListCategoriesResponse) GetCategories() []*Category {
 type CreateCategoryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type          FinanceType            `protobuf:"varint,2,opt,name=type,proto3,enum=personal.finance.FinanceType" json:"type,omitempty"`
+	Type          FinanceType            `protobuf:"varint,2,opt,name=type,proto3,enum=personal.core.FinanceType" json:"type,omitempty"`
 	SortOrder     int32                  `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -334,7 +334,7 @@ type CreateCategoryRequest struct {
 
 func (x *CreateCategoryRequest) Reset() {
 	*x = CreateCategoryRequest{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[3]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -346,7 +346,7 @@ func (x *CreateCategoryRequest) String() string {
 func (*CreateCategoryRequest) ProtoMessage() {}
 
 func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[3]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -359,7 +359,7 @@ func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*CreateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{3}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CreateCategoryRequest) GetName() string {
@@ -387,7 +387,7 @@ type UpdateCategoryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Type          FinanceType            `protobuf:"varint,3,opt,name=type,proto3,enum=personal.finance.FinanceType" json:"type,omitempty"`
+	Type          FinanceType            `protobuf:"varint,3,opt,name=type,proto3,enum=personal.core.FinanceType" json:"type,omitempty"`
 	SortOrder     int32                  `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -395,7 +395,7 @@ type UpdateCategoryRequest struct {
 
 func (x *UpdateCategoryRequest) Reset() {
 	*x = UpdateCategoryRequest{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[4]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -407,7 +407,7 @@ func (x *UpdateCategoryRequest) String() string {
 func (*UpdateCategoryRequest) ProtoMessage() {}
 
 func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[4]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -420,7 +420,7 @@ func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{4}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UpdateCategoryRequest) GetId() int64 {
@@ -460,7 +460,7 @@ type DeleteCategoryRequest struct {
 
 func (x *DeleteCategoryRequest) Reset() {
 	*x = DeleteCategoryRequest{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[5]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +472,7 @@ func (x *DeleteCategoryRequest) String() string {
 func (*DeleteCategoryRequest) ProtoMessage() {}
 
 func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[5]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -485,7 +485,7 @@ func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCategoryRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{5}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DeleteCategoryRequest) GetId() int64 {
@@ -508,7 +508,7 @@ type ListTransactionsRequest struct {
 
 func (x *ListTransactionsRequest) Reset() {
 	*x = ListTransactionsRequest{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[6]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -520,7 +520,7 @@ func (x *ListTransactionsRequest) String() string {
 func (*ListTransactionsRequest) ProtoMessage() {}
 
 func (x *ListTransactionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[6]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -533,7 +533,7 @@ func (x *ListTransactionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTransactionsRequest.ProtoReflect.Descriptor instead.
 func (*ListTransactionsRequest) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{6}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ListTransactionsRequest) GetYear() int32 {
@@ -581,7 +581,7 @@ type ListTransactionsResponse struct {
 
 func (x *ListTransactionsResponse) Reset() {
 	*x = ListTransactionsResponse{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[7]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -593,7 +593,7 @@ func (x *ListTransactionsResponse) String() string {
 func (*ListTransactionsResponse) ProtoMessage() {}
 
 func (x *ListTransactionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[7]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -606,7 +606,7 @@ func (x *ListTransactionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTransactionsResponse.ProtoReflect.Descriptor instead.
 func (*ListTransactionsResponse) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{7}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListTransactionsResponse) GetTransactions() []*Transaction {
@@ -626,7 +626,7 @@ func (x *ListTransactionsResponse) GetTotal() int32 {
 type CreateTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CategoryId    int64                  `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Type          FinanceType            `protobuf:"varint,2,opt,name=type,proto3,enum=personal.finance.FinanceType" json:"type,omitempty"`
+	Type          FinanceType            `protobuf:"varint,2,opt,name=type,proto3,enum=personal.core.FinanceType" json:"type,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	Amount        float64                `protobuf:"fixed64,4,opt,name=amount,proto3" json:"amount,omitempty"`
 	Date          string                 `protobuf:"bytes,5,opt,name=date,proto3" json:"date,omitempty"`
@@ -637,7 +637,7 @@ type CreateTransactionRequest struct {
 
 func (x *CreateTransactionRequest) Reset() {
 	*x = CreateTransactionRequest{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[8]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -649,7 +649,7 @@ func (x *CreateTransactionRequest) String() string {
 func (*CreateTransactionRequest) ProtoMessage() {}
 
 func (x *CreateTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[8]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -662,7 +662,7 @@ func (x *CreateTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTransactionRequest.ProtoReflect.Descriptor instead.
 func (*CreateTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{8}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *CreateTransactionRequest) GetCategoryId() int64 {
@@ -711,7 +711,7 @@ type UpdateTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Type          FinanceType            `protobuf:"varint,3,opt,name=type,proto3,enum=personal.finance.FinanceType" json:"type,omitempty"`
+	Type          FinanceType            `protobuf:"varint,3,opt,name=type,proto3,enum=personal.core.FinanceType" json:"type,omitempty"`
 	Name          string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
 	Amount        float64                `protobuf:"fixed64,5,opt,name=amount,proto3" json:"amount,omitempty"`
 	Date          string                 `protobuf:"bytes,6,opt,name=date,proto3" json:"date,omitempty"`
@@ -722,7 +722,7 @@ type UpdateTransactionRequest struct {
 
 func (x *UpdateTransactionRequest) Reset() {
 	*x = UpdateTransactionRequest{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[9]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -734,7 +734,7 @@ func (x *UpdateTransactionRequest) String() string {
 func (*UpdateTransactionRequest) ProtoMessage() {}
 
 func (x *UpdateTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[9]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -747,7 +747,7 @@ func (x *UpdateTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTransactionRequest.ProtoReflect.Descriptor instead.
 func (*UpdateTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{9}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UpdateTransactionRequest) GetId() int64 {
@@ -808,7 +808,7 @@ type DeleteTransactionRequest struct {
 
 func (x *DeleteTransactionRequest) Reset() {
 	*x = DeleteTransactionRequest{}
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[10]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -820,7 +820,7 @@ func (x *DeleteTransactionRequest) String() string {
 func (*DeleteTransactionRequest) ProtoMessage() {}
 
 func (x *DeleteTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_apps_personal_finance_adapter_finance_proto_msgTypes[10]
+	mi := &file_apps_personal_core_adapter_finance_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -833,7 +833,7 @@ func (x *DeleteTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTransactionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_apps_personal_finance_adapter_finance_proto_rawDescGZIP(), []int{10}
+	return file_apps_personal_core_adapter_finance_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DeleteTransactionRequest) GetId() int64 {
@@ -843,30 +843,30 @@ func (x *DeleteTransactionRequest) GetId() int64 {
 	return 0
 }
 
-var File_apps_personal_finance_adapter_finance_proto protoreflect.FileDescriptor
+var File_apps_personal_core_adapter_finance_proto protoreflect.FileDescriptor
 
-const file_apps_personal_finance_adapter_finance_proto_rawDesc = "" +
+const file_apps_personal_core_adapter_finance_proto_rawDesc = "" +
 	"\n" +
-	"+apps/personal-finance/adapter/finance.proto\x12\x10personal.finance\x1a\x1bgoogle/protobuf/empty.proto\"\xdd\x01\n" +
+	"(apps/personal-core/adapter/finance.proto\x12\rpersonal.core\x1a\x1bgoogle/protobuf/empty.proto\"\xda\x01\n" +
 	"\bCategory\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x02 \x01(\tR\taccountId\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x121\n" +
-	"\x04type\x18\x04 \x01(\x0e2\x1d.personal.finance.FinanceTypeR\x04type\x12\x1d\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12.\n" +
+	"\x04type\x18\x04 \x01(\x0e2\x1a.personal.core.FinanceTypeR\x04type\x12\x1d\n" +
 	"\n" +
 	"sort_order\x18\x05 \x01(\x05R\tsortOrder\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\x03R\tupdatedAt\"\xa2\x02\n" +
+	"updated_at\x18\a \x01(\x03R\tupdatedAt\"\x9f\x02\n" +
 	"\vTransaction\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x02 \x01(\tR\taccountId\x12\x1f\n" +
 	"\vcategory_id\x18\x03 \x01(\x03R\n" +
-	"categoryId\x121\n" +
-	"\x04type\x18\x04 \x01(\x0e2\x1d.personal.finance.FinanceTypeR\x04type\x12\x12\n" +
+	"categoryId\x12.\n" +
+	"\x04type\x18\x04 \x01(\x0e2\x1a.personal.core.FinanceTypeR\x04type\x12\x12\n" +
 	"\x04name\x18\x05 \x01(\tR\x04name\x12\x16\n" +
 	"\x06amount\x18\x06 \x01(\x01R\x06amount\x12\x12\n" +
 	"\x04date\x18\a \x01(\tR\x04date\x12\x12\n" +
@@ -875,20 +875,20 @@ const file_apps_personal_finance_adapter_finance_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\n" +
-	" \x01(\x03R\tupdatedAt\"T\n" +
-	"\x16ListCategoriesResponse\x12:\n" +
+	" \x01(\x03R\tupdatedAt\"Q\n" +
+	"\x16ListCategoriesResponse\x127\n" +
 	"\n" +
-	"categories\x18\x01 \x03(\v2\x1a.personal.finance.CategoryR\n" +
-	"categories\"}\n" +
+	"categories\x18\x01 \x03(\v2\x17.personal.core.CategoryR\n" +
+	"categories\"z\n" +
 	"\x15CreateCategoryRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x121\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x1d.personal.finance.FinanceTypeR\x04type\x12\x1d\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12.\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x1a.personal.core.FinanceTypeR\x04type\x12\x1d\n" +
 	"\n" +
-	"sort_order\x18\x03 \x01(\x05R\tsortOrder\"\x8d\x01\n" +
+	"sort_order\x18\x03 \x01(\x05R\tsortOrder\"\x8a\x01\n" +
 	"\x15UpdateCategoryRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x121\n" +
-	"\x04type\x18\x03 \x01(\x0e2\x1d.personal.finance.FinanceTypeR\x04type\x12\x1d\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12.\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x1a.personal.core.FinanceTypeR\x04type\x12\x1d\n" +
 	"\n" +
 	"sort_order\x18\x04 \x01(\x05R\tsortOrder\"'\n" +
 	"\x15DeleteCategoryRequest\x12\x0e\n" +
@@ -899,23 +899,23 @@ const file_apps_personal_finance_adapter_finance_proto_rawDesc = "" +
 	"\vcategory_id\x18\x03 \x01(\x03R\n" +
 	"categoryId\x12\x12\n" +
 	"\x04page\x18\x04 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x05 \x01(\x05R\bpageSize\"s\n" +
-	"\x18ListTransactionsResponse\x12A\n" +
-	"\ftransactions\x18\x01 \x03(\v2\x1d.personal.finance.TransactionR\ftransactions\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xc2\x01\n" +
+	"\tpage_size\x18\x05 \x01(\x05R\bpageSize\"p\n" +
+	"\x18ListTransactionsResponse\x12>\n" +
+	"\ftransactions\x18\x01 \x03(\v2\x1a.personal.core.TransactionR\ftransactions\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xbf\x01\n" +
 	"\x18CreateTransactionRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x03R\n" +
-	"categoryId\x121\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x1d.personal.finance.FinanceTypeR\x04type\x12\x12\n" +
+	"categoryId\x12.\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x1a.personal.core.FinanceTypeR\x04type\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x16\n" +
 	"\x06amount\x18\x04 \x01(\x01R\x06amount\x12\x12\n" +
 	"\x04date\x18\x05 \x01(\tR\x04date\x12\x12\n" +
-	"\x04note\x18\x06 \x01(\tR\x04note\"\xd2\x01\n" +
+	"\x04note\x18\x06 \x01(\tR\x04note\"\xcf\x01\n" +
 	"\x18UpdateTransactionRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x03R\n" +
-	"categoryId\x121\n" +
-	"\x04type\x18\x03 \x01(\x0e2\x1d.personal.finance.FinanceTypeR\x04type\x12\x12\n" +
+	"categoryId\x12.\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x1a.personal.core.FinanceTypeR\x04type\x12\x12\n" +
 	"\x04name\x18\x04 \x01(\tR\x04name\x12\x16\n" +
 	"\x06amount\x18\x05 \x01(\x01R\x06amount\x12\x12\n" +
 	"\x04date\x18\x06 \x01(\tR\x04date\x12\x12\n" +
@@ -925,71 +925,71 @@ const file_apps_personal_finance_adapter_finance_proto_rawDesc = "" +
 	"\vFinanceType\x12\x1c\n" +
 	"\x18FINANCE_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13FINANCE_TYPE_INCOME\x10\x01\x12\x18\n" +
-	"\x14FINANCE_TYPE_EXPENSE\x10\x022\xe2\x05\n" +
-	"\aFinance\x12R\n" +
-	"\x0eListCategories\x12\x16.google.protobuf.Empty\x1a(.personal.finance.ListCategoriesResponse\x12U\n" +
-	"\x0eCreateCategory\x12'.personal.finance.CreateCategoryRequest\x1a\x1a.personal.finance.Category\x12U\n" +
-	"\x0eUpdateCategory\x12'.personal.finance.UpdateCategoryRequest\x1a\x1a.personal.finance.Category\x12Q\n" +
-	"\x0eDeleteCategory\x12'.personal.finance.DeleteCategoryRequest\x1a\x16.google.protobuf.Empty\x12i\n" +
-	"\x10ListTransactions\x12).personal.finance.ListTransactionsRequest\x1a*.personal.finance.ListTransactionsResponse\x12^\n" +
-	"\x11CreateTransaction\x12*.personal.finance.CreateTransactionRequest\x1a\x1d.personal.finance.Transaction\x12^\n" +
-	"\x11UpdateTransaction\x12*.personal.finance.UpdateTransactionRequest\x1a\x1d.personal.finance.Transaction\x12W\n" +
-	"\x11DeleteTransaction\x12*.personal.finance.DeleteTransactionRequest\x1a\x16.google.protobuf.EmptyBKZIgithub.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pbb\x06proto3"
+	"\x14FINANCE_TYPE_EXPENSE\x10\x022\xbb\x05\n" +
+	"\aFinance\x12O\n" +
+	"\x0eListCategories\x12\x16.google.protobuf.Empty\x1a%.personal.core.ListCategoriesResponse\x12O\n" +
+	"\x0eCreateCategory\x12$.personal.core.CreateCategoryRequest\x1a\x17.personal.core.Category\x12O\n" +
+	"\x0eUpdateCategory\x12$.personal.core.UpdateCategoryRequest\x1a\x17.personal.core.Category\x12N\n" +
+	"\x0eDeleteCategory\x12$.personal.core.DeleteCategoryRequest\x1a\x16.google.protobuf.Empty\x12c\n" +
+	"\x10ListTransactions\x12&.personal.core.ListTransactionsRequest\x1a'.personal.core.ListTransactionsResponse\x12X\n" +
+	"\x11CreateTransaction\x12'.personal.core.CreateTransactionRequest\x1a\x1a.personal.core.Transaction\x12X\n" +
+	"\x11UpdateTransaction\x12'.personal.core.UpdateTransactionRequest\x1a\x1a.personal.core.Transaction\x12T\n" +
+	"\x11DeleteTransaction\x12'.personal.core.DeleteTransactionRequest\x1a\x16.google.protobuf.EmptyBHZFgithub.com/eviltomorrow/personal-service/apps/personal-core/adapter/pbb\x06proto3"
 
 var (
-	file_apps_personal_finance_adapter_finance_proto_rawDescOnce sync.Once
-	file_apps_personal_finance_adapter_finance_proto_rawDescData []byte
+	file_apps_personal_core_adapter_finance_proto_rawDescOnce sync.Once
+	file_apps_personal_core_adapter_finance_proto_rawDescData []byte
 )
 
-func file_apps_personal_finance_adapter_finance_proto_rawDescGZIP() []byte {
-	file_apps_personal_finance_adapter_finance_proto_rawDescOnce.Do(func() {
-		file_apps_personal_finance_adapter_finance_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_apps_personal_finance_adapter_finance_proto_rawDesc), len(file_apps_personal_finance_adapter_finance_proto_rawDesc)))
+func file_apps_personal_core_adapter_finance_proto_rawDescGZIP() []byte {
+	file_apps_personal_core_adapter_finance_proto_rawDescOnce.Do(func() {
+		file_apps_personal_core_adapter_finance_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_apps_personal_core_adapter_finance_proto_rawDesc), len(file_apps_personal_core_adapter_finance_proto_rawDesc)))
 	})
-	return file_apps_personal_finance_adapter_finance_proto_rawDescData
+	return file_apps_personal_core_adapter_finance_proto_rawDescData
 }
 
-var file_apps_personal_finance_adapter_finance_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_apps_personal_finance_adapter_finance_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
-var file_apps_personal_finance_adapter_finance_proto_goTypes = []any{
-	(FinanceType)(0),                 // 0: personal.finance.FinanceType
-	(*Category)(nil),                 // 1: personal.finance.Category
-	(*Transaction)(nil),              // 2: personal.finance.Transaction
-	(*ListCategoriesResponse)(nil),   // 3: personal.finance.ListCategoriesResponse
-	(*CreateCategoryRequest)(nil),    // 4: personal.finance.CreateCategoryRequest
-	(*UpdateCategoryRequest)(nil),    // 5: personal.finance.UpdateCategoryRequest
-	(*DeleteCategoryRequest)(nil),    // 6: personal.finance.DeleteCategoryRequest
-	(*ListTransactionsRequest)(nil),  // 7: personal.finance.ListTransactionsRequest
-	(*ListTransactionsResponse)(nil), // 8: personal.finance.ListTransactionsResponse
-	(*CreateTransactionRequest)(nil), // 9: personal.finance.CreateTransactionRequest
-	(*UpdateTransactionRequest)(nil), // 10: personal.finance.UpdateTransactionRequest
-	(*DeleteTransactionRequest)(nil), // 11: personal.finance.DeleteTransactionRequest
+var file_apps_personal_core_adapter_finance_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_apps_personal_core_adapter_finance_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_apps_personal_core_adapter_finance_proto_goTypes = []any{
+	(FinanceType)(0),                 // 0: personal.core.FinanceType
+	(*Category)(nil),                 // 1: personal.core.Category
+	(*Transaction)(nil),              // 2: personal.core.Transaction
+	(*ListCategoriesResponse)(nil),   // 3: personal.core.ListCategoriesResponse
+	(*CreateCategoryRequest)(nil),    // 4: personal.core.CreateCategoryRequest
+	(*UpdateCategoryRequest)(nil),    // 5: personal.core.UpdateCategoryRequest
+	(*DeleteCategoryRequest)(nil),    // 6: personal.core.DeleteCategoryRequest
+	(*ListTransactionsRequest)(nil),  // 7: personal.core.ListTransactionsRequest
+	(*ListTransactionsResponse)(nil), // 8: personal.core.ListTransactionsResponse
+	(*CreateTransactionRequest)(nil), // 9: personal.core.CreateTransactionRequest
+	(*UpdateTransactionRequest)(nil), // 10: personal.core.UpdateTransactionRequest
+	(*DeleteTransactionRequest)(nil), // 11: personal.core.DeleteTransactionRequest
 	(*emptypb.Empty)(nil),            // 12: google.protobuf.Empty
 }
-var file_apps_personal_finance_adapter_finance_proto_depIdxs = []int32{
-	0,  // 0: personal.finance.Category.type:type_name -> personal.finance.FinanceType
-	0,  // 1: personal.finance.Transaction.type:type_name -> personal.finance.FinanceType
-	1,  // 2: personal.finance.ListCategoriesResponse.categories:type_name -> personal.finance.Category
-	0,  // 3: personal.finance.CreateCategoryRequest.type:type_name -> personal.finance.FinanceType
-	0,  // 4: personal.finance.UpdateCategoryRequest.type:type_name -> personal.finance.FinanceType
-	2,  // 5: personal.finance.ListTransactionsResponse.transactions:type_name -> personal.finance.Transaction
-	0,  // 6: personal.finance.CreateTransactionRequest.type:type_name -> personal.finance.FinanceType
-	0,  // 7: personal.finance.UpdateTransactionRequest.type:type_name -> personal.finance.FinanceType
-	12, // 8: personal.finance.Finance.ListCategories:input_type -> google.protobuf.Empty
-	4,  // 9: personal.finance.Finance.CreateCategory:input_type -> personal.finance.CreateCategoryRequest
-	5,  // 10: personal.finance.Finance.UpdateCategory:input_type -> personal.finance.UpdateCategoryRequest
-	6,  // 11: personal.finance.Finance.DeleteCategory:input_type -> personal.finance.DeleteCategoryRequest
-	7,  // 12: personal.finance.Finance.ListTransactions:input_type -> personal.finance.ListTransactionsRequest
-	9,  // 13: personal.finance.Finance.CreateTransaction:input_type -> personal.finance.CreateTransactionRequest
-	10, // 14: personal.finance.Finance.UpdateTransaction:input_type -> personal.finance.UpdateTransactionRequest
-	11, // 15: personal.finance.Finance.DeleteTransaction:input_type -> personal.finance.DeleteTransactionRequest
-	3,  // 16: personal.finance.Finance.ListCategories:output_type -> personal.finance.ListCategoriesResponse
-	1,  // 17: personal.finance.Finance.CreateCategory:output_type -> personal.finance.Category
-	1,  // 18: personal.finance.Finance.UpdateCategory:output_type -> personal.finance.Category
-	12, // 19: personal.finance.Finance.DeleteCategory:output_type -> google.protobuf.Empty
-	8,  // 20: personal.finance.Finance.ListTransactions:output_type -> personal.finance.ListTransactionsResponse
-	2,  // 21: personal.finance.Finance.CreateTransaction:output_type -> personal.finance.Transaction
-	2,  // 22: personal.finance.Finance.UpdateTransaction:output_type -> personal.finance.Transaction
-	12, // 23: personal.finance.Finance.DeleteTransaction:output_type -> google.protobuf.Empty
+var file_apps_personal_core_adapter_finance_proto_depIdxs = []int32{
+	0,  // 0: personal.core.Category.type:type_name -> personal.core.FinanceType
+	0,  // 1: personal.core.Transaction.type:type_name -> personal.core.FinanceType
+	1,  // 2: personal.core.ListCategoriesResponse.categories:type_name -> personal.core.Category
+	0,  // 3: personal.core.CreateCategoryRequest.type:type_name -> personal.core.FinanceType
+	0,  // 4: personal.core.UpdateCategoryRequest.type:type_name -> personal.core.FinanceType
+	2,  // 5: personal.core.ListTransactionsResponse.transactions:type_name -> personal.core.Transaction
+	0,  // 6: personal.core.CreateTransactionRequest.type:type_name -> personal.core.FinanceType
+	0,  // 7: personal.core.UpdateTransactionRequest.type:type_name -> personal.core.FinanceType
+	12, // 8: personal.core.Finance.ListCategories:input_type -> google.protobuf.Empty
+	4,  // 9: personal.core.Finance.CreateCategory:input_type -> personal.core.CreateCategoryRequest
+	5,  // 10: personal.core.Finance.UpdateCategory:input_type -> personal.core.UpdateCategoryRequest
+	6,  // 11: personal.core.Finance.DeleteCategory:input_type -> personal.core.DeleteCategoryRequest
+	7,  // 12: personal.core.Finance.ListTransactions:input_type -> personal.core.ListTransactionsRequest
+	9,  // 13: personal.core.Finance.CreateTransaction:input_type -> personal.core.CreateTransactionRequest
+	10, // 14: personal.core.Finance.UpdateTransaction:input_type -> personal.core.UpdateTransactionRequest
+	11, // 15: personal.core.Finance.DeleteTransaction:input_type -> personal.core.DeleteTransactionRequest
+	3,  // 16: personal.core.Finance.ListCategories:output_type -> personal.core.ListCategoriesResponse
+	1,  // 17: personal.core.Finance.CreateCategory:output_type -> personal.core.Category
+	1,  // 18: personal.core.Finance.UpdateCategory:output_type -> personal.core.Category
+	12, // 19: personal.core.Finance.DeleteCategory:output_type -> google.protobuf.Empty
+	8,  // 20: personal.core.Finance.ListTransactions:output_type -> personal.core.ListTransactionsResponse
+	2,  // 21: personal.core.Finance.CreateTransaction:output_type -> personal.core.Transaction
+	2,  // 22: personal.core.Finance.UpdateTransaction:output_type -> personal.core.Transaction
+	12, // 23: personal.core.Finance.DeleteTransaction:output_type -> google.protobuf.Empty
 	16, // [16:24] is the sub-list for method output_type
 	8,  // [8:16] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
@@ -997,27 +997,27 @@ var file_apps_personal_finance_adapter_finance_proto_depIdxs = []int32{
 	0,  // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_apps_personal_finance_adapter_finance_proto_init() }
-func file_apps_personal_finance_adapter_finance_proto_init() {
-	if File_apps_personal_finance_adapter_finance_proto != nil {
+func init() { file_apps_personal_core_adapter_finance_proto_init() }
+func file_apps_personal_core_adapter_finance_proto_init() {
+	if File_apps_personal_core_adapter_finance_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_apps_personal_finance_adapter_finance_proto_rawDesc), len(file_apps_personal_finance_adapter_finance_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_apps_personal_core_adapter_finance_proto_rawDesc), len(file_apps_personal_core_adapter_finance_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_apps_personal_finance_adapter_finance_proto_goTypes,
-		DependencyIndexes: file_apps_personal_finance_adapter_finance_proto_depIdxs,
-		EnumInfos:         file_apps_personal_finance_adapter_finance_proto_enumTypes,
-		MessageInfos:      file_apps_personal_finance_adapter_finance_proto_msgTypes,
+		GoTypes:           file_apps_personal_core_adapter_finance_proto_goTypes,
+		DependencyIndexes: file_apps_personal_core_adapter_finance_proto_depIdxs,
+		EnumInfos:         file_apps_personal_core_adapter_finance_proto_enumTypes,
+		MessageInfos:      file_apps_personal_core_adapter_finance_proto_msgTypes,
 	}.Build()
-	File_apps_personal_finance_adapter_finance_proto = out.File
-	file_apps_personal_finance_adapter_finance_proto_goTypes = nil
-	file_apps_personal_finance_adapter_finance_proto_depIdxs = nil
+	File_apps_personal_core_adapter_finance_proto = out.File
+	file_apps_personal_core_adapter_finance_proto_goTypes = nil
+	file_apps_personal_core_adapter_finance_proto_depIdxs = nil
 }

@@ -11,18 +11,20 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/finalizer"
 	"github.com/eviltomorrow/personal-service/lib/fsutil"
 	lb "github.com/eviltomorrow/personal-service/lib/grpc/lb"
+	"github.com/eviltomorrow/personal-service/lib/grpc/middleware"
 	grpcserver "github.com/eviltomorrow/personal-service/lib/grpc/server"
 	"github.com/eviltomorrow/personal-service/lib/opentrace"
+	"github.com/eviltomorrow/personal-service/lib/redis"
 	"github.com/eviltomorrow/personal-service/lib/sqlutil"
 	"github.com/eviltomorrow/personal-service/lib/system"
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/resolver"
 
-	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/config"
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/service"
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/scripts"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/pkg/config"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/pkg/service"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/scripts"
 )
 
 type Server struct {
@@ -63,6 +65,9 @@ func New(cfg *config.Config) (*Server, error) {
 	if err := initComponent("mysql", func() (func() error, error) { return mysql.InitMySQL(&cfg.MySQL) }); err != nil {
 		return nil, err
 	}
+	if err := initComponent("redis", func() (func() error, error) { return redis.InitRedis(&cfg.Redis) }); err != nil {
+		return nil, err
+	}
 	if err := initComponent("etcd", func() (func() error, error) { return etcd.InitEtcd(&cfg.Etcd) }); err != nil {
 		return nil, err
 	}
@@ -85,7 +90,7 @@ func New(cfg *config.Config) (*Server, error) {
 		func(s *grpc.Server) {
 			pb.RegisterFinanceServer(s, financeSrv)
 		},
-	)
+	).WithUnaryInterceptors(middleware.UnaryServerAuthInterceptor(nil))
 
 	return &Server{GRPC: grpc}, nil
 }

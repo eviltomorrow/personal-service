@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/eviltomorrow/personal-service/lib/auth"
 	dbmysql "github.com/eviltomorrow/personal-service/lib/db/mysql"
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"go.uber.org/zap"
 
-	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
-	"github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/model"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
+	"github.com/eviltomorrow/personal-service/apps/personal-core/pkg/model"
 )
 
 var (
@@ -37,15 +37,11 @@ var selectDB = func(ctx context.Context) dbmysql.Exec {
 }
 
 func accountIDFromCtx(ctx context.Context) (string, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return "", status.Error(codes.Unauthenticated, "missing metadata")
-	}
-	vals := md.Get("x-account-id")
-	if len(vals) == 0 {
+	id, ok := auth.AccountIDFromContext(ctx)
+	if !ok || id == "" {
 		return "", status.Error(codes.Unauthenticated, "missing account_id")
 	}
-	return vals[0], nil
+	return id, nil
 }
 
 type Finance struct {

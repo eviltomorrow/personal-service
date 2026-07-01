@@ -14,8 +14,8 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"go.uber.org/zap"
 
-	appconfig "github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/config"
-	appserver "github.com/eviltomorrow/personal-service/apps/personal-finance/pkg/server"
+	appconfig "github.com/eviltomorrow/personal-service/apps/personal-core/pkg/config"
+	appserver "github.com/eviltomorrow/personal-service/apps/personal-core/pkg/server"
 )
 
 func Run() error {

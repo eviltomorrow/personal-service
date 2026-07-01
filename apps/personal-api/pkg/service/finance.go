@@ -8,13 +8,17 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	pb "github.com/eviltomorrow/personal-service/apps/personal-finance/adapter/pb"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
 
 	"github.com/eviltomorrow/personal-service/apps/personal-api/pkg/model"
+	"github.com/eviltomorrow/personal-service/lib/auth"
 )
 
-func withAccountID(ctx context.Context, accountID string) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, "x-account-id", accountID)
+func withAccountID(ctx context.Context, _ string) context.Context {
+	if token := auth.TokenFromContext(ctx); token != "" {
+		return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
+	}
+	return ctx
 }
 
 type FinanceService struct {
