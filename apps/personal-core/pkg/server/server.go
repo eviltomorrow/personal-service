@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/eviltomorrow/personal-service/lib/auth"
 	"github.com/eviltomorrow/personal-service/lib/db/mysql"
 	"github.com/eviltomorrow/personal-service/lib/etcd"
 	"github.com/eviltomorrow/personal-service/lib/finalizer"
@@ -18,6 +19,7 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/system"
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/resolver"
 
 	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
@@ -89,7 +91,14 @@ func New(cfg *config.Config) (*Server, error) {
 		func(s *grpc.Server) {
 			pb.RegisterFinanceServer(s, financeSrv)
 		},
-	)
+	).WithUnaryInterceptors(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if md, ok := metadata.FromIncomingContext(ctx); ok {
+			if vals := md.Get("account_id"); len(vals) > 0 && vals[0] != "" {
+				ctx = auth.WithAccountID(ctx, vals[0])
+			}
+		}
+		return handler(ctx, req)
+	})
 
 	return &Server{GRPC: grpc}, nil
 }

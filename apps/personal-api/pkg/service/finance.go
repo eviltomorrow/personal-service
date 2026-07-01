@@ -11,13 +11,10 @@ import (
 	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
 
 	"github.com/eviltomorrow/personal-service/apps/personal-api/pkg/model"
-	"github.com/eviltomorrow/personal-service/lib/auth"
 )
 
-func withAccountID(ctx context.Context, _ string) context.Context {
-	if token := auth.TokenFromContext(ctx); token != "" {
-		return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
-	}
+func withAccountID(ctx context.Context, accountID string) context.Context {
+	ctx = metadata.AppendToOutgoingContext(ctx, "account_id", accountID)
 	return ctx
 }
 
