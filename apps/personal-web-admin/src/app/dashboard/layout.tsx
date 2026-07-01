@@ -37,15 +37,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     async function checkAuth() {
-      try {
-        const res = await fetch("/api/v1/auth/token/validate", { method: "POST" });
-        if (!res.ok) { redirectToLogin(); return; }
-        const json = await res.json();
-        if (json.code !== 0) { redirectToLogin(); return; }
-        setAuthed(true);
-      } catch {
-        redirectToLogin();
+      const tryValidate = async (): Promise<boolean> => {
+        try {
+          const res = await fetch("/api/v1/auth/token/validate", { method: "POST" });
+          if (!res.ok) return false;
+          const json = await res.json();
+          return json.code === 0;
+        } catch {
+          return false;
+        }
+      };
+      let ok = await tryValidate();
+      if (!ok) {
+        await new Promise((r) => setTimeout(r, 100));
+        ok = await tryValidate();
       }
+      if (!ok) { redirectToLogin(); return; }
+      setAuthed(true);
     }
     checkAuth();
   }, []);

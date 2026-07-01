@@ -6,11 +6,24 @@ export async function api(url: string, options: RequestInit = {}): Promise<Respo
   if (!headers["Content-Type"] && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
-  return fetch(url, { ...options, headers });
-}
 
-export async function ensureToken(): Promise<void> {
-  // no-op: token is managed by server via cookies
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401) {
+    try {
+      const refreshRes = await fetch("/api/v1/auth/token/refresh", { method: "POST" });
+      if (refreshRes.ok) {
+        const json = await refreshRes.json();
+        if (json.code === 0) {
+          return fetch(url, { ...options, headers });
+        }
+      }
+    } catch {
+      // refresh failed, return original 401 response
+    }
+  }
+
+  return res;
 }
 
 export { redirectToLogin } from "./auth";
