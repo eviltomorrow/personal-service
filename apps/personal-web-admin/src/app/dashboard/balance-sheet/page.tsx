@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { formatCNY } from "@/lib/format";
+import { api } from "@/lib/api";
 import {
   Wallet, Landmark, TrendingUp, Plus, Pencil, Trash2, X, AlertTriangle,
   ChevronLeft, ChevronRight,
@@ -18,58 +19,21 @@ interface BalanceGroup {
   items: BalanceItem[];
 }
 
-function createDefaultData(): BalanceGroup[] {
-  return [
-    {
-      category: "流动资产",
-      items: [
-        { name: "现金及银行存款", amount: 285000 },
-        { name: "应收账款", amount: 128000 },
-        { name: "存货", amount: 96000 },
-        { name: "短期投资", amount: 50000 },
-      ],
-    },
-    {
-      category: "固定资产",
-      items: [
-        { name: "房屋及建筑物", amount: 320000 },
-        { name: "机器设备", amount: 100000 },
-        { name: "长期投资", amount: 180000 },
-        { name: "无形资产", amount: 62500 },
-        { name: "长期待摊费用", amount: 65000 },
-      ],
-    },
-    {
-      category: "流动负债",
-      items: [
-        { name: "应付账款", amount: 156000 },
-        { name: "短期借款", amount: 100000 },
-        { name: "应付职工薪酬", amount: 38400 },
-      ],
-    },
-    {
-      category: "非流动负债",
-      items: [
-        { name: "长期借款", amount: 180000 },
-        { name: "应付债券", amount: 49000 },
-      ],
-    },
-    {
-      category: "净资产",
-      items: [
-        { name: "实收资本", amount: 500000 },
-        { name: "资本公积", amount: 120000 },
-        { name: "未分配利润", amount: 143100 },
-      ],
-    },
-  ];
+interface BSApiItem {
+  id: number;
+  account_id: string;
+  section: number;
+  category: string;
+  name: string;
+  amount: number;
+  note: string;
+  date: string;
+  sort_order: number;
+  created_at: number;
+  updated_at: number;
 }
 
 const MONTH_LABELS = ["", "1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
-
-function getMonthKey(year: number, month: number) {
-  return `${year}-${String(month).padStart(2, "0")}`;
-}
 
 type ModalState =
   | { type: "add"; group: number }
@@ -99,15 +63,14 @@ export default function BalanceSheetPage() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
-  const [monthData, setMonthData] = useState<Record<string, BalanceGroup[]>>({
-    [getMonthKey(today.getFullYear(), today.getMonth() + 1)]: createDefaultData(),
-  });
+  const [items, setItems] = useState<BSApiItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-
-  const monthKey = getMonthKey(year, month);
-  const data = monthData[monthKey] ?? createDefaultData();
+  const [modalName, setModalName] = useState("");
+  const [modalAmount, setModalAmount] = useState("");
+  const [modalNote, setModalNote] = useState("");
+  const [modalItemId, setModalItemId] = useState<number | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const monthPickerRef = useRef<HTMLDivElement>(null);
 
@@ -121,72 +84,172 @@ export default function BalanceSheetPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  useEffect(() => {
+    loadData(year, month);
+  }, [year, month]);
+
+  async function loadData(y: number, m: number) {
+    setLoading(true);
+    try {
+      const res = await api(`/api/v1/cash-flow/balance-sheet/items?year=${y}&month=${m}`);
+      const json = await res.json();
+      if (json.code === 0) setItems(json.data);
+      else setToast({ type: "error", message: json.message || "加载失败" });
+    } catch {
+      setToast({ type: "error", message: "网络错误" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const groupedData = useMemo(() => {
+    const sections: { section: number; category: string }[] = [
+      { section: 1, category: "流动资产" },
+      { section: 1, category: "固定资产" },
+      { section: 2, category: "流动负债" },
+      { section: 2, category: "非流动负债" },
+      { section: 3, category: "净资产" },
+    ];
+    return sections.map(({ section, category }) => ({
+      category,
+      items: items
+        .filter(i => i.section === section && i.category === category)
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(i => ({ id: i.id, name: i.name, amount: i.amount })),
+    }));
+  }, [items]);
+
+  const data = groupedData;
+
   function navigateMonth(delta: number) {
     const d = new Date(year, month - 1 + delta, 1);
     const ny = d.getFullYear();
     const nm = d.getMonth() + 1;
-    const nk = getMonthKey(ny, nm);
     setYear(ny);
     setMonth(nm);
-    if (!monthData[nk]) {
-      setMonthData((prev) => ({ ...prev, [nk]: prev[monthKey].map((g) => ({ ...g, items: [...g.items] })) }));
-    }
+    loadData(ny, nm);
   }
 
   const totalAssets = useMemo(
-    () => data.slice(0, 2).flatMap((g) => g.items).reduce((s, i) => s + i.amount, 0),
-    [data],
+    () => items.filter(i => i.section === 1).reduce((s, i) => s + i.amount, 0),
+    [items],
   );
   const totalLiabilities = useMemo(
-    () => data.slice(2, 4).flatMap((g) => g.items).reduce((s, i) => s + i.amount, 0),
-    [data],
+    () => items.filter(i => i.section === 2).reduce((s, i) => s + i.amount, 0),
+    [items],
   );
   const totalEquity = useMemo(
-    () => data.slice(4).flatMap((g) => g.items).reduce((s, i) => s + i.amount, 0),
-    [data],
+    () => items.filter(i => i.section === 3).reduce((s, i) => s + i.amount, 0),
+    [items],
   );
 
   const totals = [totalAssets, totalLiabilities, totalEquity];
 
   function openAdd(group: number) {
-    setName("");
-    setAmount("");
+    setModalName("");
+    setModalAmount("");
+    setModalNote("");
+    setModalItemId(null);
     setModal({ type: "add", group });
   }
 
   function openEdit(group: number, item: number) {
-    setName(data[group].items[item].name);
-    setAmount(String(data[group].items[item].amount));
+    const apiItem = data[group].items[item];
+    const src = items.find(i => i.id === (apiItem as any).id);
+    setModalName(src?.name ?? "");
+    setModalAmount(src ? (src.amount / 100).toFixed(2) : "");
+    setModalNote(src?.note ?? "");
+    setModalItemId(src?.id ?? null);
     setModal({ type: "edit", group, item });
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!modal) return;
-    const n = name.trim();
-    const a = Number(amount);
-    if (!n || isNaN(a) || a <= 0) return;
-
-    setMonthData((prev) => {
-      const src = prev[monthKey];
-      const next = src.map((g) => ({ ...g, items: [...g.items] }));
-      if (modal.type === "add") {
-        next[modal.group].items.push({ name: n, amount: a });
-      } else {
-        next[modal.group].items[modal.item] = { name: n, amount: a };
+    const n = modalName.trim();
+    const amt = Math.round(parseFloat(modalAmount) * 100);
+    if (!n || isNaN(amt) || amt <= 0) {
+      setToast({ type: "error", message: "请输入有效的项目名称和金额" });
+      return;
+    }
+    const sectionCat = [
+      { section: 1, category: "流动资产" },
+      { section: 1, category: "固定资产" },
+      { section: 2, category: "流动负债" },
+      { section: 2, category: "非流动负债" },
+      { section: 3, category: "净资产" },
+    ][modal.group];
+    if (modal.type === "add") {
+      try {
+        const res = await api("/api/v1/cash-flow/balance-sheet/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            section: sectionCat.section,
+            category: sectionCat.category,
+            name: n,
+            amount: amt,
+            note: modalNote || undefined,
+            date: `${year}-${String(month).padStart(2, "0")}`,
+          }),
+        });
+        const json = await res.json();
+        if (json.code === 0 && json.data) {
+          setItems(prev => [...prev, json.data]);
+          setToast({ type: "success", message: "项目已添加" });
+        } else {
+          setToast({ type: "error", message: json.message || "添加失败" });
+        }
+      } catch {
+        setToast({ type: "error", message: "网络错误，请重试" });
       }
-      return { ...prev, [monthKey]: next };
-    });
+    } else {
+      try {
+        const res = await api(`/api/v1/cash-flow/balance-sheet/items/${modalItemId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            section: sectionCat.section,
+            category: sectionCat.category,
+            name: n,
+            amount: amt,
+            note: modalNote || undefined,
+            date: `${year}-${String(month).padStart(2, "0")}`,
+          }),
+        });
+        const json = await res.json();
+        if (json.code === 0 && json.data) {
+          setItems(prev => prev.map(i => i.id === json.data.id ? json.data : i));
+          setToast({ type: "success", message: "项目已更新" });
+        } else {
+          setToast({ type: "error", message: json.message || "更新失败" });
+        }
+      } catch {
+        setToast({ type: "error", message: "网络错误，请重试" });
+      }
+    }
     setModal(null);
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!modal || modal.type !== "delete") return;
-    setMonthData((prev) => {
-      const src = prev[monthKey];
-      const next = src.map((g) => ({ ...g, items: [...g.items] }));
-      next[modal.group].items.splice(modal.item, 1);
-      return { ...prev, [monthKey]: next };
-    });
+    const apiItem = data[modal.group]?.items[modal.item];
+    const itemId = (apiItem as any).id;
+    if (!itemId) {
+      setModal(null);
+      return;
+    }
+    try {
+      const res = await api(`/api/v1/cash-flow/balance-sheet/items/${itemId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.code === 0) {
+        setItems(prev => prev.filter(i => i.id !== itemId));
+        setToast({ type: "success", message: "项目已删除" });
+      } else {
+        setToast({ type: "error", message: json.message || "删除失败" });
+      }
+    } catch {
+      setToast({ type: "error", message: "网络错误，请重试" });
+    }
     setModal(null);
   }
 
@@ -257,6 +320,27 @@ export default function BalanceSheetPage() {
         }
       />
 
+      {toast && (
+        <div className={`flex items-center gap-3 rounded-lg border px-5 py-3 text-sm anim-in anim-fade anim-down ${
+          toast.type === "success"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : "border-red-200 bg-red-50 text-red-700"
+        }`}>
+          <span className="flex-1">{toast.message}</span>
+          <button type="button" onClick={() => setToast(null)}
+            className="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100 transition-opacity">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center py-12 text-sm text-gray-400">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600 mr-2" />
+          加载中...
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {summaryMeta.map((meta, i) => {
           const c = summaryColors[meta.color];
@@ -269,7 +353,7 @@ export default function BalanceSheetPage() {
                     <meta.icon className={`h-5 w-5 ${c.icon}`} />
                   </div>
                 </div>
-                <p className={`text-2xl font-bold ${c.text} tabular-nums`}>{formatCNY(totals[i])}</p>
+                <p className={`text-2xl font-bold ${c.text} tabular-nums`}>{formatCNY(totals[i] / 100)}</p>
                 <p className="mt-0.5 text-sm text-gray-500">{meta.label}</p>
               </div>
             </div>
@@ -308,7 +392,7 @@ export default function BalanceSheetPage() {
                   >
                     <span className="text-sm text-gray-700">{item.name}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-gray-900 tabular-nums">{formatCNY(item.amount)}</span>
+                      <span className="text-sm font-medium text-gray-900 tabular-nums">{formatCNY(item.amount / 100)}</span>
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           type="button"
@@ -333,7 +417,7 @@ export default function BalanceSheetPage() {
                 <div className={`px-5 py-2.5 flex items-center justify-between ${sec.bg} border-t border-gray-100`}>
                   <span className={`text-sm font-semibold ${sec.text}`}>{sec.label}</span>
                   <div className="flex items-center gap-3">
-                    <span className={`text-sm font-semibold ${sec.text} tabular-nums`}>{formatCNY(totals[si])}</span>
+                    <span className={`text-sm font-semibold ${sec.text} tabular-nums`}>{formatCNY(totals[si] / 100)}</span>
                     <div className="w-[34px]" />
                   </div>
                 </div>
@@ -358,16 +442,21 @@ export default function BalanceSheetPage() {
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">项目名称</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="请输入项目名称" autoFocus
+                <input type="text" value={modalName} onChange={(e) => setModalName(e.target.value)} placeholder="请输入项目名称" autoFocus
                   className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">金额（元）</label>
                 <div className="relative">
                   <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm text-gray-400">¥</span>
-                  <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" min="0" step="0.01"
+                  <input type="number" value={modalAmount} onChange={(e) => setModalAmount(e.target.value)} placeholder="0.00" min="0" step="0.01"
                     className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-8 pr-3.5 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none transition-all" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">备注（可选）</label>
+                <input type="text" value={modalNote} onChange={(e) => setModalNote(e.target.value)} placeholder="备注信息"
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
               </div>
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
