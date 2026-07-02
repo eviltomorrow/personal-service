@@ -9,5 +9,8 @@ func Init(cfg *config.Config) error {
 	if err := initCashFlow(cfg); err != nil {
 		return err
 	}
-	return initBalanceSheet(cfg)
+	if err := initBalanceSheet(cfg); err != nil {
+		return err
+	}
+	return initPortfolio(cfg)
 }

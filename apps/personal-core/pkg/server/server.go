@@ -85,6 +85,7 @@ func New(cfg *config.Config) (*Server, error) {
 
 	cashFlowSrv := service.NewCashFlow()
 	balanceSheetSrv := service.NewBalanceSheet()
+	portfolioSrv := service.NewPortfolio()
 
 	grpc := grpcserver.NewGRPC(
 		&cfg.Network,
@@ -92,6 +93,7 @@ func New(cfg *config.Config) (*Server, error) {
 		func(s *grpc.Server) {
 			pb.RegisterCashFlowServer(s, cashFlowSrv)
 			pb.RegisterBalanceSheetServer(s, balanceSheetSrv)
+			pb.RegisterPortfolioServer(s, portfolioSrv)
 		},
 	).WithUnaryInterceptors(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if md, ok := metadata.FromIncomingContext(ctx); ok {

@@ -68,6 +68,7 @@ func New(cfg *config.Config) (*Server, error) {
 		AuthClient:         provider.GetAuthClient(),
 		CashFlowClient:     provider.GetCashFlowClient(),
 		BalanceSheetClient: provider.GetBalanceSheetClient(),
+		PortfolioClient:    provider.GetPortfolioClient(),
 	}
 
 	refresher := provider.NewTokenRefresher(deps.AuthClient)
