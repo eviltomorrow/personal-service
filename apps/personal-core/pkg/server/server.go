@@ -83,13 +83,15 @@ func New(cfg *config.Config) (*Server, error) {
 
 	resolver.Register(lb.NewBuilder(etcd.Client))
 
-	financeSrv := service.NewFinance()
+	cashFlowSrv := service.NewCashFlow()
+	balanceSheetSrv := service.NewBalanceSheet()
 
 	grpc := grpcserver.NewGRPC(
 		&cfg.Network,
 		&cfg.Log,
 		func(s *grpc.Server) {
-			pb.RegisterFinanceServer(s, financeSrv)
+			pb.RegisterCashFlowServer(s, cashFlowSrv)
+			pb.RegisterBalanceSheetServer(s, balanceSheetSrv)
 		},
 	).WithUnaryInterceptors(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if md, ok := metadata.FromIncomingContext(ctx); ok {
