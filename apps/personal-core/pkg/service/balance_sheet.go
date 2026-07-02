@@ -29,7 +29,7 @@ func categoryToSection(category string) (pb.BalanceSheetSection, error) {
 		return pb.BalanceSheetSection_BALANCE_SHEET_SECTION_ASSET, nil
 	case "流动负债", "非流动负债":
 		return pb.BalanceSheetSection_BALANCE_SHEET_SECTION_LIABILITY, nil
-	case "净资产":
+	case "权益":
 		return pb.BalanceSheetSection_BALANCE_SHEET_SECTION_EQUITY, nil
 	default:
 		return pb.BalanceSheetSection_BALANCE_SHEET_SECTION_UNSPECIFIED, status.Error(codes.InvalidArgument, "invalid category")

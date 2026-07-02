@@ -17,37 +17,37 @@ func withAccountID(ctx context.Context, accountID string) context.Context {
 	return ctx
 }
 
-type FinanceService struct {
-	client pb.FinanceClient
+type CashFlowService struct {
+	client pb.CashFlowClient
 }
 
-func NewFinanceService(client pb.FinanceClient) *FinanceService {
-	return &FinanceService{client: client}
+func NewCashFlowService(client pb.CashFlowClient) *CashFlowService {
+	return &CashFlowService{client: client}
 }
 
-func financeTypeToProto(t model.FinanceType) (pb.FinanceType, error) {
+func cashFlowTypeToProto(t model.CashFlowType) (pb.CashFlowType, error) {
 	switch t {
-	case model.FinanceTypeIncome:
-		return pb.FinanceType_FINANCE_TYPE_INCOME, nil
-	case model.FinanceTypeExpense:
-		return pb.FinanceType_FINANCE_TYPE_EXPENSE, nil
+	case model.CashFlowTypeIncome:
+		return pb.CashFlowType_CASH_FLOW_TYPE_INCOME, nil
+	case model.CashFlowTypeExpense:
+		return pb.CashFlowType_CASH_FLOW_TYPE_EXPENSE, nil
 	default:
-		return pb.FinanceType_FINANCE_TYPE_UNSPECIFIED, status.Error(codes.InvalidArgument, "unsupported finance_type")
+		return pb.CashFlowType_CASH_FLOW_TYPE_UNSPECIFIED, status.Error(codes.InvalidArgument, "unsupported cash_flow_type")
 	}
 }
 
-func financeTypeFromProto(t pb.FinanceType) model.FinanceType {
+func cashFlowTypeFromProto(t pb.CashFlowType) model.CashFlowType {
 	switch t {
-	case pb.FinanceType_FINANCE_TYPE_INCOME:
-		return model.FinanceTypeIncome
-	case pb.FinanceType_FINANCE_TYPE_EXPENSE:
-		return model.FinanceTypeExpense
+	case pb.CashFlowType_CASH_FLOW_TYPE_INCOME:
+		return model.CashFlowTypeIncome
+	case pb.CashFlowType_CASH_FLOW_TYPE_EXPENSE:
+		return model.CashFlowTypeExpense
 	default:
 		return ""
 	}
 }
 
-func (s *FinanceService) ListCategories(ctx context.Context, accountID string, year int, month int) ([]model.Category, error) {
+func (s *CashFlowService) ListCategories(ctx context.Context, accountID string, year int, month int) ([]model.Category, error) {
 	pbResp, err := s.client.ListCategories(withAccountID(ctx, accountID), &pb.ListCategoriesRequest{
 		Year:  int32(year),
 		Month: int32(month),
@@ -61,7 +61,7 @@ func (s *FinanceService) ListCategories(ctx context.Context, accountID string, y
 			ID:        c.Id,
 			AccountID: c.AccountId,
 			Name:      c.Name,
-			Type:      financeTypeFromProto(c.Type),
+			Type:      cashFlowTypeFromProto(c.Type),
 			SortOrder: int(c.SortOrder),
 			Date:      c.Date,
 			CreatedAt: c.CreatedAt,
@@ -71,8 +71,8 @@ func (s *FinanceService) ListCategories(ctx context.Context, accountID string, y
 	return result, nil
 }
 
-func (s *FinanceService) CreateCategory(ctx context.Context, accountID string, req *model.CreateCategoryRequest) (*model.Category, error) {
-	pbType, err := financeTypeToProto(req.Type)
+func (s *CashFlowService) CreateCategory(ctx context.Context, accountID string, req *model.CreateCategoryRequest) (*model.Category, error) {
+	pbType, err := cashFlowTypeToProto(req.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (s *FinanceService) CreateCategory(ctx context.Context, accountID string, r
 		ID:        pbResp.Id,
 		AccountID: pbResp.AccountId,
 		Name:      pbResp.Name,
-		Type:      financeTypeFromProto(pbResp.Type),
+		Type:      cashFlowTypeFromProto(pbResp.Type),
 		SortOrder: int(pbResp.SortOrder),
 		Date:      pbResp.Date,
 		CreatedAt: pbResp.CreatedAt,
@@ -97,8 +97,8 @@ func (s *FinanceService) CreateCategory(ctx context.Context, accountID string, r
 	}, nil
 }
 
-func (s *FinanceService) UpdateCategory(ctx context.Context, accountID string, req *model.UpdateCategoryRequest) (*model.Category, error) {
-	pbType, err := financeTypeToProto(req.Type)
+func (s *CashFlowService) UpdateCategory(ctx context.Context, accountID string, req *model.UpdateCategoryRequest) (*model.Category, error) {
+	pbType, err := cashFlowTypeToProto(req.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (s *FinanceService) UpdateCategory(ctx context.Context, accountID string, r
 		ID:        pbResp.Id,
 		AccountID: pbResp.AccountId,
 		Name:      pbResp.Name,
-		Type:      financeTypeFromProto(pbResp.Type),
+		Type:      cashFlowTypeFromProto(pbResp.Type),
 		SortOrder: int(pbResp.SortOrder),
 		Date:      pbResp.Date,
 		CreatedAt: pbResp.CreatedAt,
@@ -124,12 +124,12 @@ func (s *FinanceService) UpdateCategory(ctx context.Context, accountID string, r
 	}, nil
 }
 
-func (s *FinanceService) DeleteCategory(ctx context.Context, accountID string, id int64) error {
+func (s *CashFlowService) DeleteCategory(ctx context.Context, accountID string, id int64) error {
 	_, err := s.client.DeleteCategory(withAccountID(ctx, accountID), &pb.DeleteCategoryRequest{Id: id})
 	return err
 }
 
-func (s *FinanceService) ListTransactions(ctx context.Context, accountID string, req *model.ListTransactionsRequest) (*model.ListTransactionsResult, error) {
+func (s *CashFlowService) ListTransactions(ctx context.Context, accountID string, req *model.ListTransactionsRequest) (*model.ListTransactionsResult, error) {
 	pbResp, err := s.client.ListTransactions(withAccountID(ctx, accountID), &pb.ListTransactionsRequest{
 		Year:       int32(req.Year),
 		Month:      int32(req.Month),
@@ -146,7 +146,7 @@ func (s *FinanceService) ListTransactions(ctx context.Context, accountID string,
 			ID:         t.Id,
 			AccountID:  t.AccountId,
 			CategoryID: t.CategoryId,
-			Type:       financeTypeFromProto(t.Type),
+			Type:       cashFlowTypeFromProto(t.Type),
 			Name:       t.Name,
 			Amount:     t.Amount,
 			Date:       t.Date,
@@ -162,8 +162,8 @@ func (s *FinanceService) ListTransactions(ctx context.Context, accountID string,
 	}, nil
 }
 
-func (s *FinanceService) CreateTransaction(ctx context.Context, accountID string, req *model.CreateTransactionRequest) (*model.Transaction, error) {
-	pbType, err := financeTypeToProto(req.Type)
+func (s *CashFlowService) CreateTransaction(ctx context.Context, accountID string, req *model.CreateTransactionRequest) (*model.Transaction, error) {
+	pbType, err := cashFlowTypeToProto(req.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (s *FinanceService) CreateTransaction(ctx context.Context, accountID string
 		ID:         pbResp.Id,
 		AccountID:  pbResp.AccountId,
 		CategoryID: pbResp.CategoryId,
-		Type:       financeTypeFromProto(pbResp.Type),
+		Type:       cashFlowTypeFromProto(pbResp.Type),
 		Name:       pbResp.Name,
 		Amount:     pbResp.Amount,
 		Date:       pbResp.Date,
@@ -194,8 +194,8 @@ func (s *FinanceService) CreateTransaction(ctx context.Context, accountID string
 	}, nil
 }
 
-func (s *FinanceService) UpdateTransaction(ctx context.Context, accountID string, req *model.UpdateTransactionRequest) (*model.Transaction, error) {
-	pbType, err := financeTypeToProto(req.Type)
+func (s *CashFlowService) UpdateTransaction(ctx context.Context, accountID string, req *model.UpdateTransactionRequest) (*model.Transaction, error) {
+	pbType, err := cashFlowTypeToProto(req.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (s *FinanceService) UpdateTransaction(ctx context.Context, accountID string
 		ID:         pbResp.Id,
 		AccountID:  pbResp.AccountId,
 		CategoryID: pbResp.CategoryId,
-		Type:       financeTypeFromProto(pbResp.Type),
+		Type:       cashFlowTypeFromProto(pbResp.Type),
 		Name:       pbResp.Name,
 		Amount:     pbResp.Amount,
 		Date:       pbResp.Date,
@@ -227,7 +227,7 @@ func (s *FinanceService) UpdateTransaction(ctx context.Context, accountID string
 	}, nil
 }
 
-func (s *FinanceService) DeleteTransaction(ctx context.Context, accountID string, id int64) error {
+func (s *CashFlowService) DeleteTransaction(ctx context.Context, accountID string, id int64) error {
 	_, err := s.client.DeleteTransaction(withAccountID(ctx, accountID), &pb.DeleteTransactionRequest{Id: id})
 	return err
 }

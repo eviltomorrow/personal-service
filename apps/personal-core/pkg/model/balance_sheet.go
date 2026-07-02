@@ -88,17 +88,17 @@ func scanBSItems(rows *sql.Rows) ([]*BalanceSheetItem, error) {
 
 func InsertBalanceSheetItem(ctx context.Context, exec dbmysql.Exec, item *BalanceSheetItem) (int64, error) {
 	return sqlutil.NewInsert(exec).Table(TableNameBalanceSheetItems).InsertCtx(ctx, map[string]interface{}{
-		FieldBSIAccountID:  item.AccountID,
-		FieldBSISection:    item.Section,
-		FieldBSICategory:   item.Category,
-		FieldBSIName:       item.Name,
-		FieldBSIAmount:     float64(item.Amount) / 100.0,
-		FieldBSINote:       item.Note,
-		FieldBSIDate:       item.Date,
-		FieldBSISortOrder:  item.SortOrder,
-		FieldBSIDeletedAt:  item.DeletedAt,
-		FieldBSICreatedAt:  item.CreatedAt,
-		FieldBSIUpdatedAt:  item.UpdatedAt,
+		FieldBSIAccountID: item.AccountID,
+		FieldBSISection:   item.Section,
+		FieldBSICategory:  item.Category,
+		FieldBSIName:      item.Name,
+		FieldBSIAmount:    float64(item.Amount) / 100.0,
+		FieldBSINote:      item.Note,
+		FieldBSIDate:      item.Date,
+		FieldBSISortOrder: item.SortOrder,
+		FieldBSIDeletedAt: item.DeletedAt,
+		FieldBSICreatedAt: item.CreatedAt,
+		FieldBSIUpdatedAt: item.UpdatedAt,
 	})
 }
 

@@ -9,18 +9,18 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/finalizer"
 )
 
-var financeCli model.FinanceClient
+var cashFlowCli model.CashFlowClient
 
-func initFinance(cfg *config.Config) error {
-	pbFinance, cleanup, err := grpcclient.NewFinanceClient(cfg.Service.CoreServiceTarget)
+func initCashFlow(cfg *config.Config) error {
+	pbCashFlow, cleanup, err := grpcclient.NewCashFlowClient(cfg.Service.CoreServiceTarget)
 	if err != nil {
 		return err
 	}
 	finalizer.RegisterCleanupFuncs(cleanup)
-	financeCli = service.NewFinanceService(pbFinance)
+	cashFlowCli = service.NewCashFlowService(pbCashFlow)
 	return nil
 }
 
-func GetFinanceClient() model.FinanceClient {
-	return financeCli
+func GetCashFlowClient() model.CashFlowClient {
+	return cashFlowCli
 }

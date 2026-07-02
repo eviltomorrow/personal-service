@@ -31,7 +31,8 @@ Frontend admin dashboard for the personal account platform. Stub application wit
 | `/dashboard/reports` | Reports |
 | `/dashboard/blog` | Blog management |
 | `/dashboard/help` | Help center |
-| `/dashboard/balance-sheet` | Financial data |
+| `/dashboard/cash-flow` | 收入与支出 (API: `/api/v1/cash-flow/*`) |
+| `/dashboard/balance-sheet` | 资产负债表 (API: `/api/v1/cash-flow/balance-sheet/*`) |
 
 ## STACK
 

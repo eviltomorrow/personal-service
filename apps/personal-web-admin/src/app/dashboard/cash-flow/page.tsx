@@ -98,9 +98,9 @@ export default function CashFlowPage() {
     try {
       const [py, pm] = prevMonth(year, month);
       const [catRes, txRes, prevTxRes] = await Promise.all([
-        api(`/api/v1/finance/categories?year=${year}&month=${month}`),
-        api(`/api/v1/finance/transactions?year=${year}&month=${month}`),
-        api(`/api/v1/finance/transactions?year=${py}&month=${pm}`),
+        api(`/api/v1/cash-flow/categories?year=${year}&month=${month}`),
+        api(`/api/v1/cash-flow/transactions?year=${year}&month=${month}`),
+        api(`/api/v1/cash-flow/transactions?year=${py}&month=${pm}`),
       ]);
       const catJson = await catRes.json();
       const txJson = await txRes.json();
@@ -200,7 +200,7 @@ export default function CashFlowPage() {
     const item = cat.items[itemIndex];
     setModalName(item.name);
     setModalAmount((item.amount / 100).toFixed(2));
-    setModalDate(item.date);
+    setModalDate(item.date.slice(0, 10));
     setModalNote(item.note ?? "");
     setModalCatId(cat.id);
     setModalItemId(item.id);
@@ -228,7 +228,7 @@ export default function CashFlowPage() {
       }
       const catDate = `${year}-${String(month).padStart(2, "0")}`;
       try {
-        const res = await api(`/api/v1/finance/categories?date=${catDate}`, {
+        const res = await api(`/api/v1/cash-flow/categories?date=${catDate}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, type: modal.section === "income" ? "income" : "expense", sort_order: Math.max(...categories.filter((c) => c.type === (modal.section === "income" ? "income" : "expense")).map((c) => c.sort_order), 0) + 1 }),
@@ -253,7 +253,7 @@ export default function CashFlowPage() {
         .filter((t) => t.category_id === modalCatId)
         .reduce((max, t) => Math.max(max, t.sort_order), 0);
       try {
-        const res = await api("/api/v1/finance/transactions", {
+        const res = await api("/api/v1/cash-flow/transactions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -284,7 +284,7 @@ export default function CashFlowPage() {
       if (isNaN(amt) || amt <= 0) { setToast({ type: "error", message: "请输入有效的金额" }); return; }
       const existingTx = transactions.find((t) => t.id === modalItemId);
       try {
-        const res = await api(`/api/v1/finance/transactions/${modalItemId}`, {
+        const res = await api(`/api/v1/cash-flow/transactions/${modalItemId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -317,7 +317,7 @@ export default function CashFlowPage() {
     if (!modal) return;
     if (modal.type === "delete-category" && modalCatId !== null) {
       try {
-        const res = await api(`/api/v1/finance/categories/${modalCatId}`, { method: "DELETE" });
+        const res = await api(`/api/v1/cash-flow/categories/${modalCatId}`, { method: "DELETE" });
         const json = await res.json();
         if (json.code === 0) {
           setCategories((prev) => prev.filter((c) => c.id !== modalCatId));
@@ -334,7 +334,7 @@ export default function CashFlowPage() {
     }
     if (modal.type === "delete-item" && modalItemId !== null) {
       try {
-        const res = await api(`/api/v1/finance/transactions/${modalItemId}`, { method: "DELETE" });
+        const res = await api(`/api/v1/cash-flow/transactions/${modalItemId}`, { method: "DELETE" });
         const json = await res.json();
         if (json.code === 0) {
           setTransactions((prev) => prev.filter((t) => t.id !== modalItemId));

@@ -6,7 +6,7 @@ import { formatCNY } from "@/lib/format";
 import { api } from "@/lib/api";
 import {
   Wallet, Landmark, TrendingUp, Plus, Pencil, Trash2, X, AlertTriangle,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 
 interface BalanceItem {
@@ -54,17 +54,18 @@ const summaryColors = {
   emerald: { text: "text-emerald-700", bg: "bg-emerald-50", icon: "text-emerald-600", iconBg: "bg-emerald-100" },
 };
 
-const sectionMeta = [
-  { label: "资产合计", indicator: "bg-blue-500", text: "text-blue-700", bg: "bg-blue-50" },
-  { label: "负债合计", indicator: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-50" },
-  { label: "净资产合计", indicator: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50" },
-];
+  const sectionMeta = [
+    { label: "资产合计", indicator: "bg-blue-500", text: "text-blue-700", bg: "bg-blue-50" },
+    { label: "负债合计", indicator: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-50" },
+    { label: "权益合计", indicator: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50" },
+  ];
 
 export default function BalanceSheetPage() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [items, setItems] = useState<BSApiItem[]>([]);
+  const [prevItems, setPrevItems] = useState<BSApiItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
   const [modalName, setModalName] = useState("");
@@ -89,13 +90,24 @@ export default function BalanceSheetPage() {
     loadData(year, month);
   }, [year, month]);
 
+  function prevMonth(y: number, m: number): [number, number] {
+    if (m === 1) return [y - 1, 12];
+    return [y, m - 1];
+  }
+
   async function loadData(y: number, m: number) {
     setLoading(true);
     try {
-      const res = await api(`/api/v1/cash-flow/balance-sheet/items?year=${y}&month=${m}`);
+      const [py, pm] = prevMonth(y, m);
+      const [res, prevRes] = await Promise.all([
+        api(`/api/v1/cash-flow/balance-sheet/items?year=${y}&month=${m}`),
+        api(`/api/v1/cash-flow/balance-sheet/items?year=${py}&month=${pm}`),
+      ]);
       const json = await res.json();
+      const prevJson = await prevRes.json();
       if (json.code === 0) setItems(json.data ?? []);
       else setToast({ type: "error", message: json.message || "加载失败" });
+      if (prevJson.code === 0) setPrevItems(prevJson.data ?? []);
     } catch {
       setToast({ type: "error", message: "网络错误" });
     } finally {
@@ -109,7 +121,7 @@ export default function BalanceSheetPage() {
       { section: 1, category: "固定资产" },
       { section: 2, category: "流动负债" },
       { section: 2, category: "非流动负债" },
-      { section: 3, category: "净资产" },
+      { section: 3, category: "权益" },
     ];
     return sections.map(({ section, category }) => ({
       category,
@@ -138,12 +150,37 @@ export default function BalanceSheetPage() {
     () => items.filter(i => i.section === 2).reduce((s, i) => s + i.amount, 0),
     [items],
   );
-  const totalEquity = useMemo(
+  const totalEquity = totalAssets - totalLiabilities;
+
+  const totalEquitySection = useMemo(
     () => items.filter(i => i.section === 3).reduce((s, i) => s + i.amount, 0),
     [items],
   );
 
+  const prevTotalAssets = useMemo(
+    () => prevItems.filter(i => i.section === 1).reduce((s, i) => s + i.amount, 0),
+    [prevItems],
+  );
+  const prevTotalLiabilities = useMemo(
+    () => prevItems.filter(i => i.section === 2).reduce((s, i) => s + i.amount, 0),
+    [prevItems],
+  );
+  const prevTotalEquity = prevTotalAssets - prevTotalLiabilities;
+
+  const prevTotalEquitySection = useMemo(
+    () => prevItems.filter(i => i.section === 3).reduce((s, i) => s + i.amount, 0),
+    [prevItems],
+  );
+
   const totals = [totalAssets, totalLiabilities, totalEquity];
+  const sectionTotals = [totalAssets, totalLiabilities, totalEquitySection];
+  const prevTotals = [prevTotalAssets, prevTotalLiabilities, prevTotalEquity];
+
+  function calcChange(current: number, previous: number): string | null {
+    if (previous === 0) return null;
+    const pct = ((current - previous) / previous) * 100;
+    return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
+  }
 
   function openAdd(group: number) {
     setModalName("");
@@ -176,20 +213,23 @@ export default function BalanceSheetPage() {
       { section: 1, category: "固定资产" },
       { section: 2, category: "流动负债" },
       { section: 2, category: "非流动负债" },
-      { section: 3, category: "净资产" },
+      { section: 3, category: "权益" },
     ][modal.group];
     if (modal.type === "add") {
+      const maxSortOrder = items
+        .filter(i => i.section === sectionCat.section && i.category === sectionCat.category)
+        .reduce((max, i) => Math.max(max, i.sort_order), 0);
       try {
         const res = await api("/api/v1/cash-flow/balance-sheet/items", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            section: sectionCat.section,
             category: sectionCat.category,
             name: n,
             amount: amt,
             note: modalNote || undefined,
             date: `${year}-${String(month).padStart(2, "0")}`,
+            sort_order: maxSortOrder + 1,
           }),
         });
         const json = await res.json();
@@ -204,17 +244,18 @@ export default function BalanceSheetPage() {
         setToast({ type: "error", message: "网络错误，请重试" });
       }
     } else {
+      const existingItem = items.find(i => i.id === modalItemId);
       try {
         const res = await api(`/api/v1/cash-flow/balance-sheet/items/${modalItemId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            section: sectionCat.section,
             category: sectionCat.category,
             name: n,
             amount: amt,
             note: modalNote || undefined,
             date: `${year}-${String(month).padStart(2, "0")}`,
+            sort_order: existingItem?.sort_order ?? 0,
           }),
         });
         const json = await res.json();
@@ -353,6 +394,21 @@ export default function BalanceSheetPage() {
                   <div className={`rounded-lg ${c.iconBg} p-2`}>
                     <meta.icon className={`h-5 w-5 ${c.icon}`} />
                   </div>
+                  {(() => {
+                    const change = calcChange(totals[i], prevTotals[i]);
+                    return change !== null ? (
+                      <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        change.startsWith("+")
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-red-50 text-red-700"
+                      }`}>
+                        {change.startsWith("+") ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                        {change}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-400">-</span>
+                    );
+                  })()}
                 </div>
                 <p className={`text-2xl font-bold ${c.text} tabular-nums`}>{formatCNY(totals[i] / 100)}</p>
                 <p className="mt-0.5 text-sm text-gray-500">{meta.label}</p>
@@ -389,7 +445,7 @@ export default function BalanceSheetPage() {
                 {group.items.map((item, ii) => (
                   <div
                     key={`${gi}-${ii}`}
-                    className="group flex items-center justify-between px-5 py-2.5 hover:bg-gray-50/50 transition-colors"
+                    className="group flex items-center justify-between pl-10 pr-5 py-2.5 hover:bg-gray-50/50 transition-colors"
                   >
                     <span className="text-sm text-gray-700">{item.name}</span>
                     <div className="flex items-center gap-3">
@@ -418,7 +474,7 @@ export default function BalanceSheetPage() {
                 <div className={`px-5 py-2.5 flex items-center justify-between ${sec.bg} border-t border-gray-100`}>
                   <span className={`text-sm font-semibold ${sec.text}`}>{sec.label}</span>
                   <div className="flex items-center gap-3">
-                    <span className={`text-sm font-semibold ${sec.text} tabular-nums`}>{formatCNY(totals[si] / 100)}</span>
+                    <span className={`text-sm font-semibold ${sec.text} tabular-nums`}>{formatCNY(sectionTotals[si] / 100)}</span>
                     <div className="w-[34px]" />
                   </div>
                 </div>
@@ -454,13 +510,11 @@ export default function BalanceSheetPage() {
                     className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-8 pr-3.5 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none transition-all" />
                 </div>
               </div>
-              {modal?.type === "edit" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">备注（可选）</label>
-                  <input type="text" value={modalNote} onChange={(e) => setModalNote(e.target.value)} placeholder="备注信息"
-                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">备注（可选）</label>
+                <input type="text" value={modalNote} onChange={(e) => setModalNote(e.target.value)} placeholder="备注信息"
+                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
+              </div>
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
                 <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">保存</button>

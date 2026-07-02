@@ -46,12 +46,12 @@ func accountIDFromCtx(ctx context.Context) (string, error) {
 	return id, nil
 }
 
-type Finance struct {
-	pb.UnimplementedFinanceServer
+type CashFlow struct {
+	pb.UnimplementedCashFlowServer
 }
 
-func NewFinance() *Finance {
-	return &Finance{}
+func NewCashFlow() *CashFlow {
+	return &CashFlow{}
 }
 
 func now() int64 {
@@ -60,7 +60,7 @@ func now() int64 {
 
 // --- Categories ---
 
-func (s *Finance) ListCategories(ctx context.Context, req *pb.ListCategoriesRequest) (*pb.ListCategoriesResponse, error) {
+func (s *CashFlow) ListCategories(ctx context.Context, req *pb.ListCategoriesRequest) (*pb.ListCategoriesResponse, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (s *Finance) ListCategories(ctx context.Context, req *pb.ListCategoriesRequ
 			Id:        c.ID,
 			AccountId: c.AccountID,
 			Name:      c.Name,
-			Type:      pb.FinanceType(c.Type),
+			Type:      pb.CashFlowType(c.Type),
 			SortOrder: int32(c.SortOrder),
 			Date:      c.Date,
 			CreatedAt: c.CreatedAt,
@@ -88,7 +88,7 @@ func (s *Finance) ListCategories(ctx context.Context, req *pb.ListCategoriesRequ
 	return &pb.ListCategoriesResponse{Categories: result}, nil
 }
 
-func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequest) (*pb.Category, error) {
+func (s *CashFlow) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequest) (*pb.Category, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequ
 	if len(req.Name) > 64 {
 		return nil, status.Error(codes.InvalidArgument, "name too long")
 	}
-	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
+	if req.Type != pb.CashFlowType_CASH_FLOW_TYPE_INCOME && req.Type != pb.CashFlowType_CASH_FLOW_TYPE_EXPENSE {
 		return nil, status.Error(codes.InvalidArgument, "invalid type")
 	}
 	if req.Date == "" {
@@ -127,7 +127,7 @@ func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequ
 		Id:        c.ID,
 		AccountId: c.AccountID,
 		Name:      c.Name,
-		Type:      pb.FinanceType(c.Type),
+		Type:      pb.CashFlowType(c.Type),
 		SortOrder: int32(c.SortOrder),
 		Date:      c.Date,
 		CreatedAt: c.CreatedAt,
@@ -135,7 +135,7 @@ func (s *Finance) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequ
 	}, nil
 }
 
-func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequest) (*pb.Category, error) {
+func (s *CashFlow) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequest) (*pb.Category, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequ
 	if len(req.Name) > 64 {
 		return nil, status.Error(codes.InvalidArgument, "name too long")
 	}
-	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
+	if req.Type != pb.CashFlowType_CASH_FLOW_TYPE_INCOME && req.Type != pb.CashFlowType_CASH_FLOW_TYPE_EXPENSE {
 		return nil, status.Error(codes.InvalidArgument, "invalid type")
 	}
 
@@ -191,7 +191,7 @@ func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequ
 		Id:        existing.ID,
 		AccountId: existing.AccountID,
 		Name:      existing.Name,
-		Type:      pb.FinanceType(existing.Type),
+		Type:      pb.CashFlowType(existing.Type),
 		SortOrder: int32(existing.SortOrder),
 		Date:      existing.Date,
 		CreatedAt: existing.CreatedAt,
@@ -199,7 +199,7 @@ func (s *Finance) UpdateCategory(ctx context.Context, req *pb.UpdateCategoryRequ
 	}, nil
 }
 
-func (s *Finance) DeleteCategory(ctx context.Context, req *pb.DeleteCategoryRequest) (*emptypb.Empty, error) {
+func (s *CashFlow) DeleteCategory(ctx context.Context, req *pb.DeleteCategoryRequest) (*emptypb.Empty, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -233,7 +233,7 @@ func (s *Finance) DeleteCategory(ctx context.Context, req *pb.DeleteCategoryRequ
 
 // --- Transactions ---
 
-func (s *Finance) ListTransactions(ctx context.Context, req *pb.ListTransactionsRequest) (*pb.ListTransactionsResponse, error) {
+func (s *CashFlow) ListTransactions(ctx context.Context, req *pb.ListTransactionsRequest) (*pb.ListTransactionsResponse, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -266,7 +266,7 @@ func (s *Finance) ListTransactions(ctx context.Context, req *pb.ListTransactions
 			Id:         t.ID,
 			AccountId:  t.AccountID,
 			CategoryId: t.CategoryID,
-			Type:       pb.FinanceType(t.Type),
+			Type:       pb.CashFlowType(t.Type),
 			Name:       t.Name,
 			Amount:     t.Amount,
 			Date:       t.Date,
@@ -279,7 +279,7 @@ func (s *Finance) ListTransactions(ctx context.Context, req *pb.ListTransactions
 	return &pb.ListTransactionsResponse{Transactions: result, Total: int32(total)}, nil
 }
 
-func (s *Finance) CreateTransaction(ctx context.Context, req *pb.CreateTransactionRequest) (*pb.Transaction, error) {
+func (s *CashFlow) CreateTransaction(ctx context.Context, req *pb.CreateTransactionRequest) (*pb.Transaction, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -299,7 +299,7 @@ func (s *Finance) CreateTransaction(ctx context.Context, req *pb.CreateTransacti
 	if req.Date == "" {
 		return nil, status.Error(codes.InvalidArgument, "date is required")
 	}
-	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
+	if req.Type != pb.CashFlowType_CASH_FLOW_TYPE_INCOME && req.Type != pb.CashFlowType_CASH_FLOW_TYPE_EXPENSE {
 		return nil, status.Error(codes.InvalidArgument, "invalid type")
 	}
 
@@ -327,7 +327,7 @@ func (s *Finance) CreateTransaction(ctx context.Context, req *pb.CreateTransacti
 		Id:         t.ID,
 		AccountId:  t.AccountID,
 		CategoryId: t.CategoryID,
-		Type:       pb.FinanceType(t.Type),
+		Type:       pb.CashFlowType(t.Type),
 		Name:       t.Name,
 		Amount:     t.Amount,
 		Date:       t.Date,
@@ -338,7 +338,7 @@ func (s *Finance) CreateTransaction(ctx context.Context, req *pb.CreateTransacti
 	}, nil
 }
 
-func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransactionRequest) (*pb.Transaction, error) {
+func (s *CashFlow) UpdateTransaction(ctx context.Context, req *pb.UpdateTransactionRequest) (*pb.Transaction, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -358,7 +358,7 @@ func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransacti
 	if req.Amount <= 0 {
 		return nil, status.Error(codes.InvalidArgument, "amount must be positive")
 	}
-	if req.Type != pb.FinanceType_FINANCE_TYPE_INCOME && req.Type != pb.FinanceType_FINANCE_TYPE_EXPENSE {
+	if req.Type != pb.CashFlowType_CASH_FLOW_TYPE_INCOME && req.Type != pb.CashFlowType_CASH_FLOW_TYPE_EXPENSE {
 		return nil, status.Error(codes.InvalidArgument, "invalid type")
 	}
 
@@ -393,7 +393,7 @@ func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransacti
 		Id:         existing.ID,
 		AccountId:  existing.AccountID,
 		CategoryId: req.CategoryId,
-		Type:       pb.FinanceType(existing.Type),
+		Type:       pb.CashFlowType(existing.Type),
 		Name:       req.Name,
 		Amount:     req.Amount,
 		Date:       req.Date,
@@ -404,7 +404,7 @@ func (s *Finance) UpdateTransaction(ctx context.Context, req *pb.UpdateTransacti
 	}, nil
 }
 
-func (s *Finance) DeleteTransaction(ctx context.Context, req *pb.DeleteTransactionRequest) (*emptypb.Empty, error) {
+func (s *CashFlow) DeleteTransaction(ctx context.Context, req *pb.DeleteTransactionRequest) (*emptypb.Empty, error) {
 	accountID, err := accountIDFromCtx(ctx)
 	if err != nil {
 		return nil, err

@@ -6,17 +6,17 @@ option go_package = "github.com/eviltomorrow/personal-service/apps/personal-core
 
 import "google/protobuf/empty.proto";
 
-enum FinanceType {
-  FINANCE_TYPE_UNSPECIFIED = 0;
-  FINANCE_TYPE_INCOME = 1;
-  FINANCE_TYPE_EXPENSE = 2;
+enum CashFlowType {
+  CASH_FLOW_TYPE_UNSPECIFIED = 0;
+  CASH_FLOW_TYPE_INCOME = 1;
+  CASH_FLOW_TYPE_EXPENSE = 2;
 }
 
 message Category {
   int64 id = 1;
   string account_id = 2;
   string name = 3;
-  FinanceType type = 4;
+  CashFlowType type = 4;
   int32 sort_order = 5;
   int64 created_at = 6;
   int64 updated_at = 7;
@@ -27,7 +27,7 @@ message Transaction {
   int64 id = 1;
   string account_id = 2;
   int64 category_id = 3;
-  FinanceType type = 4;
+  CashFlowType type = 4;
   string name = 5;
   int64 amount = 6;
   string date = 7;
@@ -48,7 +48,7 @@ message ListCategoriesResponse {
 
 message CreateCategoryRequest {
   string name = 1;
-  FinanceType type = 2;
+  CashFlowType type = 2;
   int32 sort_order = 3;
   string date = 4;
 }
@@ -56,7 +56,7 @@ message CreateCategoryRequest {
 message UpdateCategoryRequest {
   int64 id = 1;
   string name = 2;
-  FinanceType type = 3;
+  CashFlowType type = 3;
   int32 sort_order = 4;
   string date = 5;
 }
@@ -80,7 +80,7 @@ message ListTransactionsResponse {
 
 message CreateTransactionRequest {
   int64 category_id = 1;
-  FinanceType type = 2;
+  CashFlowType type = 2;
   string name = 3;
   int64 amount = 4;
   string date = 5;
@@ -91,7 +91,7 @@ message CreateTransactionRequest {
 message UpdateTransactionRequest {
   int64 id = 1;
   int64 category_id = 2;
-  FinanceType type = 3;
+  CashFlowType type = 3;
   string name = 4;
   int64 amount = 5;
   string date = 6;
@@ -103,7 +103,7 @@ message DeleteTransactionRequest {
   int64 id = 1;
 }
 
-service Finance {
+service CashFlow {
   rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
   rpc CreateCategory(CreateCategoryRequest) returns (Category);
   rpc UpdateCategory(UpdateCategoryRequest) returns (Category);

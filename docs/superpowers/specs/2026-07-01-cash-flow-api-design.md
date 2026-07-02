@@ -53,13 +53,13 @@ interface MonthCashFlow {
 
 | 前端操作 | HTTP 请求 |
 |---------|----------|
-| 页面加载分类 | `GET /api/v1/finance/categories` |
-| 页面加载交易 | `GET /api/v1/finance/transactions?year=2026&month=7` |
-| 添加分类 | `POST /api/v1/finance/categories` `{ name, type, sort_order }` |
-| 删除分类 | `DELETE /api/v1/finance/categories/:id` |
-| 添加交易 | `POST /api/v1/finance/transactions` `{ category_id, type, name, amount, date, note }` |
-| 编辑交易 | `PUT /api/v1/finance/transactions/:id` `{ category_id, type, name, amount, date, note }` |
-| 删除交易 | `DELETE /api/v1/finance/transactions/:id` |
+| 页面加载分类 | `GET /api/v1/cash-flow/categories` |
+| 页面加载交易 | `GET /api/v1/cash-flow/transactions?year=2026&month=7` |
+| 添加分类 | `POST /api/v1/cash-flow/categories` `{ name, type, sort_order }` |
+| 删除分类 | `DELETE /api/v1/cash-flow/categories/:id` |
+| 添加交易 | `POST /api/v1/cash-flow/transactions` `{ category_id, type, name, amount, date, note }` |
+| 编辑交易 | `PUT /api/v1/cash-flow/transactions/:id` `{ category_id, type, name, amount, date, note }` |
+| 删除交易 | `DELETE /api/v1/cash-flow/transactions/:id` |
 
 ## 4. UI 变化
 
