@@ -38,16 +38,27 @@ func UnaryServerLogInterceptor(ctx context.Context, req interface{}, info *grpc.
 
 	start := time.Now()
 	defer func() {
-		logger.Info("",
-			zap.Error(err),
-			zap.String("traceId", traceId),
-			zap.String("addr", addr),
-			zap.Duration("cost", time.Since(start)),
-			zap.String("service", path.Dir(info.FullMethod)[1:]),
-			zap.String("method", path.Base(info.FullMethod)),
-			zap.String("req", jsonFormat(req)),
-			zap.String("resp", jsonFormat(resp)),
-		)
+		if err != nil {
+			logger.Error("",
+				zap.String("traceId", traceId),
+				zap.String("addr", addr),
+				zap.Duration("cost", time.Since(start)),
+				zap.String("service", path.Dir(info.FullMethod)[1:]),
+				zap.String("method", path.Base(info.FullMethod)),
+				zap.String("req", jsonFormat(req)),
+				zap.Error(err),
+			)
+		} else {
+			logger.Info("",
+				zap.String("traceId", traceId),
+				zap.String("addr", addr),
+				zap.Duration("cost", time.Since(start)),
+				zap.String("service", path.Dir(info.FullMethod)[1:]),
+				zap.String("method", path.Base(info.FullMethod)),
+				zap.String("req", jsonFormat(req)),
+				zap.String("resp", jsonFormat(resp)),
+			)
+		}
 	}()
 
 	resp, err = handler(ctx, req)

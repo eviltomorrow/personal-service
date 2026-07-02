@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -27,12 +26,12 @@ var (
 	updateCategoryByID           = model.UpdateCategoryByID
 	softDeleteCategoryByID       = model.SoftDeleteCategoryByID
 
-	insertTransaction               = model.InsertTransaction
-	selectTransactions              = model.SelectTransactions
-	selectTransactionByID           = model.SelectTransactionByID
-	updateTransactionByID           = model.UpdateTransactionByID
-	softDeleteTransactionByID       = model.SoftDeleteTransactionByID
-	softDeleteTransactionsByCatID   = model.SoftDeleteTransactionsByCategoryID
+	insertTransaction             = model.InsertTransaction
+	selectTransactions            = model.SelectTransactions
+	selectTransactionByID         = model.SelectTransactionByID
+	updateTransactionByID         = model.UpdateTransactionByID
+	softDeleteTransactionByID     = model.SoftDeleteTransactionByID
+	softDeleteTransactionsByCatID = model.SoftDeleteTransactionsByCategoryID
 )
 
 var selectDB = func(ctx context.Context) dbmysql.Exec {
@@ -67,8 +66,7 @@ func (s *Finance) ListCategories(ctx context.Context, req *pb.ListCategoriesRequ
 		return nil, err
 	}
 
-	date := fmt.Sprintf("%04d-%02d", req.Year, req.Month)
-	cats, err := selectCategoriesByAcctIDDate(ctx, selectDB(ctx), accountID, date)
+	cats, err := selectCategoriesByAcctID(ctx, selectDB(ctx), accountID)
 	if err != nil {
 		zlog.Error("list categories failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "internal server error")
@@ -253,7 +251,7 @@ func (s *Finance) ListTransactions(ctx context.Context, req *pb.ListTransactions
 		filter.Page = 1
 	}
 	if filter.PageSize < 1 {
-		filter.PageSize = 50
+		filter.PageSize = 0
 	}
 
 	list, total, err := selectTransactions(ctx, selectDB(ctx), filter)

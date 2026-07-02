@@ -85,7 +85,7 @@ export default function CashFlowPage() {
   }, []);
 
   function displayAmount(cents: number) {
-    return displayAmount(cents / 100);
+    return `¥${(cents / 100).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   function prevMonth(y: number, m: number): [number, number] {
@@ -185,7 +185,10 @@ export default function CashFlowPage() {
     const cat = section === "income" ? incomeCategories[catIndex] : expenseCategories[catIndex];
     setModalName("");
     setModalAmount("");
-    setModalDate(new Date().toISOString().slice(0, 10));
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
+    const monthEnd = `${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
+    setModalDate(todayStr >= monthStart && todayStr <= monthEnd ? todayStr : monthStart);
     setModalNote("");
     setModalCatId(cat?.id ?? null);
     setModalItemId(null);
@@ -228,7 +231,7 @@ export default function CashFlowPage() {
         const res = await api(`/api/v1/finance/categories?date=${catDate}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, type: modal.section === "income" ? "income" : "expense", sort_order: 0 }),
+          body: JSON.stringify({ name, type: modal.section === "income" ? "income" : "expense", sort_order: Math.max(...categories.filter((c) => c.type === (modal.section === "income" ? "income" : "expense")).map((c) => c.sort_order), 0) + 1 }),
         });
         const json = await res.json();
         if (json.code === 0 && json.data) {
@@ -246,6 +249,9 @@ export default function CashFlowPage() {
     if (modal?.type === "add-item") {
       if (!name) { setToast({ type: "error", message: "请输入项目名称" }); return; }
       if (isNaN(amt) || amt <= 0) { setToast({ type: "error", message: "请输入有效的金额" }); return; }
+      const maxSortOrder = transactions
+        .filter((t) => t.category_id === modalCatId)
+        .reduce((max, t) => Math.max(max, t.sort_order), 0);
       try {
         const res = await api("/api/v1/finance/transactions", {
           method: "POST",
@@ -257,6 +263,7 @@ export default function CashFlowPage() {
             amount: amt,
             date: modalDate,
             note: modalNote || undefined,
+            sort_order: maxSortOrder + 1,
           }),
         });
         const json = await res.json();
@@ -275,6 +282,7 @@ export default function CashFlowPage() {
     if (modal?.type === "edit-item") {
       if (!name) { setToast({ type: "error", message: "请输入项目名称" }); return; }
       if (isNaN(amt) || amt <= 0) { setToast({ type: "error", message: "请输入有效的金额" }); return; }
+      const existingTx = transactions.find((t) => t.id === modalItemId);
       try {
         const res = await api(`/api/v1/finance/transactions/${modalItemId}`, {
           method: "PUT",
@@ -286,6 +294,7 @@ export default function CashFlowPage() {
             amount: amt,
             date: modalDate,
             note: modalNote || undefined,
+            sort_order: existingTx?.sort_order ?? 0,
           }),
         });
         const json = await res.json();
@@ -514,7 +523,7 @@ export default function CashFlowPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Income section */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="px-5 py-3 flex items-center gap-3 bg-emerald-50/80">
@@ -532,7 +541,7 @@ export default function CashFlowPage() {
             {incomeCategories.map((cat, ci) => {
               const catTotal = cat.items.reduce((s, i) => s + i.amount, 0);
               return (
-                <div key={cat.id}>
+                <div key={`${cat.id}-${ci}`}>
                   {/* Category header */}
                   <div className="group flex items-center justify-between px-5 py-2.5 bg-gray-50/50">
                     <span className="text-sm font-semibold text-gray-700">{cat.category}</span>
@@ -605,7 +614,7 @@ export default function CashFlowPage() {
             {expenseCategories.map((cat, ci) => {
               const catTotal = cat.items.reduce((s, i) => s + i.amount, 0);
               return (
-                <div key={cat.id}>
+                <div key={`${cat.id}-${ci}`}>
                   {/* Category header */}
                   <div className="group flex items-center justify-between px-5 py-2.5 bg-gray-50/50">
                     <span className="text-sm font-semibold text-gray-700">{cat.category}</span>
@@ -707,6 +716,7 @@ export default function CashFlowPage() {
               </button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-6 space-y-4">
+              {modal?.type === "edit-item" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">分类</label>
                 <select value={modalCatId ?? ""} onChange={(e) => setModalCatId(Number(e.target.value))}
@@ -716,6 +726,7 @@ export default function CashFlowPage() {
                   ))}
                 </select>
               </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">项目名称</label>
                 <input type="text" value={modalName} onChange={(e) => setModalName(e.target.value)} placeholder="请输入项目名称" autoFocus
@@ -732,6 +743,8 @@ export default function CashFlowPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">日期</label>
                 <input type="date" value={modalDate} onChange={(e) => setModalDate(e.target.value)}
+                  min={`${year}-${String(month).padStart(2, "0")}-01`}
+                  max={`${year}-${String(month).padStart(2, "0")}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`}
                   className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
               </div>
               <div>

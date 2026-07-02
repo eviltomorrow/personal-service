@@ -71,7 +71,7 @@ func (h *insert) InsertCtx(ctx context.Context, value map[string]interface{}) (i
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected()
+	return result.LastInsertId()
 }
 
 func (h *insert) Insert(value map[string]interface{}) (int64, error) {
