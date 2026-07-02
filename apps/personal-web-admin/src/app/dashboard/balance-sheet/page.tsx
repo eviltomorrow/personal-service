@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 interface BalanceItem {
+  id: number;
   name: string;
   amount: number;
 }
@@ -93,7 +94,7 @@ export default function BalanceSheetPage() {
     try {
       const res = await api(`/api/v1/cash-flow/balance-sheet/items?year=${y}&month=${m}`);
       const json = await res.json();
-      if (json.code === 0) setItems(json.data);
+      if (json.code === 0) setItems(json.data ?? []);
       else setToast({ type: "error", message: json.message || "加载失败" });
     } catch {
       setToast({ type: "error", message: "网络错误" });
@@ -127,7 +128,6 @@ export default function BalanceSheetPage() {
     const nm = d.getMonth() + 1;
     setYear(ny);
     setMonth(nm);
-    loadData(ny, nm);
   }
 
   const totalAssets = useMemo(
@@ -155,7 +155,7 @@ export default function BalanceSheetPage() {
 
   function openEdit(group: number, item: number) {
     const apiItem = data[group].items[item];
-    const src = items.find(i => i.id === (apiItem as any).id);
+    const src = items.find(i => i.id === apiItem.id);
     setModalName(src?.name ?? "");
     setModalAmount(src ? (src.amount / 100).toFixed(2) : "");
     setModalNote(src?.note ?? "");
@@ -196,6 +196,7 @@ export default function BalanceSheetPage() {
         if (json.code === 0 && json.data) {
           setItems(prev => [...prev, json.data]);
           setToast({ type: "success", message: "项目已添加" });
+          setModal(null);
         } else {
           setToast({ type: "error", message: json.message || "添加失败" });
         }
@@ -220,6 +221,7 @@ export default function BalanceSheetPage() {
         if (json.code === 0 && json.data) {
           setItems(prev => prev.map(i => i.id === json.data.id ? json.data : i));
           setToast({ type: "success", message: "项目已更新" });
+          setModal(null);
         } else {
           setToast({ type: "error", message: json.message || "更新失败" });
         }
@@ -227,13 +229,12 @@ export default function BalanceSheetPage() {
         setToast({ type: "error", message: "网络错误，请重试" });
       }
     }
-    setModal(null);
   }
 
   async function handleDelete() {
     if (!modal || modal.type !== "delete") return;
     const apiItem = data[modal.group]?.items[modal.item];
-    const itemId = (apiItem as any).id;
+    const itemId = apiItem?.id;
     if (!itemId) {
       setModal(null);
       return;
@@ -244,13 +245,13 @@ export default function BalanceSheetPage() {
       if (json.code === 0) {
         setItems(prev => prev.filter(i => i.id !== itemId));
         setToast({ type: "success", message: "项目已删除" });
+        setModal(null);
       } else {
         setToast({ type: "error", message: json.message || "删除失败" });
       }
     } catch {
       setToast({ type: "error", message: "网络错误，请重试" });
     }
-    setModal(null);
   }
 
   function sectionIndex(gi: number) {
@@ -453,11 +454,13 @@ export default function BalanceSheetPage() {
                     className="block w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-8 pr-3.5 text-sm text-gray-900 placeholder-gray-400 shadow-xs focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none transition-all" />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">备注（可选）</label>
-                <input type="text" value={modalNote} onChange={(e) => setModalNote(e.target.value)} placeholder="备注信息"
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
-              </div>
+              {modal?.type === "edit" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">备注（可选）</label>
+                  <input type="text" value={modalNote} onChange={(e) => setModalNote(e.target.value)} placeholder="备注信息"
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
+                </div>
+              )}
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setModal(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
                 <button type="submit" className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-500 transition-colors">保存</button>
