@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { formatCNY } from "@/lib/format";
+import { api } from "@/lib/api";
 import {
   Plus, Pencil, Trash2, X, AlertTriangle,
   DollarSign, TrendingUp, Percent, ArrowUpDown, GripVertical,
@@ -1046,6 +1047,56 @@ export default function PortfolioPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
   const [totalCapital, setTotalCapital] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [posRes, snapRes, cfgRes] = await Promise.all([
+        api("/api/v1/cash-flow/portfolio/positions"),
+        api("/api/v1/cash-flow/portfolio/snapshots"),
+        api("/api/v1/cash-flow/portfolio/config"),
+      ]);
+      const posJson = await posRes.json();
+      const snapJson = await snapRes.json();
+      const cfgJson = await cfgRes.json();
+      if (posJson.code === 0 && posJson.data) {
+        setPositions((posJson.data as any[]).map(p => ({
+          id: String(p.id),
+          code: p.code,
+          name: p.name,
+          type: p.type === 1 ? "股票" as const : "期货" as const,
+          direction: p.direction as "做多" | "做空",
+          initialQty: p.initial_qty,
+          quantity: p.initial_qty,
+          currentPrice: p.current_price / 100,
+          costPrice: 0,
+          marginRatio: p.margin_ratio / 10000,
+          trades: [],
+          archived: p.archived,
+          closedPnl: p.closed_pnl / 100,
+        })));
+      }
+      if (snapJson.code === 0 && snapJson.data) {
+        setSnapshots((snapJson.data as any[]).map(s => ({
+          date: s.date,
+          totalValue: s.total_value / 100,
+        })));
+      }
+      if (cfgJson.code === 0 && cfgJson.data) {
+        setTotalCapital(cfgJson.data.total_capital / 100);
+      }
+    } catch {
+      setToast({ type: "error", message: "加载数据失败" });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const selectedPosition = useMemo(
     () => positions.find((p) => p.id === selectedId) ?? null,
@@ -1174,6 +1225,25 @@ export default function PortfolioPage() {
   return (
     <div className="flex flex-col h-full space-y-6 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="投资组合" description="股票与期货持仓监控" />
+      {toast && (
+        <div className={`flex items-center gap-3 rounded-lg border px-5 py-3 text-sm anim-in anim-fade anim-down ${
+          toast.type === "success"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : "border-red-200 bg-red-50 text-red-700"
+        }`}>
+          <span className="flex-1">{toast.message}</span>
+          <button type="button" onClick={() => setToast(null)}
+            className="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100 transition-opacity">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      {loading && (
+        <div className="flex items-center justify-center py-12 text-sm text-gray-400">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600 mr-2" />
+          加载中...
+        </div>
+      )}
       <StatCards positions={activePositions} totalCapital={totalCapital} realizedPnl={realizedPnl} onCapitalChange={setTotalCapital} />
 
       <TrendChart snapshots={snapshots} />
