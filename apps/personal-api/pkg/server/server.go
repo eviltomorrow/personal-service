@@ -65,8 +65,9 @@ func New(cfg *config.Config) (*Server, error) {
 	}
 
 	deps := &handler.Dependencies{
-		AuthClient:    provider.GetAuthClient(),
-		FinanceClient: provider.GetFinanceClient(),
+		AuthClient:         provider.GetAuthClient(),
+		CashFlowClient:     provider.GetCashFlowClient(),
+		BalanceSheetClient: provider.GetBalanceSheetClient(),
 	}
 
 	refresher := provider.NewTokenRefresher(deps.AuthClient)

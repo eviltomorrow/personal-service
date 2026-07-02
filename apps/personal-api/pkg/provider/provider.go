@@ -6,5 +6,8 @@ func Init(cfg *config.Config) error {
 	if err := initAuth(cfg); err != nil {
 		return err
 	}
-	return initFinance(cfg)
+	if err := initCashFlow(cfg); err != nil {
+		return err
+	}
+	return initBalanceSheet(cfg)
 }
