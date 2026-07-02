@@ -11,8 +11,9 @@ type Router struct {
 }
 
 type Dependencies struct {
-	AuthClient    model.AuthClient
-	FinanceClient model.FinanceClient
+	AuthClient         model.AuthClient
+	CashFlowClient     model.CashFlowClient
+	BalanceSheetClient model.BalanceSheetClient
 }
 
 var handlers []func(r *Router, deps *Dependencies)
