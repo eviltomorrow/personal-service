@@ -1,4 +1,5 @@
 let refreshing: Promise<boolean> | null = null;
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 async function doRefresh(): Promise<boolean> {
   if (refreshing) return refreshing;
@@ -17,6 +18,22 @@ async function doRefresh(): Promise<boolean> {
   return result;
 }
 
+function startRefreshTimer() {
+  if (refreshTimer) return;
+  // Proactively refresh every 25 minutes (access token TTL is 1h)
+  refreshTimer = setInterval(async () => {
+    const ok = await doRefresh();
+    if (!ok) {
+      if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+      window.location.href = "/login";
+    }
+  }, 25 * 60 * 1000);
+}
+
+if (typeof window !== "undefined") {
+  startRefreshTimer();
+}
+
 export async function api(url: string, options: RequestInit = {}): Promise<Response> {
   const headers: Record<string, string> = {};
   if (options.headers) {
@@ -32,9 +49,8 @@ export async function api(url: string, options: RequestInit = {}): Promise<Respo
     if (await doRefresh()) {
       return fetch(url, { ...options, headers });
     }
+    window.location.href = "/login";
   }
 
   return res;
 }
-
-export { redirectToLogin } from "./auth";

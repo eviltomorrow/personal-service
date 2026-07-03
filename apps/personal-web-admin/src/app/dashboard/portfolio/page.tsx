@@ -152,10 +152,11 @@ function calcDerived(p: Position) {
   return { marketValue, profitAmount, profitPct, marginUsed, leverage };
 }
 
-function StatCards({ positions, totalCapital, realizedPnl, onCapitalChange }: {
+function StatCards({ positions, totalCapital, realizedPnl, totalFees, onCapitalChange }: {
   positions: Position[];
   totalCapital: number;
   realizedPnl: number;
+  totalFees: number;
   onCapitalChange: (v: number) => void;
 }) {
   const [editingCapital, setEditingCapital] = useState(false);
@@ -169,28 +170,23 @@ function StatCards({ positions, totalCapital, realizedPnl, onCapitalChange }: {
     }
     return s + calcTradeTotalCost(p.trades, p.direction);
   }, 0);
-  const totalFees = positions.reduce((s, p) =>
-    s + p.trades.reduce((sf, t) => sf + (t.fee ?? 0), 0), 0);
   const availableFunds = totalCapital - fundsUsed + realizedPnl - totalFees;
   const totalProfit = positions.reduce((s, p) => {
     const d = calcDerived(p);
     return s + d.profitAmount;
   }, 0);
   const totalProfitPct = totalCapital > 0 ? (totalProfit / totalCapital) * 100 : 0;
-  const longCount = positions.filter((p) => p.direction === "做多").length;
-  const shortCount = positions.filter((p) => p.direction === "做空").length;
 
   const profitColor = totalProfit >= 0 ? "emerald" : "red";
   const profitSign = totalProfit > 0 ? "+" : totalProfit < 0 ? "-" : "";
 
   const cards = [
     { icon: DollarSign, label: "总本金", value: formatCNY(totalCapital), bar: "slate", editable: true },
+    { icon: DollarSign, label: "总手续费", value: formatCNY(totalFees), bar: "slate" },
     { icon: DollarSign, label: "可用资金", value: formatCNY(availableFunds), bar: "blue" },
     { icon: TrendingUp, label: "总市值", value: formatCNY(totalValue), bar: "emerald" },
-    { icon: DollarSign, label: "总手续费", value: formatCNY(totalFees), bar: "slate" },
     { icon: TrendingUp, label: "总盈亏", value: `${profitSign}${formatCNY(Math.abs(totalProfit))}`, bar: profitColor, text: profitColor },
     { icon: Percent, label: "总收益率", value: `${profitSign}${totalProfitPct.toFixed(2)}%`, bar: "amber", text: profitColor },
-    { icon: ArrowUpDown, label: "多空比", value: `${longCount} : ${shortCount}`, bar: "purple" },
   ];
 
   function bar(color: string) {
@@ -280,7 +276,9 @@ function SortablePositionItem({
     position: "relative",
     zIndex: isDragging ? 10 : undefined,
   };
-  const mv = position.currentPrice * position.quantity;
+  const d = calcDerived(position);
+  const profitSign = d.profitAmount >= 0 ? "+" : "";
+  const profitColor = d.profitAmount >= 0 ? "text-emerald-600" : "text-red-600";
   return (
     <div
       ref={setNodeRef}
@@ -301,7 +299,7 @@ function SortablePositionItem({
         onClick={() => onSelect(position.id)}
         className="flex-1 text-left px-1.5 py-3 min-w-0"
       >
-        <div className="flex items-center gap-1.5 min-w-0 mb-0.5">
+        <div className="flex items-center gap-1.5 min-w-0 mb-1">
           <span className="text-sm font-medium text-gray-900 truncate">
             {position.code} {position.name}
           </span>
@@ -330,7 +328,21 @@ function SortablePositionItem({
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-500 tabular-nums pl-0.5">{position.archived ? formatCNY(position.closedPnl ?? 0) : formatCNY(mv)}</p>
+        {position.archived ? (
+          <div className="flex items-center justify-between pl-0.5">
+            <span className="text-xs text-gray-500 tabular-nums">盈亏</span>
+            <span className={`text-xs tabular-nums ${profitColor}`}>
+              {profitSign}{formatCNY(Math.abs(d.profitAmount))} ({profitSign}{d.profitPct.toFixed(2)}%)
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between pl-0.5">
+            <span className="text-xs text-gray-500 tabular-nums">市值 {formatCNY(d.marketValue)}</span>
+            <span className={`text-xs tabular-nums ${profitColor}`}>
+              {profitSign}{formatCNY(Math.abs(d.profitAmount))} ({profitSign}{d.profitPct.toFixed(2)}%)
+            </span>
+          </div>
+        )}
       </button>
     </div>
   );
@@ -370,6 +382,15 @@ function LeftPanel({
             </div>
           )}
         </SortableContext>
+      </div>
+
+      {/* Long/short ratio */}
+      <div className="px-4 py-2 flex items-center gap-2 border-t border-gray-100 bg-white">
+        <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
+        <span className="text-xs text-gray-500">多空比</span>
+        <span className="text-xs font-semibold text-gray-700 ml-auto tabular-nums">
+          {activePositions.filter(p => p.direction === "做多").length} : {activePositions.filter(p => p.direction === "做空").length}
+        </span>
       </div>
 
       {/* Archived positions section */}
@@ -643,21 +664,33 @@ function RightPanel({
         ) : (
           <div className="space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar p-1">
             {sortedTrades.map((t) => (
-              <div key={t.id} className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white px-4 py-3 hover:border-gray-200 hover:shadow-sm transition-all">
-                <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded ${
+              <div key={t.id} className="flex items-start gap-3 rounded-lg border border-gray-100 bg-white px-4 py-3 hover:border-gray-200 hover:shadow-sm transition-all">
+                <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded mt-0.5 ${
                   t.type === "买入" || t.type === "建仓" ? "bg-emerald-50 text-emerald-700" : t.type === "清仓" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
                 }`}>
                   {t.type}
                 </span>
-                <span className="text-sm text-gray-500 tabular-nums w-28 shrink-0">{t.date.slice(0, 10)}</span>
-                <span className="text-sm text-gray-500 tabular-nums w-24 text-right shrink-0">{formatCNY(t.price)}</span>
-                <span className="text-sm text-gray-900 tabular-nums w-20 text-right shrink-0">{t.quantity}</span>
-                <span className="text-sm font-semibold text-gray-900 tabular-nums w-28 text-right shrink-0">{formatCNY(t.price * t.quantity)}</span>
-                {t.note ? (
-                  <span className="text-sm text-gray-400 truncate flex-1 min-w-0">{t.note}</span>
-                ) : (
-                  <span className="flex-1 min-w-0" />
-                )}
+                <div className="flex flex-col items-start gap-0.5 w-28 shrink-0">
+                  <span className="text-[10px] text-gray-400 leading-none">日期</span>
+                  <span className="text-sm text-gray-500 tabular-nums">{t.date.slice(0, 10)}</span>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 w-24 shrink-0">
+                  <span className="text-[10px] text-gray-400 leading-none">成交价</span>
+                  <span className="text-sm text-gray-500 tabular-nums">{formatCNY(t.price)}</span>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 w-20 shrink-0">
+                  <span className="text-[10px] text-gray-400 leading-none">数量</span>
+                  <span className="text-sm text-gray-900 tabular-nums">{t.quantity}</span>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 w-28 shrink-0">
+                  <span className="text-[10px] text-gray-400 leading-none">成交金额</span>
+                  <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCNY(t.price * t.quantity)}</span>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 flex-1 min-w-0">
+                  <span className="text-[10px] text-gray-400 leading-none">手续费</span>
+                  <span className="text-xs text-gray-400 whitespace-nowrap">{formatCNY(t.fee)}</span>
+                  {t.note ? <span className="text-xs text-gray-400 truncate max-w-full mt-0.5">{t.note}</span> : null}
+                </div>
                 {!position.archived && (
                 <div className="flex items-center gap-0.5 shrink-0">
                   <button onClick={() => onEditTrade(position.id, t)}
@@ -789,19 +822,33 @@ function ArchivedRightPanel({ position }: { position: Position }) {
         ) : (
           <div className="space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar p-1">
             {sortedTrades.map((t) => (
-              <div key={t.id} className="flex items-center gap-4 rounded-lg border border-gray-100 bg-white px-4 py-3">
-                <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded ${
+              <div key={t.id} className="flex items-start gap-3 rounded-lg border border-gray-100 bg-white px-4 py-3">
+                <span className={`shrink-0 text-sm font-medium px-2 py-0.5 rounded mt-0.5 ${
                   t.type === "买入" || t.type === "建仓" ? "bg-emerald-50 text-emerald-700" : t.type === "清仓" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
                 }`}>
                   {t.type}
                 </span>
-                <span className="text-sm text-gray-500 tabular-nums w-28 shrink-0">{t.date.slice(0, 10)}</span>
-                <span className="text-sm text-gray-500 tabular-nums w-24 text-right shrink-0">{formatCNY(t.price)}</span>
-                <span className="text-sm text-gray-900 tabular-nums w-20 text-right shrink-0">{t.quantity}</span>
-                <span className="text-sm font-semibold text-gray-900 tabular-nums w-28 text-right shrink-0">{formatCNY(t.price * t.quantity)}</span>
-                {t.note ? (
-                  <span className="text-sm text-gray-400 truncate flex-1 min-w-0">{t.note}</span>
-                ) : null}
+                <div className="flex flex-col items-start gap-0.5 w-28 shrink-0">
+                  <span className="text-[10px] text-gray-400 leading-none">日期</span>
+                  <span className="text-sm text-gray-500 tabular-nums">{t.date.slice(0, 10)}</span>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 w-24 shrink-0">
+                  <span className="text-[10px] text-gray-400 leading-none">成交价</span>
+                  <span className="text-sm text-gray-500 tabular-nums">{formatCNY(t.price)}</span>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 w-20 shrink-0">
+                  <span className="text-[10px] text-gray-400 leading-none">数量</span>
+                  <span className="text-sm text-gray-900 tabular-nums">{t.quantity}</span>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 w-28 shrink-0">
+                  <span className="text-[10px] text-gray-400 leading-none">成交金额</span>
+                  <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCNY(t.price * t.quantity)}</span>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 flex-1 min-w-0">
+                  <span className="text-[10px] text-gray-400 leading-none">手续费</span>
+                  <span className="text-xs text-gray-400 whitespace-nowrap">{formatCNY(t.fee)}</span>
+                  {t.note ? <span className="text-xs text-gray-400 truncate max-w-full mt-0.5">{t.note}</span> : null}
+                </div>
               </div>
             ))}
           </div>
@@ -1000,12 +1047,9 @@ function TradeForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">手续费</label>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400 shrink-0">¥</span>
-            <input type="number" min="0" step="0.01" value={fee} onChange={(e) => setFee(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
-              placeholder="0.00" />
-          </div>
+          <input type="number" min="0" step="0.01" value={fee} onChange={(e) => setFee(e.target.value)}
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+            placeholder="0.00" />
         </div>
         <div />
       </div>
@@ -1377,7 +1421,7 @@ export default function PortfolioPage() {
           加载中...
         </div>
       )}
-      <StatCards positions={activePositions} totalCapital={totalCapital} realizedPnl={realizedPnl} onCapitalChange={async (v) => {
+      <StatCards positions={activePositions} totalCapital={totalCapital} realizedPnl={realizedPnl} totalFees={positions.reduce((s, p) => s + p.trades.reduce((sf, t) => sf + (t.fee ?? 0), 0), 0)} onCapitalChange={async (v) => {
         const res = await api("/api/v1/cash-flow/portfolio/config", {
           method: "PUT", body: JSON.stringify({ total_capital: Math.round(v * 100) }),
         });
