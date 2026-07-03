@@ -89,7 +89,7 @@ services:
         MAINVERSION: ${personal_auth_version:-7.0.5}
         GITSHA: ${GITSHA:-unknown}
         BUILDTIME: ${BUILDTIME:-unknown}
-    image: personal-auth:${personal_auth_version:-7.0.5}
+    image: registry.cn-beijing.aliyuncs.com/eviltomorrow/personal-auth:${personal_auth_version:-7.0.5}
     container_name: personal-auth
     ports:
       - "127.0.0.1:50001:50001"
@@ -114,7 +114,7 @@ services:
         MAINVERSION: ${personal_core_version:-7.0.5}
         GITSHA: ${GITSHA:-unknown}
         BUILDTIME: ${BUILDTIME:-unknown}
-    image: personal-core:${personal_core_version:-7.0.5}
+    image: registry.cn-beijing.aliyuncs.com/eviltomorrow/personal-core:${personal_core_version:-7.0.5}
     container_name: personal-core
     ports:
       - "127.0.0.1:50002:50002"
@@ -139,10 +139,12 @@ services:
         MAINVERSION: ${personal_api_version:-7.0.5}
         GITSHA: ${GITSHA:-unknown}
         BUILDTIME: ${BUILDTIME:-unknown}
-    image: personal-api:${personal_api_version:-7.0.5}
+    image: registry.cn-beijing.aliyuncs.com/eviltomorrow/personal-api:${personal_api_version:-7.0.5}
     container_name: personal-api
     ports:
       - "127.0.0.1:8080:8080"
+    environment:
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
     depends_on:
       etcd:
         condition: service_healthy
@@ -162,11 +164,13 @@ services:
         GITSHA: ${GITSHA:-unknown}
         BUILDTIME: ${BUILDTIME:-unknown}
         NEXT_PUBLIC_ENABLE_REGISTER: ${NEXT_PUBLIC_ENABLE_REGISTER:-true}
-    image: personal-web-admin:${personal_web_admin_version:-7.0.5}
+        API_TARGET: http://personal-api:8080
+    image: registry.cn-beijing.aliyuncs.com/eviltomorrow/personal-web-admin:${personal_web_admin_version:-7.0.5}
     container_name: personal-web-admin
     ports:
       - "127.0.0.1:3000:3000"
     environment:
+      - API_TARGET=http://personal-api:8080
       - NEXT_PUBLIC_ENABLE_REGISTER=${NEXT_PUBLIC_ENABLE_REGISTER:-true}
     depends_on:
       - personal-api

@@ -1,18 +1,20 @@
-FROM node:22-alpine3.21 AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --only=production
 
-FROM node:22-alpine3.21 AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 ARG NEXT_PUBLIC_ENABLE_REGISTER=true
 ENV NEXT_PUBLIC_ENABLE_REGISTER=${NEXT_PUBLIC_ENABLE_REGISTER}
+ARG API_TARGET=http://personal-api:8080
+ENV API_TARGET=${API_TARGET}
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine3.21 AS prod
+FROM node:22-alpine AS prod
 WORKDIR /app
 ARG MAINVERSION=unknown
 ARG GITSHA=unknown

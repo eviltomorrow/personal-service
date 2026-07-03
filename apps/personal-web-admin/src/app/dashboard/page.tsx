@@ -272,7 +272,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
             <Clock className="h-4 w-4 text-gray-400" />
             <span className="text-sm font-medium text-gray-900 select-none">
-              {now.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" })} {now.toLocaleTimeString("zh-CN")}
+              {now.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })} · {now.toLocaleDateString("zh-CN", { weekday: "long" })} {now.toLocaleTimeString("zh-CN")}
             </span>
           </div>
         }

@@ -3,7 +3,6 @@
 .gitattributes
 *.md
 bin/
-vendor/
 node_modules/
 .next/
 deployments/

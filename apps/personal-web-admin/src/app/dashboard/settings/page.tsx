@@ -138,21 +138,21 @@ export default function SettingsPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">昵称</label>
-            <input type="text" value={profile.nickname}
+            <input type="text" value={profile.nickname} placeholder="请设置昵称"
               onChange={(e) => setProfile((p) => ({ ...p, nickname: e.target.value }))}
               className="block w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
-            <input type="email" value={profile.email}
+            <input type="email" value={profile.email} placeholder="请设置邮箱"
               onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
               className="block w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">简介</label>
-            <textarea value={profile.bio}
+            <textarea value={profile.bio} placeholder="请设置个人简介"
               onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))} rows={3}
               className="block w-full max-w-lg rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none resize-none" />
           </div>

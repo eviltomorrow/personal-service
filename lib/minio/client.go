@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/eviltomorrow/personal-service/lib/zlog"
@@ -26,6 +27,9 @@ func InitMinIO(c *Config) (func() error, error) {
 	Bucket = c.Bucket
 	EndpointURL = client.EndpointURL()
 	PublicEndpoint = c.PublicEndpoint
+	if env := os.Getenv("MINIO_PUBLIC_ENDPOINT"); env != "" {
+		PublicEndpoint = env
+	}
 
 	return func() error {
 		Client = nil
