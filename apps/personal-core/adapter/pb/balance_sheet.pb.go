@@ -514,6 +514,162 @@ func (x *DeleteItemRequest) GetId() int64 {
 	return 0
 }
 
+type MonthlySummary struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Date             string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	TotalAssets      int64                  `protobuf:"varint,2,opt,name=total_assets,json=totalAssets,proto3" json:"total_assets,omitempty"`
+	TotalLiabilities int64                  `protobuf:"varint,3,opt,name=total_liabilities,json=totalLiabilities,proto3" json:"total_liabilities,omitempty"`
+	TotalEquity      int64                  `protobuf:"varint,4,opt,name=total_equity,json=totalEquity,proto3" json:"total_equity,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *MonthlySummary) Reset() {
+	*x = MonthlySummary{}
+	mi := &file_apps_personal_core_adapter_balance_sheet_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MonthlySummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MonthlySummary) ProtoMessage() {}
+
+func (x *MonthlySummary) ProtoReflect() protoreflect.Message {
+	mi := &file_apps_personal_core_adapter_balance_sheet_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MonthlySummary.ProtoReflect.Descriptor instead.
+func (*MonthlySummary) Descriptor() ([]byte, []int) {
+	return file_apps_personal_core_adapter_balance_sheet_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MonthlySummary) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *MonthlySummary) GetTotalAssets() int64 {
+	if x != nil {
+		return x.TotalAssets
+	}
+	return 0
+}
+
+func (x *MonthlySummary) GetTotalLiabilities() int64 {
+	if x != nil {
+		return x.TotalLiabilities
+	}
+	return 0
+}
+
+func (x *MonthlySummary) GetTotalEquity() int64 {
+	if x != nil {
+		return x.TotalEquity
+	}
+	return 0
+}
+
+type ListMonthlySummariesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Months        int32                  `protobuf:"varint,1,opt,name=months,proto3" json:"months,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMonthlySummariesRequest) Reset() {
+	*x = ListMonthlySummariesRequest{}
+	mi := &file_apps_personal_core_adapter_balance_sheet_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMonthlySummariesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMonthlySummariesRequest) ProtoMessage() {}
+
+func (x *ListMonthlySummariesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_apps_personal_core_adapter_balance_sheet_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMonthlySummariesRequest.ProtoReflect.Descriptor instead.
+func (*ListMonthlySummariesRequest) Descriptor() ([]byte, []int) {
+	return file_apps_personal_core_adapter_balance_sheet_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ListMonthlySummariesRequest) GetMonths() int32 {
+	if x != nil {
+		return x.Months
+	}
+	return 0
+}
+
+type ListMonthlySummariesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Summaries     []*MonthlySummary      `protobuf:"bytes,1,rep,name=summaries,proto3" json:"summaries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMonthlySummariesResponse) Reset() {
+	*x = ListMonthlySummariesResponse{}
+	mi := &file_apps_personal_core_adapter_balance_sheet_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMonthlySummariesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMonthlySummariesResponse) ProtoMessage() {}
+
+func (x *ListMonthlySummariesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_apps_personal_core_adapter_balance_sheet_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMonthlySummariesResponse.ProtoReflect.Descriptor instead.
+func (*ListMonthlySummariesResponse) Descriptor() ([]byte, []int) {
+	return file_apps_personal_core_adapter_balance_sheet_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListMonthlySummariesResponse) GetSummaries() []*MonthlySummary {
+	if x != nil {
+		return x.Summaries
+	}
+	return nil
+}
+
 var File_apps_personal_core_adapter_balance_sheet_proto protoreflect.FileDescriptor
 
 const file_apps_personal_core_adapter_balance_sheet_proto_rawDesc = "" +
@@ -559,12 +715,21 @@ const file_apps_personal_core_adapter_balance_sheet_proto_rawDesc = "" +
 	"\n" +
 	"sort_order\x18\a \x01(\x05R\tsortOrder\"#\n" +
 	"\x11DeleteItemRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id*\xa4\x01\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"\x97\x01\n" +
+	"\x0eMonthlySummary\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12!\n" +
+	"\ftotal_assets\x18\x02 \x01(\x03R\vtotalAssets\x12+\n" +
+	"\x11total_liabilities\x18\x03 \x01(\x03R\x10totalLiabilities\x12!\n" +
+	"\ftotal_equity\x18\x04 \x01(\x03R\vtotalEquity\"5\n" +
+	"\x1bListMonthlySummariesRequest\x12\x16\n" +
+	"\x06months\x18\x01 \x01(\x05R\x06months\"[\n" +
+	"\x1cListMonthlySummariesResponse\x12;\n" +
+	"\tsummaries\x18\x01 \x03(\v2\x1d.personal.core.MonthlySummaryR\tsummaries*\xa4\x01\n" +
 	"\x13BalanceSheetSection\x12%\n" +
 	"!BALANCE_SHEET_SECTION_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bBALANCE_SHEET_SECTION_ASSET\x10\x01\x12#\n" +
 	"\x1fBALANCE_SHEET_SECTION_LIABILITY\x10\x02\x12 \n" +
-	"\x1cBALANCE_SHEET_SECTION_EQUITY\x10\x032\xc8\x02\n" +
+	"\x1cBALANCE_SHEET_SECTION_EQUITY\x10\x032\xb9\x03\n" +
 	"\fBalanceSheet\x12N\n" +
 	"\tListItems\x12\x1f.personal.core.ListItemsRequest\x1a .personal.core.ListItemsResponse\x12O\n" +
 	"\n" +
@@ -572,7 +737,8 @@ const file_apps_personal_core_adapter_balance_sheet_proto_rawDesc = "" +
 	"\n" +
 	"UpdateItem\x12 .personal.core.UpdateItemRequest\x1a\x1f.personal.core.BalanceSheetItem\x12F\n" +
 	"\n" +
-	"DeleteItem\x12 .personal.core.DeleteItemRequest\x1a\x16.google.protobuf.EmptyBHZFgithub.com/eviltomorrow/personal-service/apps/personal-core/adapter/pbb\x06proto3"
+	"DeleteItem\x12 .personal.core.DeleteItemRequest\x1a\x16.google.protobuf.Empty\x12o\n" +
+	"\x14ListMonthlySummaries\x12*.personal.core.ListMonthlySummariesRequest\x1a+.personal.core.ListMonthlySummariesResponseBHZFgithub.com/eviltomorrow/personal-service/apps/personal-core/adapter/pbb\x06proto3"
 
 var (
 	file_apps_personal_core_adapter_balance_sheet_proto_rawDescOnce sync.Once
@@ -587,33 +753,39 @@ func file_apps_personal_core_adapter_balance_sheet_proto_rawDescGZIP() []byte {
 }
 
 var file_apps_personal_core_adapter_balance_sheet_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_apps_personal_core_adapter_balance_sheet_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_apps_personal_core_adapter_balance_sheet_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_apps_personal_core_adapter_balance_sheet_proto_goTypes = []any{
-	(BalanceSheetSection)(0),  // 0: personal.core.BalanceSheetSection
-	(*BalanceSheetItem)(nil),  // 1: personal.core.BalanceSheetItem
-	(*ListItemsRequest)(nil),  // 2: personal.core.ListItemsRequest
-	(*ListItemsResponse)(nil), // 3: personal.core.ListItemsResponse
-	(*CreateItemRequest)(nil), // 4: personal.core.CreateItemRequest
-	(*UpdateItemRequest)(nil), // 5: personal.core.UpdateItemRequest
-	(*DeleteItemRequest)(nil), // 6: personal.core.DeleteItemRequest
-	(*emptypb.Empty)(nil),     // 7: google.protobuf.Empty
+	(BalanceSheetSection)(0),             // 0: personal.core.BalanceSheetSection
+	(*BalanceSheetItem)(nil),             // 1: personal.core.BalanceSheetItem
+	(*ListItemsRequest)(nil),             // 2: personal.core.ListItemsRequest
+	(*ListItemsResponse)(nil),            // 3: personal.core.ListItemsResponse
+	(*CreateItemRequest)(nil),            // 4: personal.core.CreateItemRequest
+	(*UpdateItemRequest)(nil),            // 5: personal.core.UpdateItemRequest
+	(*DeleteItemRequest)(nil),            // 6: personal.core.DeleteItemRequest
+	(*MonthlySummary)(nil),               // 7: personal.core.MonthlySummary
+	(*ListMonthlySummariesRequest)(nil),  // 8: personal.core.ListMonthlySummariesRequest
+	(*ListMonthlySummariesResponse)(nil), // 9: personal.core.ListMonthlySummariesResponse
+	(*emptypb.Empty)(nil),                // 10: google.protobuf.Empty
 }
 var file_apps_personal_core_adapter_balance_sheet_proto_depIdxs = []int32{
-	0, // 0: personal.core.BalanceSheetItem.section:type_name -> personal.core.BalanceSheetSection
-	1, // 1: personal.core.ListItemsResponse.items:type_name -> personal.core.BalanceSheetItem
-	2, // 2: personal.core.BalanceSheet.ListItems:input_type -> personal.core.ListItemsRequest
-	4, // 3: personal.core.BalanceSheet.CreateItem:input_type -> personal.core.CreateItemRequest
-	5, // 4: personal.core.BalanceSheet.UpdateItem:input_type -> personal.core.UpdateItemRequest
-	6, // 5: personal.core.BalanceSheet.DeleteItem:input_type -> personal.core.DeleteItemRequest
-	3, // 6: personal.core.BalanceSheet.ListItems:output_type -> personal.core.ListItemsResponse
-	1, // 7: personal.core.BalanceSheet.CreateItem:output_type -> personal.core.BalanceSheetItem
-	1, // 8: personal.core.BalanceSheet.UpdateItem:output_type -> personal.core.BalanceSheetItem
-	7, // 9: personal.core.BalanceSheet.DeleteItem:output_type -> google.protobuf.Empty
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: personal.core.BalanceSheetItem.section:type_name -> personal.core.BalanceSheetSection
+	1,  // 1: personal.core.ListItemsResponse.items:type_name -> personal.core.BalanceSheetItem
+	7,  // 2: personal.core.ListMonthlySummariesResponse.summaries:type_name -> personal.core.MonthlySummary
+	2,  // 3: personal.core.BalanceSheet.ListItems:input_type -> personal.core.ListItemsRequest
+	4,  // 4: personal.core.BalanceSheet.CreateItem:input_type -> personal.core.CreateItemRequest
+	5,  // 5: personal.core.BalanceSheet.UpdateItem:input_type -> personal.core.UpdateItemRequest
+	6,  // 6: personal.core.BalanceSheet.DeleteItem:input_type -> personal.core.DeleteItemRequest
+	8,  // 7: personal.core.BalanceSheet.ListMonthlySummaries:input_type -> personal.core.ListMonthlySummariesRequest
+	3,  // 8: personal.core.BalanceSheet.ListItems:output_type -> personal.core.ListItemsResponse
+	1,  // 9: personal.core.BalanceSheet.CreateItem:output_type -> personal.core.BalanceSheetItem
+	1,  // 10: personal.core.BalanceSheet.UpdateItem:output_type -> personal.core.BalanceSheetItem
+	10, // 11: personal.core.BalanceSheet.DeleteItem:output_type -> google.protobuf.Empty
+	9,  // 12: personal.core.BalanceSheet.ListMonthlySummaries:output_type -> personal.core.ListMonthlySummariesResponse
+	8,  // [8:13] is the sub-list for method output_type
+	3,  // [3:8] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_apps_personal_core_adapter_balance_sheet_proto_init() }
@@ -627,7 +799,7 @@ func file_apps_personal_core_adapter_balance_sheet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_apps_personal_core_adapter_balance_sheet_proto_rawDesc), len(file_apps_personal_core_adapter_balance_sheet_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

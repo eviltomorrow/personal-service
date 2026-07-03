@@ -16,11 +16,12 @@ import (
 )
 
 var (
-	insertBSItem         = model.InsertBalanceSheetItem
-	selectBSItems        = model.SelectBalanceSheetItems
-	selectBSItemByID     = model.SelectBalanceSheetItemByID
-	updateBSItemByID     = model.UpdateBalanceSheetItemByID
-	softDeleteBSItemByID = model.SoftDeleteBalanceSheetItemByID
+	insertBSItem             = model.InsertBalanceSheetItem
+	selectBSItems            = model.SelectBalanceSheetItems
+	selectBSItemByID         = model.SelectBalanceSheetItemByID
+	updateBSItemByID         = model.UpdateBalanceSheetItemByID
+	softDeleteBSItemByID     = model.SoftDeleteBalanceSheetItemByID
+	selectBSMonthlySummaries = model.SelectBalanceSheetMonthlySummaries
 )
 
 func categoryToSection(category string) (pb.BalanceSheetSection, error) {
@@ -208,6 +209,30 @@ func (s *BalanceSheet) UpdateItem(ctx context.Context, req *pb.UpdateItemRequest
 		CreatedAt: existing.CreatedAt,
 		UpdatedAt: n,
 	}, nil
+}
+
+func (s *BalanceSheet) ListMonthlySummaries(ctx context.Context, req *pb.ListMonthlySummariesRequest) (*pb.ListMonthlySummariesResponse, error) {
+	accountID, err := accountIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := selectBSMonthlySummaries(ctx, selectDB(ctx), accountID, int(req.Months))
+	if err != nil {
+		zlog.Error("list balance sheet monthly summaries failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	result := make([]*pb.MonthlySummary, 0, len(list))
+	for _, s := range list {
+		result = append(result, &pb.MonthlySummary{
+			Date:             s.Date,
+			TotalAssets:      s.TotalAssets,
+			TotalLiabilities: s.TotalLiabilities,
+			TotalEquity:      s.TotalEquity,
+		})
+	}
+	return &pb.ListMonthlySummariesResponse{Summaries: result}, nil
 }
 
 func (s *BalanceSheet) DeleteItem(ctx context.Context, req *pb.DeleteItemRequest) (*emptypb.Empty, error) {

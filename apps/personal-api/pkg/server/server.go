@@ -5,6 +5,7 @@ import (
 
 	"github.com/eviltomorrow/personal-service/lib/auth"
 	httpserver "github.com/eviltomorrow/personal-service/lib/http/server"
+	"github.com/eviltomorrow/personal-service/lib/minio"
 	"google.golang.org/grpc/resolver"
 
 	"github.com/eviltomorrow/personal-service/lib/etcd"
@@ -60,6 +61,12 @@ func New(cfg *config.Config) (*Server, error) {
 
 	resolver.Register(lb.NewBuilder(etcd.Client))
 
+	if err := initComponent("minio", func() (func() error, error) {
+		return minio.InitMinIO(&cfg.MinIO)
+	}); err != nil {
+		return nil, err
+	}
+
 	if err := provider.Init(cfg); err != nil {
 		return nil, err
 	}
@@ -69,6 +76,7 @@ func New(cfg *config.Config) (*Server, error) {
 		CashFlowClient:     provider.GetCashFlowClient(),
 		BalanceSheetClient: provider.GetBalanceSheetClient(),
 		PortfolioClient:    provider.GetPortfolioClient(),
+		ProfileClient:      provider.GetProfileClient(),
 	}
 
 	refresher := provider.NewTokenRefresher(deps.AuthClient)

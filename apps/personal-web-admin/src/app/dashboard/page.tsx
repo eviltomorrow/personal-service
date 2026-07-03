@@ -6,7 +6,7 @@ import { formatCNY } from "@/lib/format";
 import { api } from "@/lib/api";
 import {
   Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, BookOpen,
-  ArrowRight, LayoutDashboard, BarChart3,
+  ArrowRight, LayoutDashboard, BarChart3, Clock,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -26,23 +26,41 @@ interface Position {
   initial_qty: number;
 }
 
-interface ValueSnapshot {
-  date: string;
-  total_value: number;
-}
-
 interface Category {
   id: number;
   name: string;
   type: "income" | "expense";
 }
 
-const featureCards = [
-  { label: "资产负债表", desc: "6 个资产类别", href: "/dashboard/balance-sheet", icon: BookOpen, color: "from-sky-500 to-blue-600" },
-  { label: "投资组合", desc: "3 个持仓品种", href: "/dashboard/portfolio", icon: TrendingUp, color: "from-emerald-500 to-teal-600" },
-  { label: "收入与支出", desc: "本月结余 ¥12,270", href: "/dashboard/cash-flow", icon: Wallet, color: "from-amber-500 to-orange-600" },
-  { label: "系统设置", desc: "账户与偏好", href: "/dashboard/settings", icon: LayoutDashboard, color: "from-slate-500 to-slate-700" },
-];
+interface BSApiItem {
+  id: number;
+  account_id: string;
+  section: number;
+  category: string;
+  name: string;
+  amount: number;
+  note: string;
+  date: string;
+  sort_order: number;
+  created_at: number;
+  updated_at: number;
+}
+
+interface MonthlySummary {
+  date: string;
+  total_assets: number;
+  total_liabilities: number;
+  total_equity: number;
+}
+
+function assetCategoriesDesc(bsItems: BSApiItem[]): string {
+  const count = new Set(bsItems.filter(i => i.section === 1).map(i => i.category)).size;
+  return `${count} 个资产类别`;
+}
+
+function portfolioDesc(positions: Position[]): string {
+  return `${positions.length} 个持仓品种`;
+}
 
 const DONUT_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
@@ -55,32 +73,45 @@ const ChartTooltip = ({ active, payload, label }: any) => {
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-md text-xs">
       <p className="font-semibold text-gray-900 mb-1">{label}</p>
       <p className="text-gray-600">总资产：<span className="font-medium text-gray-900">{formatCNY(d.total)}</span></p>
-      {d.change !== 0 && (
-        <p className={d.change > 0 ? "text-emerald-600" : "text-red-600"}>
-          月变动：{d.change > 0 ? "+" : ""}{formatCNY(d.change)}
-        </p>
-      )}
     </div>
   );
 };
 
 export default function DashboardPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [summaries, setSummaries] = useState<MonthlySummary[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [bsItems, setBsItems] = useState<BSApiItem[]>([]);
+  const [prevBsItems, setPrevBsItems] = useState<BSApiItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  function prevMonth(y: number, m: number): [number, number] {
+    if (m === 1) return [y - 1, 12];
+    return [y, m - 1];
+  }
+
+  useEffect(() => {
+    const [py, pm] = prevMonth(year, month);
+    setLoading(true);
     async function load() {
-      const [txRes, posRes, snapRes, catRes] = await Promise.allSettled([
-        api(`/api/v1/cash-flow/transactions?year=${y}&month=${m}`).then(r => r.json()),
+      const [txRes, posRes, sumRes, catRes, bsRes, prevBsRes] = await Promise.allSettled([
+        api(`/api/v1/cash-flow/transactions?year=${year}&month=${month}`).then(r => r.json()),
         api("/api/v1/cash-flow/portfolio/positions").then(r => r.json()),
-        api("/api/v1/cash-flow/portfolio/snapshots").then(r => r.json()),
-        api(`/api/v1/cash-flow/categories?year=${y}&month=${m}`).then(r => r.json()),
+        api("/api/v1/cash-flow/balance-sheet/summaries?months=12").then(r => r.json()),
+        api(`/api/v1/cash-flow/categories?year=${year}&month=${month}`).then(r => r.json()),
+        api(`/api/v1/cash-flow/balance-sheet/items?year=${year}&month=${month}`).then(r => r.json()),
+        api(`/api/v1/cash-flow/balance-sheet/items?year=${py}&month=${pm}`).then(r => r.json()),
       ]);
       if (txRes.status === "fulfilled" && txRes.value.code === 0) {
         setTransactions(txRes.value.data?.transactions ?? []);
@@ -88,16 +119,22 @@ export default function DashboardPage() {
       if (posRes.status === "fulfilled" && posRes.value.code === 0) {
         setPositions(posRes.value.data ?? []);
       }
-      if (snapRes.status === "fulfilled" && snapRes.value.code === 0) {
-        setSnapshots(snapRes.value.data ?? []);
+      if (sumRes.status === "fulfilled" && sumRes.value.code === 0) {
+        setSummaries(sumRes.value.data ?? []);
       }
       if (catRes.status === "fulfilled" && catRes.value.code === 0) {
         setCategories(catRes.value.data ?? []);
       }
+      if (bsRes.status === "fulfilled" && bsRes.value.code === 0) {
+        setBsItems(bsRes.value.data ?? []);
+      }
+      if (prevBsRes.status === "fulfilled" && prevBsRes.value.code === 0) {
+        setPrevBsItems(prevBsRes.value.data ?? []);
+      }
       setLoading(false);
     }
     load();
-  }, []);
+  }, [year, month]);
 
   const totalIncome = transactions
     .filter(t => t.type === "income")
@@ -110,9 +147,13 @@ export default function DashboardPage() {
   const portfolioValue = positions
     .reduce((s, p) => s + p.current_price * p.initial_qty, 0);
 
-  const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
-  const lastSnapshot = sortedSnapshots[sortedSnapshots.length - 1];
-  const prevSnapshot = sortedSnapshots.length > 1 ? sortedSnapshots[sortedSnapshots.length - 2] : null;
+  const totalAssets = bsItems
+    .filter(i => i.section === 1)
+    .reduce((s, i) => s + i.amount, 0);
+
+  const prevTotalAssets = prevBsItems
+    .filter(i => i.section === 1)
+    .reduce((s, i) => s + i.amount, 0);
 
   function calcChange(current: number, previous: number | null): { change: string; trend: "up" | "down" } | null {
     if (!previous || previous === 0) return null;
@@ -125,14 +166,19 @@ export default function DashboardPage() {
 
   const incomeChange = calcChange(totalIncome, null);
   const expenseChange = calcChange(totalExpense, null);
-  const portfolioChange = lastSnapshot && prevSnapshot
-    ? calcChange(portfolioValue, prevSnapshot.total_value)
-    : null;
+  const assetChange = calcChange(totalAssets, prevTotalAssets || null);
 
   const summaryCards = [
+    { label: "本月资产", value: totalAssets, change: assetChange, icon: BarChart3 },
     { label: "本月收入", value: totalIncome, change: incomeChange, icon: TrendingUp },
     { label: "本月支出", value: totalExpense, change: expenseChange, icon: Wallet },
-    { label: "投资总市值", value: portfolioValue, change: portfolioChange, icon: BarChart3 },
+  ];
+
+  const featureCards = [
+    { label: "资产负债表", desc: assetCategoriesDesc(bsItems), href: "/dashboard/balance-sheet", icon: BookOpen, color: "from-sky-500 to-blue-600" as const },
+    { label: "投资组合", desc: portfolioDesc(positions), href: "/dashboard/portfolio", icon: TrendingUp, color: "from-emerald-500 to-teal-600" as const },
+    { label: "收入与支出", desc: `本月结余 ${formatCNY((totalIncome - totalExpense) / 100)}`, href: "/dashboard/cash-flow", icon: Wallet, color: "from-amber-500 to-orange-600" as const },
+    { label: "系统设置", desc: "账户与偏好", href: "/dashboard/settings", icon: LayoutDashboard, color: "from-slate-500 to-slate-700" as const },
   ];
 
   const catMap = new Map(categories.filter(c => c.type === "expense").map(c => [c.id, c.name]));
@@ -161,15 +207,15 @@ export default function DashboardPage() {
 
   const totalExpenseAmt = donutData.reduce((s, d) => s + d.value, 0);
 
-  const chartData = sortedSnapshots.slice(-12).map((s, i, arr) => {
+  const chartData = summaries
+    .filter(s => s.date <= `${year}-${String(month).padStart(2, "0")}`)
+    .map((s, i, arr) => {
     const monthLabel = s.date.length >= 7
       ? `${parseInt(s.date.slice(5, 7))}月`
       : s.date;
-    const prev = i > 0 ? arr[i - 1].total_value : s.total_value;
     return {
       month: monthLabel,
-      total: s.total_value,
-      change: s.total_value - prev,
+      total: s.total_assets / 100,
     };
   });
 
@@ -216,7 +262,16 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-      <PageHeader title="仪表盘" description="欢迎回来，这是你的财务与投资总览。" />
+      <PageHeader title="仪表盘" description="欢迎回来，这是你的财务与投资总览。"
+        actions={
+          <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
+            <Clock className="h-4 w-4 text-gray-400" />
+            <span className="text-sm font-medium text-gray-900 select-none">
+              {now.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" })} {now.toLocaleTimeString("zh-CN")}
+            </span>
+          </div>
+        }
+      />
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -277,6 +332,7 @@ export default function DashboardPage() {
                   <Pie
                     data={donutData}
                     cx="50%" cy="50%"
+                    isAnimationActive={false}
                     innerRadius={55}
                     outerRadius={85}
                     paddingAngle={2}
@@ -329,13 +385,9 @@ export default function DashboardPage() {
                 tick={{ fontSize: 12, fill: "#9ca3af" }} dy={4} />
               <YAxis axisLine={false} tickLine={false}
                 tick={{ fontSize: 11, fill: "#9ca3af" }} dx={-4}
-                tickFormatter={(v: number) => (v >= 0 ? "+" : "") + toWan(Math.abs(v))} />
+                tickFormatter={(v: number) => `${(v / 10000).toFixed(v >= 1000000 ? 0 : 1)}万`} />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#cbd5e1", strokeDasharray: "3 3" }} />
-              <Bar dataKey="change" barSize={48} radius={[6, 6, 0, 0]} maxBarSize={64}>
-                {chartData.map((d, i) => (
-                  <Cell key={i} fill={d.change >= 0 ? "#10b981" : "#ef4444"} fillOpacity={0.75} />
-                ))}
-              </Bar>
+              <Bar dataKey="total" barSize={48} radius={[6, 6, 0, 0]} maxBarSize={64} fill="#3b82f6" fillOpacity={0.75} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -9,6 +9,7 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/etcd"
 	"github.com/eviltomorrow/personal-service/lib/flagsutil"
 	"github.com/eviltomorrow/personal-service/lib/log"
+	"github.com/eviltomorrow/personal-service/lib/minio"
 	"github.com/eviltomorrow/personal-service/lib/netutil"
 	"github.com/eviltomorrow/personal-service/lib/opentrace"
 	"github.com/eviltomorrow/personal-service/lib/system"
@@ -21,6 +22,7 @@ type Config struct {
 	Log       log.Config       `json:"log" toml:"log" mapstructure:"log"`
 	Etcd      etcd.Config      `json:"etcd" toml:"etcd" mapstructure:"etcd"`
 	Opentrace opentrace.Config `json:"opentrace" toml:"opentrace" mapstructure:"opentrace"`
+	MinIO     minio.Config     `json:"minio" toml:"minio" mapstructure:"minio"`
 	Service   ServiceConfig    `json:"service" toml:"service" mapstructure:"service"`
 }
 
@@ -47,6 +49,16 @@ var DefaultConfig = Config{
 	},
 	Opentrace: opentrace.Config{
 		ConnectTimeout: 10 * time.Second,
+	},
+	MinIO: minio.Config{
+		Endpoint:           "127.0.0.1:9000",
+		AccessKey:          "minioadmin",
+		SecretKey:          "minioadmin",
+		UseSSL:             false,
+		Bucket:             "profiles",
+		ConnectTimeout:     10 * time.Second,
+		StartupRetryTimes:  3,
+		StartupRetryPeriod: 3 * time.Second,
 	},
 	Service: ServiceConfig{
 		AuthServiceTarget: "etcd:///grpclb/personal-auth",

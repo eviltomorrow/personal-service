@@ -57,9 +57,25 @@ message DeleteItemRequest {
   int64 id = 1;
 }
 
+message MonthlySummary {
+  string date = 1;
+  int64 total_assets = 2;
+  int64 total_liabilities = 3;
+  int64 total_equity = 4;
+}
+
+message ListMonthlySummariesRequest {
+  int32 months = 1;
+}
+
+message ListMonthlySummariesResponse {
+  repeated MonthlySummary summaries = 1;
+}
+
 service BalanceSheet {
   rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
   rpc CreateItem(CreateItemRequest) returns (BalanceSheetItem);
   rpc UpdateItem(UpdateItemRequest) returns (BalanceSheetItem);
   rpc DeleteItem(DeleteItemRequest) returns (google.protobuf.Empty);
+  rpc ListMonthlySummaries(ListMonthlySummariesRequest) returns (ListMonthlySummariesResponse);
 }

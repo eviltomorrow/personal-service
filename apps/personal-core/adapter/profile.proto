@@ -1,0 +1,34 @@
+syntax = "proto3";
+package personal.core;
+option go_package = "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb";
+
+message ProfileInfo {
+  int64 id = 1;
+  string account_id = 2;
+  string nickname = 3;
+  string email = 4;
+  string bio = 5;
+  string avatar_url = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message GetProfileRequest {
+  string account_id = 1;
+}
+
+message UpdateProfileRequest {
+  string nickname = 1;
+  string email = 2;
+  string bio = 3;
+  string avatar_url = 4;
+}
+
+message UpdateProfileResponse {
+  ProfileInfo profile = 1;
+}
+
+service Profile {
+  rpc GetProfile(GetProfileRequest) returns (ProfileInfo);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+}

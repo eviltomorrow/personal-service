@@ -3,6 +3,7 @@ package minio
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/eviltomorrow/personal-service/lib/zlog"
@@ -12,6 +13,8 @@ import (
 )
 
 var Client *minio.Client
+var Bucket string
+var EndpointURL *url.URL
 
 func InitMinIO(c *Config) (func() error, error) {
 	client, err := tryConnect(c)
@@ -19,9 +22,13 @@ func InitMinIO(c *Config) (func() error, error) {
 		return nil, err
 	}
 	Client = client
+	Bucket = c.Bucket
+	EndpointURL = client.EndpointURL()
 
 	return func() error {
 		Client = nil
+		Bucket = ""
+		EndpointURL = nil
 		return nil
 	}, nil
 }

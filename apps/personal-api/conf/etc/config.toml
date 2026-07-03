@@ -14,6 +14,13 @@ endpoints = ["127.0.0.1:2379"]
 enable = false
 dsn = ""
 
+[minio]
+endpoint = "127.0.0.1:9000"
+access_key = "minioadmin"
+secret_key = "minioadmin"
+use_ssl = false
+bucket = "profiles"
+
 [service]
 auth_service_target = "etcd:///grpclb/personal-auth"
 core_service_target = "etcd:///grpclb/personal-core"

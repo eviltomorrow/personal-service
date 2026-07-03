@@ -12,5 +12,8 @@ func Init(cfg *config.Config) error {
 	if err := initBalanceSheet(cfg); err != nil {
 		return err
 	}
-	return initPortfolio(cfg)
+	if err := initPortfolio(cfg); err != nil {
+		return err
+	}
+	return initProfile(cfg)
 }

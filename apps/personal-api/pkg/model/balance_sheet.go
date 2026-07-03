@@ -35,8 +35,16 @@ type UpdateBSItemRequest struct {
 	SortOrder int    `json:"sort_order"`
 }
 
+type MonthlySummary struct {
+	Date             string `json:"date"`
+	TotalAssets      int64  `json:"total_assets"`
+	TotalLiabilities int64  `json:"total_liabilities"`
+	TotalEquity      int64  `json:"total_equity"`
+}
+
 type BalanceSheetClient interface {
 	ListItems(ctx context.Context, accountID string, year int, month int) ([]BalanceSheetItem, error)
+	ListMonthlySummaries(ctx context.Context, accountID string, months int) ([]MonthlySummary, error)
 	CreateItem(ctx context.Context, accountID string, req *CreateBSItemRequest) (*BalanceSheetItem, error)
 	UpdateItem(ctx context.Context, accountID string, req *UpdateBSItemRequest) (*BalanceSheetItem, error)
 	DeleteItem(ctx context.Context, accountID string, id int64) error

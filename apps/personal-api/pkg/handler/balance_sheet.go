@@ -10,6 +10,18 @@ import (
 	"go.uber.org/zap"
 )
 
+func parseQueryInt(c echo.Context, name string, defaultVal int) int {
+	val := c.QueryParam(name)
+	if val == "" {
+		return defaultVal
+	}
+	n, err := strconv.Atoi(val)
+	if err != nil {
+		return defaultVal
+	}
+	return n
+}
+
 type BalanceSheetHandler struct {
 	client model.BalanceSheetClient
 }
@@ -21,7 +33,19 @@ func init() {
 		r.POST("/cash-flow/balance-sheet/items", h.CreateItem)
 		r.PUT("/cash-flow/balance-sheet/items/:id", h.UpdateItem)
 		r.DELETE("/cash-flow/balance-sheet/items/:id", h.DeleteItem)
+		r.GET("/cash-flow/balance-sheet/summaries", h.ListSummaries)
 	})
+}
+
+func (h *BalanceSheetHandler) ListSummaries(c echo.Context) error {
+	months := parseQueryInt(c, "months", 12)
+	resp, err := h.client.ListMonthlySummaries(tokenCtx(c), accountID(c), months)
+	if err != nil {
+		zlog.Error("balance sheet list summaries failure", zap.Error(err))
+		httpStatus, msg := GrpcStatusToHTTP(err)
+		return Respond(c, httpStatus, httpStatus, msg, nil)
+	}
+	return Respond(c, http.StatusOK, 0, "success", resp)
 }
 
 func (h *BalanceSheetHandler) ListItems(c echo.Context) error {

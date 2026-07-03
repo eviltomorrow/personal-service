@@ -98,6 +98,25 @@ func (s *BalanceSheetService) UpdateItem(ctx context.Context, accountID string, 
 	}, nil
 }
 
+func (s *BalanceSheetService) ListMonthlySummaries(ctx context.Context, accountID string, months int) ([]model.MonthlySummary, error) {
+	pbResp, err := s.client.ListMonthlySummaries(withAccountID(ctx, accountID), &pb.ListMonthlySummariesRequest{
+		Months: int32(months),
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]model.MonthlySummary, 0, len(pbResp.Summaries))
+	for _, m := range pbResp.Summaries {
+		result = append(result, model.MonthlySummary{
+			Date:             m.Date,
+			TotalAssets:      m.TotalAssets,
+			TotalLiabilities: m.TotalLiabilities,
+			TotalEquity:      m.TotalEquity,
+		})
+	}
+	return result, nil
+}
+
 func (s *BalanceSheetService) DeleteItem(ctx context.Context, accountID string, id int64) error {
 	_, err := s.client.DeleteItem(withAccountID(ctx, accountID), &pb.DeleteItemRequest{Id: id})
 	return err

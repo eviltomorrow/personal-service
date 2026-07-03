@@ -149,6 +149,43 @@ func SelectBalanceSheetItemByID(ctx context.Context, exec dbmysql.Exec, id int64
 	return item, nil
 }
 
+type MonthlySummary struct {
+	Date             string
+	TotalAssets      int64
+	TotalLiabilities int64
+	TotalEquity      int64
+}
+
+func SelectBalanceSheetMonthlySummaries(ctx context.Context, exec dbmysql.Exec, accountID string, months int) ([]*MonthlySummary, error) {
+	query := fmt.Sprintf(`SELECT date,
+		ROUND(SUM(CASE WHEN section = 1 THEN amount ELSE 0 END) * 100) AS total_assets,
+		ROUND(SUM(CASE WHEN section = 2 THEN amount ELSE 0 END) * 100) AS total_liabilities,
+		ROUND(SUM(CASE WHEN section = 3 THEN amount ELSE 0 END) * 100) AS total_equity
+		FROM %s
+		WHERE account_id = ? AND deleted_at = 0
+		GROUP BY date
+		ORDER BY date ASC`, TableNameBalanceSheetItems)
+
+	var list []*MonthlySummary
+	err := sqlutil.ExecQueryMany(ctx, exec, query, []interface{}{accountID}, func(rows *sql.Rows) error {
+		for rows.Next() {
+			s := &MonthlySummary{}
+			if err := rows.Scan(&s.Date, &s.TotalAssets, &s.TotalLiabilities, &s.TotalEquity); err != nil {
+				return err
+			}
+			list = append(list, s)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if months > 0 && len(list) > months {
+		list = list[len(list)-months:]
+	}
+	return list, nil
+}
+
 func UpdateBalanceSheetItemByID(ctx context.Context, exec dbmysql.Exec, id int64, updates map[string]interface{}) (int64, error) {
 	return sqlutil.NewUpdate(exec).
 		Table(TableNameBalanceSheetItems).
