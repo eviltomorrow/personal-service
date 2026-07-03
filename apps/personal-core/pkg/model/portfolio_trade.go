@@ -19,6 +19,7 @@ const (
 	FieldTradeDate       = "date"
 	FieldTradePrice      = "price"
 	FieldTradeQuantity   = "quantity"
+	FieldTradeFee        = "fee"
 	FieldTradeNote       = "note"
 	FieldTradeDeletedAt  = "deleted_at"
 	FieldTradeCreatedAt  = "created_at"
@@ -33,6 +34,7 @@ type Trade struct {
 	Date       string
 	Price      int64
 	Quantity   int
+	Fee        int64
 	Note       string
 	DeletedAt  int64
 	CreatedAt  int64
@@ -41,21 +43,22 @@ type Trade struct {
 
 var TradeColumns = []string{
 	FieldTradeAccountID, FieldTradePositionID, FieldTradeType, FieldTradeDate,
-	FieldTradePrice, FieldTradeQuantity, FieldTradeNote, FieldTradeDeletedAt,
-	FieldTradeCreatedAt, FieldTradeUpdatedAt,
+	FieldTradePrice, FieldTradeQuantity, FieldTradeFee, FieldTradeNote,
+	FieldTradeDeletedAt, FieldTradeCreatedAt, FieldTradeUpdatedAt,
 }
 
 var TradeColumnsWithID = append([]string{"id"}, TradeColumns...)
 
 func scanTrade(row *sql.Row) (*Trade, error) {
 	t := &Trade{}
-	var priceDec float64
+	var priceDec, feeDec float64
 	err := row.Scan(&t.ID, &t.AccountID, &t.PositionID, &t.Type, &t.Date,
-		&priceDec, &t.Quantity, &t.Note, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt)
+		&priceDec, &t.Quantity, &feeDec, &t.Note, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	t.Price = int64(math.Round(priceDec * 100))
+	t.Fee = int64(math.Round(feeDec * 100))
 	return t, nil
 }
 
@@ -63,13 +66,14 @@ func scanTrades(rows *sql.Rows) ([]*Trade, error) {
 	var list []*Trade
 	for rows.Next() {
 		t := &Trade{}
-		var priceDec float64
+		var priceDec, feeDec float64
 		err := rows.Scan(&t.ID, &t.AccountID, &t.PositionID, &t.Type, &t.Date,
-			&priceDec, &t.Quantity, &t.Note, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt)
+			&priceDec, &t.Quantity, &feeDec, &t.Note, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
 		t.Price = int64(math.Round(priceDec * 100))
+		t.Fee = int64(math.Round(feeDec * 100))
 		list = append(list, t)
 	}
 	return list, nil
@@ -83,6 +87,7 @@ func InsertTrade(ctx context.Context, exec dbmysql.Exec, t *Trade) (int64, error
 		FieldTradeDate:       t.Date,
 		FieldTradePrice:      float64(t.Price) / 100.0,
 		FieldTradeQuantity:   t.Quantity,
+		FieldTradeFee:        float64(t.Fee) / 100.0,
 		FieldTradeNote:       t.Note,
 		FieldTradeDeletedAt:  t.DeletedAt,
 		FieldTradeCreatedAt:  t.CreatedAt,

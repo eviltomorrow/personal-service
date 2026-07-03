@@ -91,6 +91,7 @@ func (s *PortfolioService) CreateTrade(ctx context.Context, accountID string, re
 		Date:       req.Date,
 		Price:      req.Price,
 		Quantity:   int32(req.Quantity),
+		Fee:        req.Fee,
 		Note:       req.Note,
 	})
 	if err != nil {
@@ -106,6 +107,7 @@ func (s *PortfolioService) UpdateTrade(ctx context.Context, accountID string, re
 		Date:     req.Date,
 		Price:    req.Price,
 		Quantity: int32(req.Quantity),
+		Fee:      req.Fee,
 		Note:     req.Note,
 	})
 	if err != nil {
@@ -186,6 +188,7 @@ func tradeFromProto(t *pb.Trade) *model.Trade {
 		Date:       t.Date,
 		Price:      t.Price,
 		Quantity:   int(t.Quantity),
+		Fee:        t.Fee,
 		Note:       t.Note,
 		CreatedAt:  t.CreatedAt,
 		UpdatedAt:  t.UpdatedAt,

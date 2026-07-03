@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	dbmysql "github.com/eviltomorrow/personal-service/lib/db/mysql"
@@ -53,6 +54,9 @@ func SelectConfigByAccountID(ctx context.Context, exec dbmysql.Exec, accountID s
 			return err
 		})
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 	return c, nil

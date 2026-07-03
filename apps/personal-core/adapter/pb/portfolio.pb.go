@@ -286,6 +286,7 @@ type Trade struct {
 	Note          string                 `protobuf:"bytes,8,opt,name=note,proto3" json:"note,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     int64                  `protobuf:"varint,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Fee           int64                  `protobuf:"varint,11,opt,name=fee,proto3" json:"fee,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -386,6 +387,13 @@ func (x *Trade) GetCreatedAt() int64 {
 func (x *Trade) GetUpdatedAt() int64 {
 	if x != nil {
 		return x.UpdatedAt
+	}
+	return 0
+}
+
+func (x *Trade) GetFee() int64 {
+	if x != nil {
+		return x.Fee
 	}
 	return 0
 }
@@ -894,6 +902,7 @@ type CreateTradeRequest struct {
 	Price         int64                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
 	Quantity      int32                  `protobuf:"varint,5,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	Note          string                 `protobuf:"bytes,6,opt,name=note,proto3" json:"note,omitempty"`
+	Fee           int64                  `protobuf:"varint,7,opt,name=fee,proto3" json:"fee,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -970,6 +979,13 @@ func (x *CreateTradeRequest) GetNote() string {
 	return ""
 }
 
+func (x *CreateTradeRequest) GetFee() int64 {
+	if x != nil {
+		return x.Fee
+	}
+	return 0
+}
+
 type UpdateTradeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -978,6 +994,7 @@ type UpdateTradeRequest struct {
 	Price         int64                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
 	Quantity      int32                  `protobuf:"varint,5,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	Note          string                 `protobuf:"bytes,6,opt,name=note,proto3" json:"note,omitempty"`
+	Fee           int64                  `protobuf:"varint,7,opt,name=fee,proto3" json:"fee,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1052,6 +1069,13 @@ func (x *UpdateTradeRequest) GetNote() string {
 		return x.Note
 	}
 	return ""
+}
+
+func (x *UpdateTradeRequest) GetFee() int64 {
+	if x != nil {
+		return x.Fee
+	}
+	return 0
 }
 
 type DeleteTradeRequest struct {
@@ -1264,7 +1288,7 @@ const file_apps_personal_core_adapter_portfolio_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\r \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x0e \x01(\x03R\tupdatedAt\"\x9d\x02\n" +
+	"updated_at\x18\x0e \x01(\x03R\tupdatedAt\"\xaf\x02\n" +
 	"\x05Trade\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1280,7 +1304,8 @@ const file_apps_personal_core_adapter_portfolio_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\n" +
-	" \x01(\x03R\tupdatedAt\"D\n" +
+	" \x01(\x03R\tupdatedAt\x12\x10\n" +
+	"\x03fee\x18\v \x01(\x03R\x03fee\"D\n" +
 	"\rValueSnapshot\x12\x12\n" +
 	"\x04date\x18\x01 \x01(\tR\x04date\x12\x1f\n" +
 	"\vtotal_value\x18\x02 \x01(\x03R\n" +
@@ -1322,7 +1347,7 @@ const file_apps_personal_core_adapter_portfolio_proto_rawDesc = "" +
 	"\vposition_id\x18\x01 \x01(\x03R\n" +
 	"positionId\"B\n" +
 	"\x12ListTradesResponse\x12,\n" +
-	"\x06trades\x18\x01 \x03(\v2\x14.personal.core.TradeR\x06trades\"\xbd\x01\n" +
+	"\x06trades\x18\x01 \x03(\v2\x14.personal.core.TradeR\x06trades\"\xcf\x01\n" +
 	"\x12CreateTradeRequest\x12\x1f\n" +
 	"\vposition_id\x18\x01 \x01(\x03R\n" +
 	"positionId\x12,\n" +
@@ -1330,14 +1355,16 @@ const file_apps_personal_core_adapter_portfolio_proto_rawDesc = "" +
 	"\x04date\x18\x03 \x01(\tR\x04date\x12\x14\n" +
 	"\x05price\x18\x04 \x01(\x03R\x05price\x12\x1a\n" +
 	"\bquantity\x18\x05 \x01(\x05R\bquantity\x12\x12\n" +
-	"\x04note\x18\x06 \x01(\tR\x04note\"\xac\x01\n" +
+	"\x04note\x18\x06 \x01(\tR\x04note\x12\x10\n" +
+	"\x03fee\x18\a \x01(\x03R\x03fee\"\xbe\x01\n" +
 	"\x12UpdateTradeRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12,\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x18.personal.core.TradeTypeR\x04type\x12\x12\n" +
 	"\x04date\x18\x03 \x01(\tR\x04date\x12\x14\n" +
 	"\x05price\x18\x04 \x01(\x03R\x05price\x12\x1a\n" +
 	"\bquantity\x18\x05 \x01(\x05R\bquantity\x12\x12\n" +
-	"\x04note\x18\x06 \x01(\tR\x04note\"$\n" +
+	"\x04note\x18\x06 \x01(\tR\x04note\x12\x10\n" +
+	"\x03fee\x18\a \x01(\x03R\x03fee\"$\n" +
 	"\x12DeleteTradeRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\"S\n" +
 	"\x15ListSnapshotsResponse\x12:\n" +

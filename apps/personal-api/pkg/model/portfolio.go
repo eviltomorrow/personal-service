@@ -27,6 +27,7 @@ type Trade struct {
 	Date       string `json:"date"`
 	Price      int64  `json:"price"`
 	Quantity   int    `json:"quantity"`
+	Fee        int64  `json:"fee"`
 	Note       string `json:"note"`
 	CreatedAt  int64  `json:"created_at"`
 	UpdatedAt  int64  `json:"updated_at"`
@@ -72,6 +73,7 @@ type CreateTradeRequest struct {
 	Date       string `json:"date"`
 	Price      int64  `json:"price"`
 	Quantity   int    `json:"quantity"`
+	Fee        int64  `json:"fee"`
 	Note       string `json:"note"`
 }
 
@@ -81,6 +83,7 @@ type UpdateTradeRequest struct {
 	Date     string `json:"date"`
 	Price    int64  `json:"price"`
 	Quantity int    `json:"quantity"`
+	Fee      int64  `json:"fee"`
 	Note     string `json:"note"`
 }
 

@@ -15,6 +15,30 @@ import (
 	"github.com/eviltomorrow/personal-service/apps/personal-core/pkg/model"
 )
 
+var directionToDB = map[string]string{
+	"做多": "1",
+	"做空": "2",
+}
+
+var directionFromDB = map[string]string{
+	"1": "做多",
+	"2": "做空",
+}
+
+func dirToString(s string) string {
+	if v, ok := directionToDB[s]; ok {
+		return v
+	}
+	return s
+}
+
+func dirFromString(s string) string {
+	if v, ok := directionFromDB[s]; ok {
+		return v
+	}
+	return s
+}
+
 var (
 	insertPosition         = model.InsertPosition
 	selectPositionsByAcct  = model.SelectPositionsByAccountID
@@ -82,7 +106,7 @@ func (s *Portfolio) CreatePosition(ctx context.Context, req *pb.CreatePositionRe
 		Code:         req.Code,
 		Name:         req.Name,
 		Type:         int(req.Type),
-		Direction:    req.Direction,
+		Direction:    dirToString(req.Direction),
 		InitialQty:   int(req.InitialQty),
 		CurrentPrice: req.CurrentPrice,
 		MarginRatio:  int(req.MarginRatio),
@@ -127,7 +151,7 @@ func (s *Portfolio) UpdatePosition(ctx context.Context, req *pb.UpdatePositionRe
 		model.FieldPosCode:         req.Code,
 		model.FieldPosName:         req.Name,
 		model.FieldPosType:         int(req.Type),
-		model.FieldPosDirection:    req.Direction,
+		model.FieldPosDirection:    dirToString(req.Direction),
 		model.FieldPosInitialQty:   int(req.InitialQty),
 		model.FieldPosCurrentPrice: float64(req.CurrentPrice) / 100.0,
 		model.FieldPosMarginRatio:  int(req.MarginRatio),
@@ -144,7 +168,7 @@ func (s *Portfolio) UpdatePosition(ctx context.Context, req *pb.UpdatePositionRe
 	existing.Code = req.Code
 	existing.Name = req.Name
 	existing.Type = int(req.Type)
-	existing.Direction = req.Direction
+	existing.Direction = dirToString(req.Direction)
 	existing.InitialQty = int(req.InitialQty)
 	existing.CurrentPrice = req.CurrentPrice
 	existing.MarginRatio = int(req.MarginRatio)
@@ -189,7 +213,7 @@ func positionToProto(p *model.Position) *pb.Position {
 		Code:         p.Code,
 		Name:         p.Name,
 		Type:         pb.PositionType(p.Type),
-		Direction:    p.Direction,
+		Direction:    dirFromString(p.Direction),
 		InitialQty:   int32(p.InitialQty),
 		CurrentPrice: p.CurrentPrice,
 		MarginRatio:  int32(p.MarginRatio),
@@ -245,6 +269,7 @@ func (s *Portfolio) CreateTrade(ctx context.Context, req *pb.CreateTradeRequest)
 		Date:       req.Date,
 		Price:      req.Price,
 		Quantity:   int(req.Quantity),
+		Fee:        req.Fee,
 		Note:       req.Note,
 		DeletedAt:  0,
 		CreatedAt:  n,
@@ -285,6 +310,7 @@ func (s *Portfolio) UpdateTrade(ctx context.Context, req *pb.UpdateTradeRequest)
 		model.FieldTradeDate:      req.Date,
 		model.FieldTradePrice:     float64(req.Price) / 100.0,
 		model.FieldTradeQuantity:  int(req.Quantity),
+		model.FieldTradeFee:       float64(req.Fee) / 100.0,
 		model.FieldTradeNote:      req.Note,
 		model.FieldTradeUpdatedAt: n,
 	})
@@ -297,6 +323,7 @@ func (s *Portfolio) UpdateTrade(ctx context.Context, req *pb.UpdateTradeRequest)
 	existing.Date = req.Date
 	existing.Price = req.Price
 	existing.Quantity = int(req.Quantity)
+	existing.Fee = req.Fee
 	existing.Note = req.Note
 	existing.UpdatedAt = n
 	return tradeToProto(existing), nil
@@ -336,6 +363,7 @@ func tradeToProto(t *model.Trade) *pb.Trade {
 		Date:       t.Date,
 		Price:      t.Price,
 		Quantity:   int32(t.Quantity),
+		Fee:        t.Fee,
 		Note:       t.Note,
 		CreatedAt:  t.CreatedAt,
 		UpdatedAt:  t.UpdatedAt,

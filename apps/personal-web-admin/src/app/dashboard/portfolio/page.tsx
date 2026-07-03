@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { formatCNY } from "@/lib/format";
 import { api } from "@/lib/api";
@@ -17,7 +17,64 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-function genId() { return crypto.randomUUID(); }
+const TRADE_TYPE_MAP: Record<string, number> = { "建仓": 1, "买入": 2, "卖出": 3, "清仓": 4 };
+const TRADE_TYPE_REV: Record<number, string> = { 1: "建仓", 2: "买入", 3: "卖出", 4: "清仓" };
+
+function posToAPI(p: Position, extra?: Record<string, unknown>) {
+  return {
+    code: p.code,
+    name: p.name,
+    type: p.type === "股票" ? 1 : 2,
+    direction: p.direction,
+    initial_qty: p.initialQty,
+    current_price: Math.round(p.currentPrice * 100),
+    margin_ratio: Math.round((p.marginRatio ?? 0) * 10000),
+    sort_order: p.sortOrder ?? 0,
+    ...extra,
+  };
+}
+
+function tradeToAPI(t: { type: string; date: string; price: number; quantity: number; fee?: number; note?: string }) {
+  return {
+    type: TRADE_TYPE_MAP[t.type] ?? 2,
+    date: t.date,
+    price: Math.round(t.price * 100),
+    quantity: t.quantity,
+    fee: Math.round((t.fee ?? 0) * 100),
+    note: t.note ?? "",
+  };
+}
+
+function posFromAPI(p: any): Position {
+  return {
+    id: String(p.id),
+    code: p.code,
+    name: p.name,
+    type: p.type === 1 ? "股票" as const : "期货" as const,
+    direction: p.direction as "做多" | "做空",
+    initialQty: p.initial_qty,
+    quantity: 0,
+    currentPrice: p.current_price / 100,
+    costPrice: 0,
+    marginRatio: p.margin_ratio / 10000,
+    trades: [],
+    archived: p.archived,
+    closedPnl: p.closed_pnl / 100,
+    sortOrder: p.sort_order ?? 0,
+  };
+}
+
+function tradeFromAPI(t: any): TradeRecord {
+  return {
+    id: String(t.id),
+    type: (TRADE_TYPE_REV[t.type] ?? "买入") as TradeRecord["type"],
+    date: (t.date || "").slice(0, 10),
+    price: t.price / 100,
+    quantity: t.quantity,
+    fee: (t.fee ?? 0) / 100,
+    note: t.note || undefined,
+  };
+}
 
 interface TradeRecord {
   id: string;
@@ -25,6 +82,7 @@ interface TradeRecord {
   date: string;
   price: number;
   quantity: number;
+  fee: number;
   note?: string;
 }
 
@@ -42,6 +100,7 @@ interface Position {
   trades: TradeRecord[];
   archived: boolean;
   closedPnl?: number;
+  sortOrder: number;
 }
 
 interface ValueSnapshot {
@@ -49,24 +108,33 @@ interface ValueSnapshot {
   totalValue: number;
 }
 
-function calcTradeTotalCost(trades: TradeRecord[]): number {
+function calcTradeTotalCost(trades: TradeRecord[], direction: "做多" | "做空"): number {
   return trades.reduce((cost, t) => {
-    return t.type === "买入" || t.type === "建仓"
-      ? cost + t.price * t.quantity
-      : cost - t.price * t.quantity;
+    const q = t.price * t.quantity;
+    const f = t.fee ?? 0;
+    if (direction === "做空") {
+      if (t.type === "建仓" || t.type === "卖出") return cost - q + f;
+      return cost + q + f;
+    }
+    if (t.type === "买入" || t.type === "建仓") return cost + q + f;
+    return cost - q + f;
   }, 0);
 }
 
-function recalcCostPrice(trades: TradeRecord[]): number {
-  const totalCost = calcTradeTotalCost(trades);
-  const totalQty = calcQuantity(trades, 0);
+function recalcCostPrice(trades: TradeRecord[], direction: "做多" | "做空"): number {
+  const totalCost = calcTradeTotalCost(trades, direction);
+  const totalQty = calcQuantity(trades, 0, direction);
   if (totalQty <= 0) return 0;
-  return totalCost / totalQty;
+  return Math.abs(totalCost / totalQty);
 }
 
-function calcQuantity(trades: TradeRecord[], initialQty: number): number {
+function calcQuantity(trades: TradeRecord[], initialQty: number, direction: "做多" | "做空"): number {
   return Math.max(0, trades.reduce((qty, t) => {
-    return t.type === "买入" || t.type === "建仓" ? qty + t.quantity : qty - t.quantity;
+    if (direction === "做空") {
+      if (t.type === "建仓" || t.type === "卖出") return qty + t.quantity;
+      return Math.max(0, qty - t.quantity);
+    }
+    return t.type === "买入" || t.type === "建仓" ? qty + t.quantity : Math.max(0, qty - t.quantity);
   }, Math.max(0, initialQty)));
 }
 
@@ -94,8 +162,16 @@ function StatCards({ positions, totalCapital, realizedPnl, onCapitalChange }: {
   const [capitalDraft, setCapitalDraft] = useState("");
 
   const totalValue = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0);
-  const totalCost = positions.reduce((s, p) => s + calcTradeTotalCost(p.trades), 0);
-  const availableFunds = totalCapital - totalCost + realizedPnl;
+  const fundsUsed = positions.reduce((s, p) => {
+    if (p.type === "期货") {
+      const marketValue = p.currentPrice * p.quantity;
+      return s + (p.marginRatio ? marketValue * p.marginRatio : marketValue);
+    }
+    return s + calcTradeTotalCost(p.trades, p.direction);
+  }, 0);
+  const totalFees = positions.reduce((s, p) =>
+    s + p.trades.reduce((sf, t) => sf + (t.fee ?? 0), 0), 0);
+  const availableFunds = totalCapital - fundsUsed + realizedPnl - totalFees;
   const totalProfit = positions.reduce((s, p) => {
     const d = calcDerived(p);
     return s + d.profitAmount;
@@ -111,6 +187,7 @@ function StatCards({ positions, totalCapital, realizedPnl, onCapitalChange }: {
     { icon: DollarSign, label: "总本金", value: formatCNY(totalCapital), bar: "slate", editable: true },
     { icon: DollarSign, label: "可用资金", value: formatCNY(availableFunds), bar: "blue" },
     { icon: TrendingUp, label: "总市值", value: formatCNY(totalValue), bar: "emerald" },
+    { icon: DollarSign, label: "总手续费", value: formatCNY(totalFees), bar: "slate" },
     { icon: TrendingUp, label: "总盈亏", value: `${profitSign}${formatCNY(Math.abs(totalProfit))}`, bar: profitColor, text: profitColor },
     { icon: Percent, label: "总收益率", value: `${profitSign}${totalProfitPct.toFixed(2)}%`, bar: "amber", text: profitColor },
     { icon: ArrowUpDown, label: "多空比", value: `${longCount} : ${shortCount}`, bar: "purple" },
@@ -166,7 +243,7 @@ function StatCards({ positions, totalCapital, realizedPnl, onCapitalChange }: {
         </div>
       ))}
       {editingCapital && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setEditingCapital(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="rounded-xl border border-gray-200 bg-white shadow-xl p-5 w-80" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-sm font-semibold text-gray-900 mb-3">修改总本金</h3>
             <div className="flex items-center gap-2 mb-4">
@@ -334,7 +411,7 @@ function RightPanel({
     () => calcDerived(position),
     [position]
   );
-  const totalCost = calcTradeTotalCost(position.trades);
+  const totalCost = calcTradeTotalCost(position.trades, position.direction);
   const positionPct = totalValue > 0 ? (position.currentPrice * position.quantity / totalValue) * 100 : 0;
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceDraft, setPriceDraft] = useState(String(position.currentPrice));
@@ -572,7 +649,7 @@ function RightPanel({
                 }`}>
                   {t.type}
                 </span>
-                <span className="text-sm text-gray-500 tabular-nums w-28 shrink-0">{t.date}</span>
+                <span className="text-sm text-gray-500 tabular-nums w-28 shrink-0">{t.date.slice(0, 10)}</span>
                 <span className="text-sm text-gray-500 tabular-nums w-24 text-right shrink-0">{formatCNY(t.price)}</span>
                 <span className="text-sm text-gray-900 tabular-nums w-20 text-right shrink-0">{t.quantity}</span>
                 <span className="text-sm font-semibold text-gray-900 tabular-nums w-28 text-right shrink-0">{formatCNY(t.price * t.quantity)}</span>
@@ -718,7 +795,7 @@ function ArchivedRightPanel({ position }: { position: Position }) {
                 }`}>
                   {t.type}
                 </span>
-                <span className="text-sm text-gray-500 tabular-nums w-28 shrink-0">{t.date}</span>
+                <span className="text-sm text-gray-500 tabular-nums w-28 shrink-0">{t.date.slice(0, 10)}</span>
                 <span className="text-sm text-gray-500 tabular-nums w-24 text-right shrink-0">{formatCNY(t.price)}</span>
                 <span className="text-sm text-gray-900 tabular-nums w-20 text-right shrink-0">{t.quantity}</span>
                 <span className="text-sm font-semibold text-gray-900 tabular-nums w-28 text-right shrink-0">{formatCNY(t.price * t.quantity)}</span>
@@ -741,12 +818,9 @@ function Modal({
   children: React.ReactNode;
   onClose: () => void;
 }) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   return (
     <div
-      ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/5"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
         className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down"
@@ -766,7 +840,7 @@ function Modal({
 
 function AddPositionForm({ initial, onSave, onClose }: {
   initial?: Position;
-  onSave: (p: Omit<Position, "id" | "trades" | "costPrice" | "quantity" | "archived" | "closedPnl">) => void;
+  onSave: (p: Omit<Position, "id" | "trades" | "costPrice" | "quantity" | "archived" | "closedPnl" | "sortOrder">) => void;
   onClose: () => void;
 }) {
   const [code, setCode] = useState(initial?.code ?? "");
@@ -871,9 +945,10 @@ function TradeForm({
   onClose: () => void;
 }) {
   const [type, setType] = useState<"建仓" | "买入" | "卖出" | "清仓">(initial?.type ?? "买入");
-  const [date, setDate] = useState(initial?.date ?? new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState((initial?.date || "").slice(0, 10) || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10));
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
   const [quantity, setQuantity] = useState(initial ? String(initial.quantity) : "");
+  const [fee, setFee] = useState(initial ? String(initial.fee) : "0");
   const [note, setNote] = useState(initial?.note ?? "");
   const [error, setError] = useState("");
 
@@ -887,7 +962,7 @@ function TradeForm({
       setError(`卖出量不能大于当前持仓量（${currentQty}）`);
       return;
     }
-    onSave({ type, date, price: p, quantity: q, note: note.trim() || undefined });
+    onSave({ type, date, price: p, quantity: q, fee: parseFloat(fee) || 0, note: note.trim() || undefined });
   }
 
   return (
@@ -922,6 +997,18 @@ function TradeForm({
             placeholder="100" />
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">手续费</label>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-400 shrink-0">¥</span>
+            <input type="number" min="0" step="0.01" value={fee} onChange={(e) => setFee(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-slate-400 focus:ring-2 focus:ring-slate-200/60 focus:outline-none"
+              placeholder="0.00" />
+          </div>
+        </div>
+        <div />
+      </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">备注（可选）</label>
         <input type="text" value={note} onChange={(e) => setNote(e.target.value)}
@@ -940,7 +1027,7 @@ function DeleteConfirm({
   message, onConfirm, onClose,
 }: {
   message: string;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onClose: () => void;
 }) {
   return (
@@ -952,7 +1039,7 @@ function DeleteConfirm({
       <p className="text-xs text-gray-500 mb-4">此操作不可撤销</p>
       <div className="flex gap-2">
         <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
-        <button onClick={() => { onConfirm(); onClose(); }} className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-colors">确认删除</button>
+        <button onClick={async () => { await onConfirm(); onClose(); }} className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-500 transition-colors">确认删除</button>
       </div>
     </div>
   );
@@ -1066,21 +1153,31 @@ export default function PortfolioPage() {
       const snapJson = await snapRes.json();
       const cfgJson = await cfgRes.json();
       if (posJson.code === 0 && posJson.data) {
-        setPositions((posJson.data as any[]).map(p => ({
-          id: String(p.id),
-          code: p.code,
-          name: p.name,
-          type: p.type === 1 ? "股票" as const : "期货" as const,
-          direction: p.direction as "做多" | "做空",
-          initialQty: p.initial_qty,
-          quantity: p.initial_qty,
-          currentPrice: p.current_price / 100,
-          costPrice: 0,
-          marginRatio: p.margin_ratio / 10000,
-          trades: [],
-          archived: p.archived,
-          closedPnl: p.closed_pnl / 100,
-        })));
+        const rawPositions = (posJson.data as any[]);
+        const positions = rawPositions.map(p => posFromAPI(p));
+        // Load trades for each position
+        setPositions(positions);
+        const loaded = await Promise.allSettled(
+          positions.map(async (pos) => {
+            const res = await api(`/api/v1/cash-flow/portfolio/positions/${pos.id}/trades`);
+            const json = await res.json();
+            if (json.code === 0 && json.data) {
+              const trades = (json.data as any[]).map(t => tradeFromAPI(t));
+              const qty = calcQuantity(trades, pos.initialQty, pos.direction);
+              return { id: pos.id, trades, quantity: qty, costPrice: recalcCostPrice(trades, pos.direction) };
+            }
+            return null;
+          })
+        );
+        const tradeUpdates: Record<string, any> = {};
+        for (const result of loaded) {
+          if (result.status === "fulfilled" && result.value) {
+            tradeUpdates[result.value.id] = result.value;
+          }
+        }
+        if (Object.keys(tradeUpdates).length > 0) {
+          setPositions((prev) => prev.map(p => tradeUpdates[p.id] ? { ...p, ...tradeUpdates[p.id] } : p));
+        }
       }
       if (snapJson.code === 0 && snapJson.data) {
         setSnapshots((snapJson.data as any[]).map(s => ({
@@ -1135,22 +1232,42 @@ export default function PortfolioPage() {
   const [modal, setModal] = useState<ModalType>(null);
 
   function handleUpdatePosition(id: string, updates: Partial<Position>) {
-    setPositions((prev) => {
-      const updated = prev.map((p) => {
-        if (p.id !== id) return p;
-        let next = { ...p, ...updates };
-        if ("initialQty" in updates || "trades" in updates) {
-          next.quantity = calcQuantity(next.trades, next.initialQty);
-        }
-        if (next.quantity === 0 && !next.archived) {
-          next.archived = true;
-          next.closedPnl = calcDerived(next).profitAmount;
-        }
-        return next;
-      });
-      if ("currentPrice" in updates) {
-        const today = new Date().toISOString().slice(0, 10);
-        const newTotal = updated.reduce((s, p) => s + p.currentPrice * (p.archived ? 0 : p.quantity), 0);
+    setPositions((prev) => prev.map((p) => {
+      if (p.id !== id) return p;
+      let next = { ...p, ...updates };
+      if ("initialQty" in updates || "trades" in updates) {
+        next.quantity = calcQuantity(next.trades, next.initialQty, next.direction);
+      }
+      const wasArchived = next.archived;
+      if (next.quantity === 0 && !next.archived) {
+        next.archived = true;
+        next.closedPnl = calcDerived(next).profitAmount;
+      }
+      // Persist to backend
+      if ("currentPrice" in updates || "marginRatio" in updates || (next.archived && !wasArchived)) {
+        api(`/api/v1/cash-flow/portfolio/positions/${id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            ...posToAPI(next),
+            archived: next.archived,
+            closed_pnl: Math.round((next.closedPnl ?? 0) * 100),
+          }),
+        }).then(r => r.json()).then(j => {
+          if (j.code !== 0) setToast({ type: "error", message: j.message || "保存失败" });
+        });
+      }
+      return next;
+    }));
+    if ("currentPrice" in updates) {
+      const today = new Date().toISOString().slice(0, 10);
+      setPositions((prev) => {
+        const newTotal = prev.reduce((s, p) => s + p.currentPrice * (p.archived ? 0 : p.quantity), 0);
+        api("/api/v1/cash-flow/portfolio/snapshots", {
+          method: "POST",
+          body: JSON.stringify({ date: today, total_value: Math.round(newTotal * 100) }),
+        }).then(r => r.json()).then(j => {
+          if (j.code !== 0) console.warn("snapshot save failed", j);
+        });
         setSnapshots((prev) => {
           const existing = prev.findIndex((s) => s.date === today);
           if (existing >= 0) {
@@ -1160,9 +1277,9 @@ export default function PortfolioPage() {
           }
           return [...prev, { date: today, totalValue: newTotal }];
         });
-      }
-      return updated;
-    });
+        return prev;
+      });
+    }
   }
 
   function handleDeleteTrade(positionId: string, tradeId: string) {
@@ -1170,15 +1287,16 @@ export default function PortfolioPage() {
       prev.map((p) => {
         if (p.id !== positionId) return p;
         const newTrades = p.trades.filter((t) => t.id !== tradeId);
-        const qty = calcQuantity(newTrades, p.initialQty);
-        return {
-          ...p,
-          trades: newTrades,
-          quantity: qty,
-          costPrice: recalcCostPrice(newTrades),
-          archived: qty === 0 ? true : p.archived,
-          closedPnl: qty === 0 ? calcDerived({ ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades) }).profitAmount : p.closedPnl,
-        };
+        const qty = calcQuantity(newTrades, p.initialQty, p.direction);
+        if (qty === 0) {
+          const closedPnl = calcDerived({ ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades, p.direction) }).profitAmount;
+          api(`/api/v1/cash-flow/portfolio/positions/${positionId}`, {
+            method: "PUT",
+            body: JSON.stringify({ ...posToAPI(p), archived: true, closed_pnl: Math.round(closedPnl * 100) }),
+          });
+          return { ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades, p.direction), archived: true, closedPnl };
+        }
+        return { ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades, p.direction), archived: false, closedPnl: 0 };
       })
     );
   }
@@ -1209,12 +1327,27 @@ export default function PortfolioPage() {
       if (insertIdx === -1) return prev;
 
       const updatedMoved = crossList
-        ? { ...movedItem, archived: targetArchived, closedPnl: targetArchived ? calcDerived(movedItem).profitAmount : undefined }
+        ? { ...movedItem, archived: targetArchived, closedPnl: targetArchived ? calcDerived(movedItem).profitAmount : 0 }
         : movedItem;
 
       targetItems.splice(insertIdx, 0, updatedMoved);
 
-      return targetArchived ? [...otherItems, ...targetItems] : [...targetItems, ...otherItems];
+      const reordered = targetArchived ? [...otherItems, ...targetItems] : [...targetItems, ...otherItems];
+      // Persist sort_order and archive changes
+      reordered.forEach((p, i) => {
+        api(`/api/v1/cash-flow/portfolio/positions/${p.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            ...posToAPI(p),
+            sort_order: i,
+            archived: p.archived,
+            closed_pnl: Math.round((p.closedPnl ?? 0) * 100),
+          }),
+        }).then(r => r.json()).then(j => {
+          if (j.code !== 0) console.warn("position save failed", p.id, j);
+        });
+      });
+      return reordered;
     });
   }
 
@@ -1244,7 +1377,18 @@ export default function PortfolioPage() {
           加载中...
         </div>
       )}
-      <StatCards positions={activePositions} totalCapital={totalCapital} realizedPnl={realizedPnl} onCapitalChange={setTotalCapital} />
+      <StatCards positions={activePositions} totalCapital={totalCapital} realizedPnl={realizedPnl} onCapitalChange={async (v) => {
+        const res = await api("/api/v1/cash-flow/portfolio/config", {
+          method: "PUT", body: JSON.stringify({ total_capital: Math.round(v * 100) }),
+        });
+        const json = await res.json();
+        if (json.code === 0) {
+          setTotalCapital(v);
+          setToast({ type: "success", message: "总本金已更新" });
+        } else {
+          setToast({ type: "error", message: json.message || "更新失败" });
+        }
+      }} />
 
       <TrendChart snapshots={snapshots} />
 
@@ -1288,26 +1432,45 @@ export default function PortfolioPage() {
       {modal?.type === "addPosition" && (
         <Modal title="新增品种" onClose={() => setModal(null)}>
           <AddPositionForm
-            onSave={(data) => {
-              const id = genId();
-              const qty = calcQuantity([], data.initialQty);
-              const trades = data.initialQty > 0 && data.currentPrice > 0
-                ? [{ id: genId(), type: "建仓" as const, date: new Date().toISOString().slice(0, 10), price: data.currentPrice, quantity: data.initialQty }]
-                : [];
-              setPositions((prev) => [...prev, { ...data, id, quantity: qty, costPrice: recalcCostPrice(trades), trades, initialQty: 0, archived: false }]);
-              setSnapshots((prev) => {
-                const today = new Date().toISOString().slice(0, 10);
-                const newTotal = positions.reduce((s, p) => s + p.currentPrice * p.quantity, 0) + data.currentPrice * qty;
-                const existing = prev.findIndex((s) => s.date === today);
-                if (existing >= 0) {
-                  const next = [...prev];
-                  next[existing] = { ...next[existing], totalValue: newTotal };
-                  return next;
+            onSave={async (data) => {
+              const body = {
+                code: data.code,
+                name: data.name,
+                type: data.type === "股票" ? 1 : 2,
+                direction: data.direction,
+                initial_qty: 0,
+                current_price: Math.round(data.currentPrice * 100),
+                margin_ratio: Math.round((data.marginRatio ?? 0) * 10000),
+                sort_order: activePositions.length,
+              };
+              try {
+                const res = await api("/api/v1/cash-flow/portfolio/positions", {
+                  method: "POST", body: JSON.stringify(body),
+                });
+                const json = await res.json();
+                if (json.code !== 0) { setToast({ type: "error", message: json.message || "创建失败" }); return; }
+                const pos = posFromAPI(json.data);
+                // Create initial trade if quantity > 0
+                if (data.initialQty > 0 && data.currentPrice > 0) {
+                  const today = new Date().toISOString().slice(0, 10);
+                  await api(`/api/v1/cash-flow/portfolio/positions/${pos.id}/trades`, {
+                    method: "POST",
+                    body: JSON.stringify({ type: 1, date: today, price: Math.round(data.currentPrice * 100), quantity: data.initialQty, note: "" }),
+                  });
+                  // Reload trades
+                  const tRes = await api(`/api/v1/cash-flow/portfolio/positions/${pos.id}/trades`);
+                  const tJson = await tRes.json();
+                  if (tJson.code === 0 && tJson.data) {
+                    pos.trades = (tJson.data as any[]).map(t => tradeFromAPI(t));
+                    pos.quantity = calcQuantity(pos.trades, 0, pos.direction);
+                    pos.costPrice = recalcCostPrice(pos.trades, pos.direction);
+                  }
                 }
-                return [...prev, { date: today, totalValue: newTotal }];
-              });
-              setSelectedId(id);
-              setModal(null);
+                setPositions((prev) => [...prev, pos]);
+                setSelectedId(pos.id);
+                setToast({ type: "success", message: "品种创建成功" });
+                setModal(null);
+              } catch { setToast({ type: "error", message: "创建失败" }); }
             }}
             onClose={() => setModal(null)}
           />
@@ -1319,11 +1482,29 @@ export default function PortfolioPage() {
         if (!p) return null;
         return (
           <Modal title="编辑品种" onClose={() => setModal(null)}>
-            <AddPositionForm
+            <AddPositionForm key={modal.positionId}
               initial={p}
-              onSave={(data) => {
-                handleUpdatePosition(modal.positionId, data);
-                setModal(null);
+              onSave={async (data) => {
+                try {
+                  const res = await api(`/api/v1/cash-flow/portfolio/positions/${modal.positionId}`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                      code: data.code, name: data.name,
+                      type: data.type === "股票" ? 1 : 2, direction: data.direction,
+                      initial_qty: data.initialQty,
+                      current_price: Math.round(data.currentPrice * 100),
+                      margin_ratio: Math.round((data.marginRatio ?? 0) * 10000),
+                      sort_order: p.sortOrder ?? 0,
+                      archived: p.archived,
+                      closed_pnl: Math.round((p.closedPnl ?? 0) * 100),
+                    }),
+                  });
+                  const json = await res.json();
+                  if (json.code !== 0) { setToast({ type: "error", message: json.message || "更新失败" }); return; }
+                  setPositions((prev) => prev.map(x => x.id === modal.positionId ? { ...x, ...data } : x));
+                  setToast({ type: "success", message: "品种已更新" });
+                  setModal(null);
+                } catch { setToast({ type: "error", message: "更新失败" }); }
               }}
               onClose={() => setModal(null)}
             />
@@ -1335,7 +1516,15 @@ export default function PortfolioPage() {
         <Modal title="删除品种" onClose={() => setModal(null)}>
           <DeleteConfirm
             message="删除此品种将同时清除所有关联的买卖记录和趋势数据。"
-            onConfirm={() => { handleDeletePosition(modal.positionId); }}
+            onConfirm={async () => {
+              try {
+                const res = await api(`/api/v1/cash-flow/portfolio/positions/${modal.positionId}`, { method: "DELETE" });
+                const json = await res.json();
+                if (json.code !== 0) { setToast({ type: "error", message: json.message || "删除失败" }); return; }
+                handleDeletePosition(modal.positionId);
+                setToast({ type: "success", message: "品种已删除" });
+              } catch { setToast({ type: "error", message: "删除失败" }); }
+            }}
             onClose={() => setModal(null)}
           />
         </Modal>
@@ -1347,25 +1536,35 @@ export default function PortfolioPage() {
         <Modal title="新增记录" onClose={() => setModal(null)}>
           <TradeForm
             currentQty={pos?.quantity}
-            onSave={(data) => {
-              const type = data.type === "卖出" && pos && data.quantity >= pos.quantity ? "清仓" : data.type;
-              const newTrade = { id: genId(), ...data, type };
-              setPositions((prev) =>
-                prev.map((p) => {
-                  if (p.id !== modal.positionId) return p;
-                  const newTrades = [...p.trades, newTrade];
-                  const qty = calcQuantity(newTrades, p.initialQty);
-                  return {
-                    ...p,
-                    trades: newTrades,
-                    quantity: qty,
-                    costPrice: recalcCostPrice(newTrades),
-                    archived: qty === 0 ? true : p.archived,
-                    closedPnl: qty === 0 ? -calcTradeTotalCost(newTrades) : p.closedPnl,
-                  };
-                })
-              );
-              setModal(null);
+            onSave={async (data) => {
+              const tradeType = data.type === "卖出" && pos && data.quantity >= pos.quantity ? "清仓" : data.type;
+              try {
+                const res = await api(`/api/v1/cash-flow/portfolio/positions/${modal.positionId}/trades`, {
+                  method: "POST",
+                  body: JSON.stringify(tradeToAPI({ ...data, type: tradeType })),
+                });
+                const json = await res.json();
+                if (json.code !== 0) { setToast({ type: "error", message: json.message || "创建失败" }); return; }
+                const newTrade = tradeFromAPI(json.data);
+                setPositions((prev) =>
+                  prev.map((p) => {
+                    if (p.id !== modal.positionId) return p;
+                    const newTrades = [...p.trades, newTrade];
+                    const qty = calcQuantity(newTrades, p.initialQty, p.direction);
+                    if (qty === 0) {
+                      const closedPnl = -calcTradeTotalCost(newTrades, p.direction);
+                      api(`/api/v1/cash-flow/portfolio/positions/${modal.positionId}`, {
+                        method: "PUT",
+                        body: JSON.stringify({ ...posToAPI(p), archived: true, closed_pnl: Math.round(closedPnl * 100) }),
+                      });
+                      return { ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades, p.direction), archived: true, closedPnl };
+                    }
+                    return { ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades, p.direction), archived: false, closedPnl: p.closedPnl };
+                  })
+                );
+                setToast({ type: "success", message: "记录已添加" });
+                setModal(null);
+              } catch { setToast({ type: "error", message: "创建失败" }); }
             }}
             onClose={() => setModal(null)}
           />
@@ -1374,25 +1573,36 @@ export default function PortfolioPage() {
 
       {modal?.type === "editTrade" && (
         <Modal title="编辑记录" onClose={() => setModal(null)}>
-          <TradeForm
+          <TradeForm key={modal.trade.id}
             initial={modal.trade}
-            onSave={(data) => {
-              setPositions((prev) =>
-                prev.map((p) => {
-                  if (p.id !== modal.positionId) return p;
-                  const newTrades = p.trades.map((t) => t.id === modal.trade.id ? { ...t, ...data } : t);
-                  const qty = calcQuantity(newTrades, p.initialQty);
-                  return {
-                    ...p,
-                    trades: newTrades,
-                    quantity: qty,
-                    costPrice: recalcCostPrice(newTrades),
-                    archived: qty === 0 ? true : p.archived,
-                    closedPnl: qty === 0 ? -calcTradeTotalCost(newTrades) : p.closedPnl,
-                  };
-                })
-              );
-              setModal(null);
+            onSave={async (data) => {
+              try {
+                const res = await api(`/api/v1/cash-flow/portfolio/trades/${modal.trade.id}`, {
+                  method: "PUT",
+                  body: JSON.stringify(tradeToAPI(data)),
+                });
+                const json = await res.json();
+                if (json.code !== 0) { setToast({ type: "error", message: json.message || "更新失败" }); return; }
+                const updated = tradeFromAPI(json.data);
+                setPositions((prev) =>
+                  prev.map((p) => {
+                    if (p.id !== modal.positionId) return p;
+                    const newTrades = p.trades.map((t) => t.id === modal.trade.id ? updated : t);
+                    const qty = calcQuantity(newTrades, p.initialQty, p.direction);
+                    if (qty === 0) {
+                      const closedPnl = -calcTradeTotalCost(newTrades, p.direction);
+                      api(`/api/v1/cash-flow/portfolio/positions/${modal.positionId}`, {
+                        method: "PUT",
+                        body: JSON.stringify({ ...posToAPI(p), archived: true, closed_pnl: Math.round(closedPnl * 100) }),
+                      });
+                      return { ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades, p.direction), archived: true, closedPnl };
+                    }
+                    return { ...p, trades: newTrades, quantity: qty, costPrice: recalcCostPrice(newTrades, p.direction), archived: false, closedPnl: 0 };
+                  })
+                );
+                setToast({ type: "success", message: "记录已更新" });
+                setModal(null);
+              } catch { setToast({ type: "error", message: "更新失败" }); }
             }}
             onClose={() => setModal(null)}
           />
@@ -1403,7 +1613,15 @@ export default function PortfolioPage() {
         <Modal title="删除记录" onClose={() => setModal(null)}>
           <DeleteConfirm
             message="确定要删除此买卖记录吗？"
-            onConfirm={() => { handleDeleteTrade(modal.positionId, modal.tradeId); }}
+            onConfirm={async () => {
+              try {
+                const res = await api(`/api/v1/cash-flow/portfolio/trades/${modal.tradeId}`, { method: "DELETE" });
+                const json = await res.json();
+                if (json.code !== 0) { setToast({ type: "error", message: json.message || "删除失败" }); return; }
+                handleDeleteTrade(modal.positionId, modal.tradeId);
+                setToast({ type: "success", message: "记录已删除" });
+              } catch { setToast({ type: "error", message: "删除失败" }); }
+            }}
             onClose={() => setModal(null)}
           />
         </Modal>

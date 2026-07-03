@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS trades (
     date          DATE            NOT NULL,
     price         DECIMAL(15,2)   NOT NULL,
     quantity      INT             NOT NULL,
+    fee           DECIMAL(15,2)   NOT NULL DEFAULT 0 COMMENT '手续费，单位元',
     note          VARCHAR(256)    NOT NULL DEFAULT '',
     deleted_at    BIGINT UNSIGNED NOT NULL DEFAULT 0,
     created_at    BIGINT UNSIGNED NOT NULL DEFAULT 0,
