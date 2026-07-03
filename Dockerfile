@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:latest AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine3.21 AS builder
 WORKDIR /personal-service
 COPY [".", "./"]
 ARG APPNAME=unknown
@@ -10,11 +10,11 @@ ENV MAINVERSION=${MAINVERSION} \
     BUILDTIME=${BUILDTIME} 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.AppName=${APPNAME} -X main.MainVersion=${MAINVERSION} -X main.GitSha=${GITSHA} -X main.BuildTime=${BUILDTIME} -s -w" -gcflags "all=-trimpath=$(go env GOPATH)" -o bin/${APPNAME}/bin/${APPNAME} apps/${APPNAME}/main.go
 
-
-FROM --platform=$BUILDPLATFORM alpine:latest AS prod
+FROM --platform=$BUILDPLATFORM alpine:3.21 AS prod
 WORKDIR /app
 ARG APPNAME=unknown
 ENV APPNAME=${APPNAME} 
-COPY --from=builder ["/personal-service/bin/${APPNAME}","."]
-COPY --from=builder ["/personal-service/apps/${APPNAME}/conf/etc","./etc"]
-ENTRYPOINT ["sh","-c","./bin/${APPNAME}"]
+COPY --from=builder ["/personal-service/bin/${APPNAME}", "."]
+COPY --from=builder ["/personal-service/apps/${APPNAME}/conf/etc", "./etc"]
+RUN apk add --no-cache tzdata ca-certificates
+ENTRYPOINT ["sh", "-c", "./bin/${APPNAME}"]

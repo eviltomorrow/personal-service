@@ -55,6 +55,20 @@ else
 	@bash build/app_build.sh ${app}
 endif
 
+# sync release configs from source
+.PHONY: sync-config
+sync-config:
+	@echo "$(CGREEN)=> Syncing configs to deployments/release/conf/...$(CEND)"
+	@mkdir -p deployments/release/conf/personal-auth deployments/release/conf/personal-api deployments/release/conf/personal-core
+	@cp apps/personal-auth/conf/etc/config.toml deployments/release/conf/personal-auth/config.toml
+	@cp apps/personal-api/conf/etc/config.toml deployments/release/conf/personal-api/config.toml
+	@cp apps/personal-core/conf/etc/config.toml deployments/release/conf/personal-core/config.toml
+	@sed -i 's|127.0.0.1:2379|etcd:2379|g' deployments/release/conf/personal-*/config.toml
+	@sed -i 's|127.0.0.1:3306|mysql:3306|g' deployments/release/conf/personal-*/config.toml
+	@sed -i 's|127.0.0.1:6379|redis:6379|g' deployments/release/conf/personal-*/config.toml
+	@sed -i 's|127.0.0.1:9000|minio:9000|g' deployments/release/conf/personal-*/config.toml
+	@echo "$(CGREEN)=> Config sync done$(CEND)"
+
 # docker
 .PHONY: docker
 docker: vendor
@@ -62,6 +76,11 @@ docker: fmt
 ifeq (${app},)
 	cp -f version deployments/version
 	@bash build/docker_build.sh ${MAINVERSION} ${GITSHA} ${BUILDTIME}
+	@echo "$(CGREEN)=> Building personal-web-admin...$(CEND)"
+	@docker build --target prod -t ${REGISTRY}/${ACCOUNT}/personal-web-admin:${MAINVERSION} apps/personal-web-admin/. --build-arg MAINVERSION=${MAINVERSION} --build-arg GITSHA=${GITSHA} --build-arg BUILDTIME=${BUILDTIME}
+	@echo "$(CGREEN)=> Build Success$(CEND)"
+else ifeq (${app},personal-web-admin)
+	@docker build --target prod -t ${REGISTRY}/${ACCOUNT}/${app}:${MAINVERSION} apps/${app}/. --build-arg MAINVERSION=${MAINVERSION} --build-arg GITSHA=${GITSHA} --build-arg BUILDTIME=${BUILDTIME}
 else
 	docker build --target prod -t ${REGISTRY}/${ACCOUNT}/${app}:${MAINVERSION} . --build-arg APPNAME=${app} --build-arg MAINVERSION=${MAINVERSION} --build-arg GITSHA=${GITSHA} --build-arg BUILDTIME=${BUILDTIME}
 endif

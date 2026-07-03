@@ -110,7 +110,11 @@ func (h *ProfileHandler) UploadAvatar(c echo.Context) error {
 		}
 	}
 
-	avatarURL := fmt.Sprintf("%s/%s/%s", minio.EndpointURL.String(), minio.Bucket, objectKey)
+	base := minio.PublicEndpoint
+	if base == "" {
+		base = minio.EndpointURL.String()
+	}
+	avatarURL := fmt.Sprintf("%s/%s/%s", base, minio.Bucket, objectKey)
 
 	resp, err := h.client.UpdateProfile(tokenCtx(c), accID, &model.UpdateProfileRequest{
 		AvatarURL: avatarURL,

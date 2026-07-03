@@ -15,6 +15,7 @@ import (
 var Client *minio.Client
 var Bucket string
 var EndpointURL *url.URL
+var PublicEndpoint string
 
 func InitMinIO(c *Config) (func() error, error) {
 	client, err := tryConnect(c)
@@ -24,11 +25,13 @@ func InitMinIO(c *Config) (func() error, error) {
 	Client = client
 	Bucket = c.Bucket
 	EndpointURL = client.EndpointURL()
+	PublicEndpoint = c.PublicEndpoint
 
 	return func() error {
 		Client = nil
 		Bucket = ""
 		EndpointURL = nil
+		PublicEndpoint = ""
 		return nil
 	}, nil
 }

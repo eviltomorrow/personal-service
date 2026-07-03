@@ -72,10 +72,24 @@ services:
     volumes:
       - ${DATA_HOME:-./data}/minio/data:/data
       - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
   personal-auth:
     restart: always
-    image: registry.cn-beijing.aliyuncs.com/eviltomorrow/personal-auth:${personal_auth_version:-7.0.5}
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        APPNAME: personal-auth
+        MAINVERSION: ${personal_auth_version:-7.0.5}
+        GITSHA: ${GITSHA:-unknown}
+        BUILDTIME: ${BUILDTIME:-unknown}
+    image: personal-auth:${personal_auth_version:-7.0.5}
     container_name: personal-auth
     ports:
       - "127.0.0.1:50001:50001"
@@ -90,18 +104,72 @@ services:
       - ./conf/personal-auth/config.toml:/app/etc/config.toml
       - /etc/localtime:/etc/localtime:ro
 
+  personal-core:
+    restart: always
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        APPNAME: personal-core
+        MAINVERSION: ${personal_core_version:-7.0.5}
+        GITSHA: ${GITSHA:-unknown}
+        BUILDTIME: ${BUILDTIME:-unknown}
+    image: personal-core:${personal_core_version:-7.0.5}
+    container_name: personal-core
+    ports:
+      - "127.0.0.1:50002:50002"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+    volumes:
+      - ./conf/personal-core/config.toml:/app/etc/config.toml
+      - /etc/localtime:/etc/localtime:ro
+
   personal-api:
     restart: always
-    image: registry.cn-beijing.aliyuncs.com/eviltomorrow/personal-api:${personal_api_version:-7.0.5}
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        APPNAME: personal-api
+        MAINVERSION: ${personal_api_version:-7.0.5}
+        GITSHA: ${GITSHA:-unknown}
+        BUILDTIME: ${BUILDTIME:-unknown}
+    image: personal-api:${personal_api_version:-7.0.5}
     container_name: personal-api
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
       etcd:
         condition: service_healthy
+      personal-core:
+        condition: service_started
     volumes:
       - ./conf/personal-api/config.toml:/app/etc/config.toml
       - /etc/localtime:/etc/localtime:ro
+
+  personal-web-admin:
+    restart: always
+    build:
+      context: ../../apps/personal-web-admin
+      dockerfile: Dockerfile
+      args:
+        MAINVERSION: ${personal_web_admin_version:-7.0.5}
+        GITSHA: ${GITSHA:-unknown}
+        BUILDTIME: ${BUILDTIME:-unknown}
+        NEXT_PUBLIC_ENABLE_REGISTER: ${NEXT_PUBLIC_ENABLE_REGISTER:-true}
+    image: personal-web-admin:${personal_web_admin_version:-7.0.5}
+    container_name: personal-web-admin
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NEXT_PUBLIC_ENABLE_REGISTER=${NEXT_PUBLIC_ENABLE_REGISTER:-true}
+    depends_on:
+      - personal-api
 
 networks:
   default:

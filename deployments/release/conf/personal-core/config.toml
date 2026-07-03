@@ -1,0 +1,33 @@
+[network]
+bind_ip = "0.0.0.0"
+bind_port = 50002
+disable_tls = true
+
+[log]
+level = "info"
+
+[mysql]
+dsn = "root:root@tcp(mysql:3306)/personal_core?charset=utf8mb4&parseTime=True&loc=Local"
+min_open = 3
+max_open = 10
+max_lifetime = "300s"
+connect_timeout = "10s"
+startup_retry_times = 3
+startup_retry_period = "3s"
+
+[redis]
+dsn = "redis://redis:6379/1"
+connect_timeout = "10s"
+startup_retry_times = 3
+startup_retry_period = "3s"
+
+[etcd]
+endpoints = ["etcd:2379"]
+connect_timeout = "10s"
+startup_retry_times = 3
+startup_retry_period = "3s"
+
+[opentrace]
+enable = false
+dsn = ""
+connect_timeout = "10s"

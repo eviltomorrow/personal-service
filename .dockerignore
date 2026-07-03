@@ -1,0 +1,13 @@
+.git
+.gitignore
+.gitattributes
+*.md
+bin/
+vendor/
+node_modules/
+.next/
+deployments/
+scripts/
+build/
+docs/
+third-party/

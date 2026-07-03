@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   env: {
@@ -15,8 +16,10 @@ const nextConfig: NextConfig = {
     return redirects;
   },
   async rewrites() {
+    const target = process.env.API_TARGET;
+    if (!target) return [];
     return [
-      { source: "/api/:path*", destination: "http://127.0.0.1:8080/api/:path*" },
+      { source: "/api/:path*", destination: `${target}/api/:path*` },
     ];
   },
 };

@@ -13,6 +13,7 @@ type Config struct {
 	SecretKey          string        `json:"secret_key" toml:"secret_key" mapstructure:"secret_key"`
 	UseSSL             bool          `json:"use_ssl" toml:"use_ssl" mapstructure:"use_ssl"`
 	Bucket             string        `json:"bucket" toml:"bucket" mapstructure:"bucket"`
+	PublicEndpoint     string        `json:"public_endpoint" toml:"public_endpoint" mapstructure:"public_endpoint"`
 	ConnectTimeout     time.Duration `json:"connect_timeout" toml:"-" mapstructure:"-"`
 	StartupRetryTimes  int           `json:"startup_retry_times" toml:"-" mapstructure:"-"`
 	StartupRetryPeriod time.Duration `json:"startup_retry_period" toml:"-" mapstructure:"-"`
