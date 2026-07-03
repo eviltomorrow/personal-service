@@ -150,6 +150,23 @@ export default function DashboardPage() {
 
   const totalExpenseAmt = donutData.reduce((s, d) => s + d.value, 0);
 
+  const chartData = sortedSnapshots.slice(-12).map((s, i, arr) => {
+    const monthLabel = s.date.length >= 7
+      ? `${parseInt(s.date.slice(5, 7))}月`
+      : s.date;
+    const prev = i > 0 ? arr[i - 1].total_value : s.total_value;
+    return {
+      month: monthLabel,
+      total: s.total_value,
+      change: s.total_value - prev,
+    };
+  });
+
+  const latestTotal = chartData.length > 0 ? chartData[chartData.length - 1].total : 0;
+  const ytdChange = chartData.length > 1
+    ? ((chartData[chartData.length - 1].total - chartData[0].total) / chartData[0].total * 100)
+    : 0;
+
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="仪表盘" description="欢迎回来，这是你的财务与投资总览。" />
@@ -247,15 +264,19 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-semibold text-gray-900">总资产走势</h3>
-              <p className="text-sm text-gray-500">近半年资产变化趋势</p>
+              <p className="text-sm text-gray-500">资产变化趋势</p>
             </div>
             <div className="text-right">
-              <p className="text-lg font-semibold text-gray-900 tabular-nums">{formatCNY(assetData[assetData.length - 1].total)}</p>
-              <p className="text-xs text-emerald-600">较年初 +14.3%</p>
+              <p className="text-lg font-semibold text-gray-900 tabular-nums">{formatCNY(latestTotal)}</p>
+              {ytdChange !== 0 && (
+                <p className={`text-xs ${ytdChange > 0 ? "text-emerald-600" : "text-red-600"}`}>
+                  {ytdChange > 0 ? "+" : ""}{Math.round(ytdChange)}%
+                </p>
+              )}
             </div>
           </div>
           <ResponsiveContainer width="100%" height={360}>
-            <BarChart data={assetData} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+            <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
               <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
               <XAxis dataKey="month" axisLine={{ stroke: "#e2e8f0" }} tickLine={false}
                 tick={{ fontSize: 12, fill: "#9ca3af" }} dy={4} />
@@ -264,7 +285,7 @@ export default function DashboardPage() {
                 tickFormatter={(v: number) => (v >= 0 ? "+" : "") + toWan(Math.abs(v))} />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#cbd5e1", strokeDasharray: "3 3" }} />
               <Bar dataKey="change" barSize={48} radius={[6, 6, 0, 0]} maxBarSize={64}>
-                {assetData.map((d, i) => (
+                {chartData.map((d, i) => (
                   <Cell key={i} fill={d.change >= 0 ? "#10b981" : "#ef4444"} fillOpacity={0.75} />
                 ))}
               </Bar>
