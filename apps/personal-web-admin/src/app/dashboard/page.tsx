@@ -64,8 +64,6 @@ function portfolioDesc(positions: Position[]): string {
 
 const DONUT_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
-const toWan = (v: number) => `${(v / 10000).toFixed(v >= 1000000 ? 0 : 1)}万`;
-
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
@@ -73,6 +71,11 @@ const ChartTooltip = ({ active, payload, label }: any) => {
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-md text-xs">
       <p className="font-semibold text-gray-900 mb-1">{label}</p>
       <p className="text-gray-600">总资产：<span className="font-medium text-gray-900">{formatCNY(d.total)}</span></p>
+      {d.change && (
+        <p className={`mt-0.5 ${Number(d.change) >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+          环比：{Number(d.change) >= 0 ? "+" : ""}{d.change}%
+        </p>
+      )}
     </div>
   );
 };
@@ -81,7 +84,7 @@ export default function DashboardPage() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
+    const id = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(id);
   }, []);
 
@@ -213,9 +216,11 @@ export default function DashboardPage() {
     const monthLabel = s.date.length >= 7
       ? `${parseInt(s.date.slice(5, 7))}月`
       : s.date;
+    const prev = i > 0 ? arr[i - 1].total_assets / 100 : 0;
     return {
       month: monthLabel,
       total: s.total_assets / 100,
+      change: prev > 0 ? ((s.total_assets / 100 - prev) / prev * 100).toFixed(1) : null,
     };
   });
 

@@ -40,7 +40,7 @@ func (s *Profile) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*p
 			now := now()
 			p = &model.Profile{
 				AccountID: accountID,
-				Nickname:  req.AccountId,
+				Nickname:  "",
 				CreatedAt: now,
 				UpdatedAt: now,
 			}

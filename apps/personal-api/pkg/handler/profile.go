@@ -105,7 +105,9 @@ func (h *ProfileHandler) UploadAvatar(c echo.Context) error {
 
 	oldProfile, err := h.client.GetProfile(tokenCtx(c), accID)
 	if err == nil && oldProfile.AvatarURL != "" {
-		_ = minio.Client.RemoveObject(c.Request().Context(), minio.Bucket, oldProfile.AvatarURL, minio7.RemoveObjectOptions{})
+		if err := minio.Client.RemoveObject(c.Request().Context(), minio.Bucket, oldProfile.AvatarURL, minio7.RemoveObjectOptions{}); err != nil {
+			zlog.Warn("remove old avatar from minio failure", zap.Error(err))
+		}
 	}
 
 	avatarURL := fmt.Sprintf("%s/%s/%s", minio.EndpointURL.String(), minio.Bucket, objectKey)

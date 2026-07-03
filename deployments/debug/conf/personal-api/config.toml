@@ -1,0 +1,27 @@
+[log]
+level = "debug"
+
+[network]
+bind_ip = "0.0.0.0"
+bind_port = 8080
+access_ip = ""
+disable_tls = true
+
+[etcd]
+endpoints = ["etcd:2379"]
+
+[opentrace]
+enable = false
+dsn = ""
+
+[minio]
+endpoint = "minio:9000"
+access_key = "minioadmin"
+secret_key = "minioadmin"
+use_ssl = false
+bucket = "profiles"
+
+[service]
+auth_service_target = "etcd:///grpclb/personal-auth"
+core_service_target = "etcd:///grpclb/personal-core"
+signing_key = "sk_c1d8df11cce60aa705ea95ce9310b99a4177d6a4"

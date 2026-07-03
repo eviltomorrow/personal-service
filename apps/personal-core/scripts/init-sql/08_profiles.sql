@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS profiles (
     updated_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     deleted_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
-    UNIQUE KEY uk_account (account_id)
+    UNIQUE KEY uk_account (account_id, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
