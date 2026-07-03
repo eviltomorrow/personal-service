@@ -1,20 +1,41 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { formatCNY } from "@/lib/format";
+import { api } from "@/lib/api";
 import {
   Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, BookOpen,
-  ArrowRight, LayoutDashboard, MessageCircle, BarChart3,
+  ArrowRight, LayoutDashboard, BarChart3,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie,
 } from "recharts";
 
-const summaryCards = [
-  { label: "本月收入", value: "¥ 28,500.00", change: "+8.3%", trend: "up" as const, icon: TrendingUp },
-  { label: "本月支出", value: "¥ 16,230.00", change: "-2.1%", trend: "down" as const, icon: Wallet },
-  { label: "投资总市值", value: "¥ 234,567.89", change: "+12.5%", trend: "up" as const, icon: BarChart3 },
-];
+interface Transaction {
+  id: number;
+  category_id: number;
+  type: "income" | "expense";
+  name: string;
+  amount: number;
+}
+
+interface Position {
+  current_price: number;
+  initial_qty: number;
+}
+
+interface ValueSnapshot {
+  date: string;
+  total_value: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  type: "income" | "expense";
+}
 
 const featureCards = [
   { label: "资产负债表", desc: "6 个资产类别", href: "/dashboard/balance-sheet", icon: BookOpen, color: "from-sky-500 to-blue-600" },
@@ -23,23 +44,7 @@ const featureCards = [
   { label: "系统设置", desc: "账户与偏好", href: "/dashboard/settings", icon: LayoutDashboard, color: "from-slate-500 to-slate-700" },
 ];
 
-const recentActivity = [
-  { type: "buy", text: "买入 贵州茅台 100股", module: "投资组合", time: "2小时前", href: "/dashboard/portfolio" },
-  { type: "income", text: "工资入账 ¥28,500.00", module: "收入与支出", time: "3小时前", href: "/dashboard/cash-flow" },
-  { type: "expense", text: "盒马鲜生 ¥328.50", module: "收入与支出", time: "5小时前", href: "/dashboard/cash-flow" },
-  { type: "asset", text: "新增 货币资金 ¥500,000", module: "资产负债表", time: "昨天", href: "/dashboard/balance-sheet" },
-  { type: "sell", text: "卖出 沪深300ETF 2手", module: "投资组合", time: "昨天", href: "/dashboard/portfolio" },
-  { type: "expense", text: "物业管理费 ¥1,200.00", module: "收入与支出", time: "2天前", href: "/dashboard/cash-flow" },
-];
-
-const assetData = [
-  { month: "1月", total: 2150000, change: 0 },
-  { month: "2月", total: 2180000, change: 30000 },
-  { month: "3月", total: 2250000, change: 70000 },
-  { month: "4月", total: 2320000, change: 70000 },
-  { month: "5月", total: 2380000, change: 60000 },
-  { month: "6月", total: 2456789, change: 76789 },
-];
+const DONUT_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 const toWan = (v: number) => `${(v / 10000).toFixed(v >= 1000000 ? 0 : 1)}万`;
 
@@ -60,6 +65,65 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function DashboardPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    Promise.all([
+      api(`/api/v1/cash-flow/transactions?year=${y}&month=${m}`).then(r => r.json()),
+      api("/api/v1/cash-flow/portfolio/positions").then(r => r.json()),
+      api("/api/v1/cash-flow/portfolio/snapshots").then(r => r.json()),
+      api(`/api/v1/cash-flow/categories?year=${y}&month=${m}`).then(r => r.json()),
+    ]).then(([txRes, posRes, snapRes, catRes]: any[]) => {
+      if (txRes.code === 0) setTransactions(txRes.data?.transactions ?? []);
+      if (posRes.code === 0) setPositions(posRes.data ?? []);
+      if (snapRes.code === 0) setSnapshots(snapRes.data ?? []);
+      if (catRes.code === 0) setCategories(catRes.data ?? []);
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const totalIncome = transactions
+    .filter(t => t.type === "income")
+    .reduce((s, t) => s + t.amount, 0);
+
+  const totalExpense = transactions
+    .filter(t => t.type === "expense")
+    .reduce((s, t) => s + t.amount, 0);
+
+  const portfolioValue = positions
+    .reduce((s, p) => s + p.current_price * p.initial_qty, 0);
+
+  const sortedSnapshots = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  const lastSnapshot = sortedSnapshots[sortedSnapshots.length - 1];
+  const prevSnapshot = sortedSnapshots.length > 1 ? sortedSnapshots[sortedSnapshots.length - 2] : null;
+
+  function calcChange(current: number, previous: number | null): { change: string; trend: "up" | "down" } | null {
+    if (!previous || previous === 0) return null;
+    const pct = ((current - previous) / previous) * 100;
+    return {
+      change: `${pct >= 0 ? "+" : ""}${Math.round(pct)}%`,
+      trend: pct >= 0 ? "up" as const : "down" as const,
+    };
+  }
+
+  const incomeChange = calcChange(totalIncome, null);
+  const expenseChange = calcChange(totalExpense, null);
+  const portfolioChange = lastSnapshot && prevSnapshot
+    ? calcChange(portfolioValue, prevSnapshot.total_value)
+    : null;
+
+  const summaryCards = [
+    { label: "本月收入", value: totalIncome, change: incomeChange, icon: TrendingUp },
+    { label: "本月支出", value: totalExpense, change: expenseChange, icon: Wallet },
+    { label: "投资总市值", value: portfolioValue, change: portfolioChange, icon: BarChart3 },
+  ];
+
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="仪表盘" description="欢迎回来，这是你的财务与投资总览。" />
@@ -72,14 +136,16 @@ export default function DashboardPage() {
               <div className="rounded-lg bg-slate-100 p-2.5">
                 <card.icon className="h-5 w-5 text-slate-600" />
               </div>
-              <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                card.trend === "up" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
-              }`}>
-                {card.trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {card.change}
-              </span>
+              {card.change && (
+                <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                  card.change.trend === "up" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                }`}>
+                  {card.change.trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {card.change.change}
+                </span>
+              )}
             </div>
-            <p className="mt-4 text-2xl font-semibold text-gray-900">{card.value}</p>
+            <p className="mt-4 text-2xl font-semibold text-gray-900">{formatCNY(card.value / 100)}</p>
             <p className="mt-1 text-sm text-gray-500">{card.label}</p>
           </div>
         ))}
