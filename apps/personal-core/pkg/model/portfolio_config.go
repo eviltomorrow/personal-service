@@ -37,7 +37,7 @@ func scanConfig(row *sql.Row) (*PortfolioConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.TotalCapital = int64(capitalDec * 100 + 0.5)
+	c.TotalCapital = int64(capitalDec*100 + 0.5)
 	return c, nil
 }
 

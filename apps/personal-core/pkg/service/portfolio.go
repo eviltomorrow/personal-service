@@ -22,11 +22,11 @@ var (
 	updatePositionByID     = model.UpdatePositionByID
 	softDeletePositionByID = model.SoftDeletePositionByID
 
-	insertTrade          = model.InsertTrade
-	selectTradesByPosID  = model.SelectTradesByPositionID
-	selectTradeByID      = model.SelectTradeByID
-	updateTradeByID      = model.UpdateTradeByID
-	softDeleteTradeByID  = model.SoftDeleteTradeByID
+	insertTrade         = model.InsertTrade
+	selectTradesByPosID = model.SelectTradesByPositionID
+	selectTradeByID     = model.SelectTradeByID
+	updateTradeByID     = model.UpdateTradeByID
+	softDeleteTradeByID = model.SoftDeleteTradeByID
 
 	selectSnapshotsByAcct = model.SelectSnapshotsByAccountID
 	upsertSnapshot        = model.UpsertSnapshot
@@ -281,11 +281,11 @@ func (s *Portfolio) UpdateTrade(ctx context.Context, req *pb.UpdateTradeRequest)
 
 	n := now()
 	_, err = updateTradeByID(ctx, selectDB(ctx), req.Id, map[string]interface{}{
-		model.FieldTradeType:     int(req.Type),
-		model.FieldTradeDate:     req.Date,
-		model.FieldTradePrice:    float64(req.Price) / 100.0,
-		model.FieldTradeQuantity: int(req.Quantity),
-		model.FieldTradeNote:     req.Note,
+		model.FieldTradeType:      int(req.Type),
+		model.FieldTradeDate:      req.Date,
+		model.FieldTradePrice:     float64(req.Price) / 100.0,
+		model.FieldTradeQuantity:  int(req.Quantity),
+		model.FieldTradeNote:      req.Note,
 		model.FieldTradeUpdatedAt: n,
 	})
 	if err != nil {
