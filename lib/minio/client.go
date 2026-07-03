@@ -71,5 +71,18 @@ func buildMinIO(c *Config) (*minio.Client, error) {
 		}
 	}
 
+	policy := fmt.Sprintf(`{
+		"Version":"2012-10-17",
+		"Statement":[{
+			"Effect":"Allow",
+			"Principal":{"AWS":["*"]},
+			"Action":["s3:GetObject"],
+			"Resource":["arn:aws:s3:::%s/*"]
+		}]
+	}`, c.Bucket)
+	if err := client.SetBucketPolicy(ctx, c.Bucket, policy); err != nil {
+		zlog.Warn("set bucket public policy failure", zap.Error(err))
+	}
+
 	return client, nil
 }

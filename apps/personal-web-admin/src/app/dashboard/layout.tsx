@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { redirectToLogin } from "@/lib/auth";
+import { api } from "@/lib/api";
 import {
   LayoutDashboard, Settings, Shield, Bell, Search, Menu, X, ChevronDown,
   HelpCircle, Sparkles, User, LogOut,
@@ -21,7 +22,6 @@ const navItems = [
 
 const bottomNavItems = [
   { label: "帮助中心", href: "/dashboard/help", icon: HelpCircle },
-  { label: "安全设置", href: "/dashboard/security", icon: Shield },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [profile, setProfile] = useState({ nickname: "管理员", avatarDataUrl: "" });
+  const [profile, setProfile] = useState({ nickname: "管理员", avatar_url: "" });
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -69,13 +69,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (authed !== true) return;
-    try {
-      const data = localStorage.getItem("settings-profile");
-      if (data) {
-        const p = JSON.parse(data);
-        setProfile({ nickname: p.nickname || "管理员", avatarDataUrl: p.avatarDataUrl || "" });
-      }
-    } catch     { /* ignore */ }
+    (async () => {
+      try {
+        const res = await api("/api/v1/profile");
+        const json = await res.json();
+        if (json.code === 0 && json.data) {
+          setProfile({
+            nickname: json.data.nickname || "管理员",
+            avatar_url: json.data.avatar_url || "",
+          });
+        }
+      } catch { /* ignore */ }
+    })();
   }, [authed]);
 
   if (authed !== true) return null;
@@ -245,8 +250,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className="flex items-center gap-2 pl-2 border-l border-gray-200 cursor-pointer group"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full overflow-hidden bg-gradient-to-br from-slate-400 to-slate-600 text-xs font-semibold text-white shadow-xs shadow-slate-400/20 shrink-0">
-                  {profile.avatarDataUrl ? (
-                    <img src={profile.avatarDataUrl} alt="" className="w-full h-full object-cover" />
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                     initials
                   )}
@@ -255,7 +260,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p className="text-sm font-medium text-gray-700 leading-tight group-hover:text-gray-900 transition-colors">
                     {profile.nickname}
                   </p>
-                  <p className="text-xs text-gray-500">管理员</p>
+
                 </div>
                 <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
               </button>

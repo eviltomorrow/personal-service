@@ -1201,6 +1201,9 @@ export default function PortfolioPage() {
         const positions = rawPositions.map(p => posFromAPI(p));
         // Load trades for each position
         setPositions(positions);
+        if (positions.length > 0 && !selectedId) {
+          setSelectedId(positions[0].id);
+        }
         const loaded = await Promise.allSettled(
           positions.map(async (pos) => {
             const res = await api(`/api/v1/cash-flow/portfolio/positions/${pos.id}/trades`);

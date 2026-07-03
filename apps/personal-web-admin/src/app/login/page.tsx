@@ -218,16 +218,18 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-gray-500">
-              还没有账户？{" "}
-              <button
-                type="button"
-                onClick={() => router.push("/register")}
-                className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block cursor-pointer hover:underline hover:underline-offset-2"
-              >
-                注册
-              </button>
-            </p>
+            {process.env.NEXT_PUBLIC_ENABLE_REGISTER !== "false" && (
+              <p className="mt-6 text-center text-sm text-gray-500">
+                还没有账户？{" "}
+                <button
+                  type="button"
+                  onClick={() => router.push("/register")}
+                  className="font-medium text-slate-600 hover:text-slate-500 transition-colors active:scale-95 inline-block cursor-pointer hover:underline hover:underline-offset-2"
+                >
+                  注册
+                </button>
+              </p>
+            )}
           </div>
         </div>
       </div>
