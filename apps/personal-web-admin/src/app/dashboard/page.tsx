@@ -124,6 +124,32 @@ export default function DashboardPage() {
     { label: "投资总市值", value: portfolioValue, change: portfolioChange, icon: BarChart3 },
   ];
 
+  const catMap = new Map(categories.filter(c => c.type === "expense").map(c => [c.id, c.name]));
+
+  const expenseByCat = transactions
+    .filter(t => t.type === "expense")
+    .reduce<Map<number, number>>((map, t) => {
+      map.set(t.category_id, (map.get(t.category_id) ?? 0) + t.amount);
+      return map;
+    }, new Map());
+
+  const sortedCats = [...expenseByCat.entries()]
+    .sort((a, b) => b[1] - a[1]);
+
+  const topCats = sortedCats.slice(0, 5);
+  const otherAmount = sortedCats.slice(5).reduce((s, [, v]) => s + v, 0);
+
+  const donutData = topCats.map(([catId, amount], i) => ({
+    name: catMap.get(catId) ?? `分类${catId}`,
+    value: amount,
+    color: DONUT_COLORS[i % DONUT_COLORS.length],
+  }));
+  if (otherAmount > 0) {
+    donutData.push({ name: "其他", value: otherAmount, color: "#94a3b8" });
+  }
+
+  const totalExpenseAmt = donutData.reduce((s, d) => s + d.value, 0);
+
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       <PageHeader title="仪表盘" description="欢迎回来，这是你的财务与投资总览。" />
@@ -170,41 +196,50 @@ export default function DashboardPage() {
 
       {/* Bottom section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Recent activity */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between p-6 pb-4">
+        {/* Category expense donut */}
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-semibold text-gray-900">近期活动</h3>
-              <p className="text-sm text-gray-500">各模块的最新动态</p>
+              <h3 className="text-base font-semibold text-gray-900">分类支出占比</h3>
+              <p className="text-sm text-gray-500">当月支出按类别分布</p>
             </div>
           </div>
-          <div className="divide-y divide-gray-100">
-            {recentActivity.map((act, i) => {
-              const iconMap: Record<string, string> = {
-                buy: "text-emerald-600 bg-emerald-50",
-                sell: "text-red-600 bg-red-50",
-                income: "text-emerald-600 bg-emerald-50",
-                expense: "text-red-600 bg-red-50",
-                asset: "text-blue-600 bg-blue-50",
-              };
-              const dotCls = iconMap[act.type] || "text-gray-500 bg-gray-50";
-              return (
-                <a key={i} href={act.href}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group">
-                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${dotCls}`}>
-                    <MessageCircle className="h-4 w-4" />
+          {donutData.length === 0 ? (
+            <p className="text-sm text-gray-400 py-8 text-center">本月暂无支出记录</p>
+          ) : (
+            <div className="flex items-center gap-6">
+              <ResponsiveContainer width="60%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    cx="50%" cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {donutData.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: any) => formatCNY(Number(value) / 100)}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2.5">
+                {donutData.map((d) => (
+                  <div key={d.name} className="flex items-center gap-2.5 text-sm">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                    <span className="text-gray-700 min-w-[3rem]">{d.name}</span>
+                    <span className="text-gray-500">
+                      {totalExpenseAmt > 0 ? `${Math.round(d.value / totalExpenseAmt * 100)}%` : "0%"}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 group-hover:text-slate-600 transition-colors">{act.text}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{act.time}</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-medium text-gray-600 ring-1 ring-gray-600/10">
-                    {act.module}
-                  </span>
-                </a>
-              );
-            })}
-          </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Total asset trend */}
