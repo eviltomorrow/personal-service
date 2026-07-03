@@ -75,17 +75,28 @@ export default function DashboardPage() {
     const now = new Date();
     const y = now.getFullYear();
     const m = now.getMonth() + 1;
-    Promise.all([
-      api(`/api/v1/cash-flow/transactions?year=${y}&month=${m}`).then(r => r.json()),
-      api("/api/v1/cash-flow/portfolio/positions").then(r => r.json()),
-      api("/api/v1/cash-flow/portfolio/snapshots").then(r => r.json()),
-      api(`/api/v1/cash-flow/categories?year=${y}&month=${m}`).then(r => r.json()),
-    ]).then(([txRes, posRes, snapRes, catRes]: any[]) => {
-      if (txRes.code === 0) setTransactions(txRes.data?.transactions ?? []);
-      if (posRes.code === 0) setPositions(posRes.data ?? []);
-      if (snapRes.code === 0) setSnapshots(snapRes.data ?? []);
-      if (catRes.code === 0) setCategories(catRes.data ?? []);
-    }).finally(() => setLoading(false));
+    async function load() {
+      const [txRes, posRes, snapRes, catRes] = await Promise.allSettled([
+        api(`/api/v1/cash-flow/transactions?year=${y}&month=${m}`).then(r => r.json()),
+        api("/api/v1/cash-flow/portfolio/positions").then(r => r.json()),
+        api("/api/v1/cash-flow/portfolio/snapshots").then(r => r.json()),
+        api(`/api/v1/cash-flow/categories?year=${y}&month=${m}`).then(r => r.json()),
+      ]);
+      if (txRes.status === "fulfilled" && txRes.value.code === 0) {
+        setTransactions(txRes.value.data?.transactions ?? []);
+      }
+      if (posRes.status === "fulfilled" && posRes.value.code === 0) {
+        setPositions(posRes.value.data ?? []);
+      }
+      if (snapRes.status === "fulfilled" && snapRes.value.code === 0) {
+        setSnapshots(snapRes.value.data ?? []);
+      }
+      if (catRes.status === "fulfilled" && catRes.value.code === 0) {
+        setCategories(catRes.value.data ?? []);
+      }
+      setLoading(false);
+    }
+    load();
   }, []);
 
   const totalIncome = transactions
