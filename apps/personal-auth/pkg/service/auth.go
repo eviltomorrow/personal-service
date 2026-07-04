@@ -177,7 +177,7 @@ func (s *Auth) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Regis
 		zlog.Error("hash refresh token failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "create refresh token failure")
 	}
-	if err := stateRenew(ctx, "", refreshTokenHash, accountID, refreshExpire); err != nil {
+	if err := stateRenew(ctx, "", refreshTokenHash, accountID, accountID+":user", refreshExpire); err != nil {
 		zlog.Error("store refresh token failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "create refresh token failure")
 	}
@@ -296,7 +296,7 @@ func (s *Auth) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginRespon
 		zlog.Error("hash refresh token failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "create refresh token failure")
 	}
-	if err := stateRenew(ctx, "", refreshTokenHash, account.AccountID, refreshExpire); err != nil {
+	if err := stateRenew(ctx, "", refreshTokenHash, account.AccountID, account.AccountID+":"+account.Role, refreshExpire); err != nil {
 		zlog.Error("store refresh token failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "create refresh token failure")
 	}
@@ -391,7 +391,7 @@ func (s *Auth) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*
 		return nil, status.Error(codes.Internal, "hash token failure")
 	}
 
-	if err := stateRenew(ctx, oldTokenHash, newRefreshTokenHash, accountID, s.cfg.RefreshTokenExpire); err != nil {
+	if err := stateRenew(ctx, oldTokenHash, newRefreshTokenHash, accountID, accountID+":"+role, s.cfg.RefreshTokenExpire); err != nil {
 		zlog.Error("rotate refresh token failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "rotate token failure")
 	}

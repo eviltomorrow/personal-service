@@ -82,6 +82,7 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	resp, err := h.client.RefreshToken(c.Request().Context(), &req)
 	if err != nil {
 		zlog.Error("auth refresh token failure", zap.Error(err))
+		clearTokenCookies(c)
 		httpStatus, msg := GrpcStatusToHTTP(err)
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}

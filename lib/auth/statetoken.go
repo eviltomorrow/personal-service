@@ -159,9 +159,9 @@ func evictOldestToken(ctx context.Context, id string) error {
 	return StateTokenWithRevoke(ctx, tokens[0])
 }
 
-func StateTokenWithRenew(ctx context.Context, oldToken, newToken string, id string, expiresIn time.Duration) error {
-	if newToken == "" || id == "" {
-		return fmt.Errorf("new_token/id is nil")
+func StateTokenWithRenew(ctx context.Context, oldToken, newToken string, accountID string, value string, expiresIn time.Duration) error {
+	if newToken == "" || accountID == "" {
+		return fmt.Errorf("new_token/account_id is nil")
 	}
 
 	if oldToken != "" {
@@ -175,27 +175,26 @@ func StateTokenWithRenew(ctx context.Context, oldToken, newToken string, id stri
 		}
 	}
 
-	count, err := StateTokenWithCount(ctx, id)
+	count, err := StateTokenWithCount(ctx, accountID)
 	if err != nil {
 		return err
 	}
 	if count >= TokenLimitPerAccount {
-		if oldToken == "" {
-			// New login at capacity: evict oldest token to make room
-			if err := evictOldestToken(ctx, id); err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("token apply has reached the maximum")
+		if err := evictOldestToken(ctx, accountID); err != nil {
+			return err
 		}
 	}
 
 	tokenKey := fmt.Sprintf("%s%s", tokenPrefix, newToken)
-	if err := redisSetFn(ctx, tokenKey, id, expiresIn); err != nil {
+	redisValue := value
+	if redisValue == "" {
+		redisValue = accountID
+	}
+	if err := redisSetFn(ctx, tokenKey, redisValue, expiresIn); err != nil {
 		return err
 	}
 
-	accountKey := fmt.Sprintf("%s%s", tokenAccountPrefix, id)
+	accountKey := fmt.Sprintf("%s%s", tokenAccountPrefix, accountID)
 	if _, err := redisHSetFn(ctx, accountKey, newToken, 0); err != nil {
 		return err
 	}

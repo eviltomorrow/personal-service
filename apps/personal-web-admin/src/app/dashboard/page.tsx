@@ -9,7 +9,7 @@ import {
   ArrowRight, LayoutDashboard, BarChart3, Clock,
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie,
 } from "recharts";
 
@@ -24,6 +24,7 @@ interface Transaction {
 interface Position {
   current_price: number;
   initial_qty: number;
+  archived?: boolean;
 }
 
 interface Category {
@@ -54,12 +55,14 @@ interface MonthlySummary {
 }
 
 function assetCategoriesDesc(bsItems: BSApiItem[]): string {
-  const count = new Set(bsItems.filter(i => i.section === 1).map(i => i.category)).size;
-  return `${count} 个资产类别`;
+  const assetCount = new Set(bsItems.filter(i => i.section === 1).map(i => i.category)).size;
+  const liabilityCount = new Set(bsItems.filter(i => i.section === 2).map(i => i.category)).size;
+  return `${assetCount} 个资产类别，${liabilityCount} 个负债类别`;
 }
 
 function portfolioDesc(positions: Position[]): string {
-  return `${positions.length} 个持仓品种`;
+  const count = positions.filter(p => !p.archived).length;
+  return `${count} 个持仓品种`;
 }
 
 const DONUT_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
@@ -68,13 +71,19 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-md text-xs">
-      <p className="font-semibold text-gray-900 mb-1">{label}</p>
-      <p className="text-gray-600">总资产：<span className="font-medium text-gray-900">{formatCNY(d.total)}</span></p>
+    <div className="rounded-xl border border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-3 shadow-xl text-xs">
+      <p className="font-semibold text-gray-900 mb-1.5">{label}</p>
+      <div className="flex items-center gap-2">
+        <span className="text-gray-500">总值</span>
+        <span className="font-semibold text-gray-900 tabular-nums">{formatCNY(d.total)}</span>
+      </div>
       {d.change && (
-        <p className={`mt-0.5 ${Number(d.change) >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-          环比：{Number(d.change) >= 0 ? "+" : ""}{d.change}%
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-gray-500">环比</span>
+          <span className={`font-medium tabular-nums ${Number(d.change) >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+            {Number(d.change) >= 0 ? "+" : ""}{d.change}%
+          </span>
+        </div>
       )}
     </div>
   );
@@ -84,7 +93,7 @@ export default function DashboardPage() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30000);
+    const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -154,6 +163,12 @@ export default function DashboardPage() {
     .filter(i => i.section === 1)
     .reduce((s, i) => s + i.amount, 0);
 
+  const totalLiabilities = bsItems
+    .filter(i => i.section === 2)
+    .reduce((s, i) => s + i.amount, 0);
+
+  const netEquity = totalAssets - totalLiabilities;
+
   const prevTotalAssets = prevBsItems
     .filter(i => i.section === 1)
     .reduce((s, i) => s + i.amount, 0);
@@ -172,9 +187,9 @@ export default function DashboardPage() {
   const assetChange = calcChange(totalAssets, prevTotalAssets || null);
 
   const summaryCards = [
-    { label: "本月资产", value: totalAssets, change: assetChange, icon: BarChart3 },
-    { label: "本月收入", value: totalIncome, change: incomeChange, icon: TrendingUp },
-    { label: "本月支出", value: totalExpense, change: expenseChange, icon: Wallet },
+    { label: "本月资产", value: totalAssets, change: assetChange, icon: BarChart3, bar: "bg-blue-500", iconBg: "bg-blue-100", iconColor: "text-blue-600" },
+    { label: "本月收入", value: totalIncome, change: incomeChange, icon: TrendingUp, bar: "bg-emerald-500", iconBg: "bg-emerald-100", iconColor: "text-emerald-600" },
+    { label: "本月支出", value: totalExpense, change: expenseChange, icon: Wallet, bar: "bg-red-500", iconBg: "bg-red-100", iconColor: "text-red-600" },
   ];
 
   const featureCards = [
@@ -229,19 +244,41 @@ export default function DashboardPage() {
     ? ((chartData[chartData.length - 1].total - chartData[0].total) / chartData[0].total * 100)
     : 0;
 
+  const equityChartData = summaries
+    .filter(s => s.date <= `${year}-${String(month).padStart(2, "0")}`)
+    .map(s => ({
+      month: s.date.length >= 7 ? `${parseInt(s.date.slice(5, 7))}月` : s.date,
+      equity: s.total_equity / 100,
+    }));
+
+  const latestEquity = equityChartData.length > 0 ? equityChartData[equityChartData.length - 1].equity : 0;
+  const firstEquity = equityChartData.length > 1 ? equityChartData[0].equity : 0;
+  const equityChange = firstEquity > 0 ? ((latestEquity - firstEquity) / firstEquity * 100) : 0;
+
+  const bsDonutData = [
+    { name: "总资产", value: totalAssets, color: "#3b82f6" },
+    { name: "总负债", value: totalLiabilities, color: "#ef4444" },
+    { name: "净资产", value: netEquity > 0 ? netEquity : 0, color: "#10b981" },
+  ].filter(d => d.value > 0);
+
+  const bsDonutTotal = bsDonutData.reduce((s, d) => s + d.value, 0);
+
   return (
     <div className="space-y-8 anim-in anim-fade anim-up" style={{ animationDuration: "500ms" }}>
       {loading ? (
         <div className="space-y-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {[1,2,3].map(i => (
-              <div key={i} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm animate-pulse">
-                <div className="flex items-center justify-between">
-                  <div className="rounded-lg bg-slate-200 h-10 w-10" />
-                  <div className="rounded-full bg-slate-200 h-5 w-16" />
+              <div key={i} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden animate-pulse">
+                <div className="h-1 bg-slate-200" />
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="rounded-lg bg-slate-200 h-9 w-9" />
+                    <div className="rounded-full bg-slate-200 h-5 w-16" />
+                  </div>
+                  <div className="bg-slate-200 h-8 w-32 rounded" />
+                  <div className="mt-1 bg-slate-200 h-4 w-16 rounded" />
                 </div>
-                <div className="mt-4 bg-slate-200 h-8 w-32 rounded" />
-                <div className="mt-1 bg-slate-200 h-4 w-16 rounded" />
               </div>
             ))}
           </div>
@@ -267,12 +304,12 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-      <PageHeader title="仪表盘" description="欢迎回来，这是你的财务与投资总览。"
+      <PageHeader title="仪表盘" description="财务与投资总览。"
         actions={
           <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
             <Clock className="h-4 w-4 text-gray-400" />
-            <span className="text-sm font-medium text-gray-900 select-none">
-              {now.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })} · {now.toLocaleDateString("zh-CN", { weekday: "long" })} {now.toLocaleTimeString("zh-CN")}
+            <span className="text-sm font-medium text-gray-900 select-none tabular-nums">
+              {now.getFullYear()}.{String(now.getMonth() + 1).padStart(2, "0")}.{String(now.getDate()).padStart(2, "0")} · {["周日", "周一", "周二", "周三", "周四", "周五", "周六"][now.getDay()]} · {String(now.getHours()).padStart(2, "0")}:{String(now.getMinutes()).padStart(2, "0")}:{String(now.getSeconds()).padStart(2, "0")}
             </span>
           </div>
         }
@@ -281,22 +318,25 @@ export default function DashboardPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {summaryCards.map((card) => (
-          <div key={card.label} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-            <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-slate-100 p-2.5">
-                <card.icon className="h-5 w-5 text-slate-600" />
+          <div key={card.label} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className={`h-1 ${card.bar}`} />
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`rounded-lg ${card.iconBg} p-2`}>
+                  <card.icon className={`h-5 w-5 ${card.iconColor}`} />
+                </div>
+                {card.change && (
+                  <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                    card.change.trend === "up" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                  }`}>
+                    {card.change.trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {card.change.change}
+                  </span>
+                )}
               </div>
-              {card.change && (
-                <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                  card.change.trend === "up" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
-                }`}>
-                  {card.change.trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                  {card.change.change}
-                </span>
-              )}
+              <p className="text-2xl font-bold text-gray-900 tabular-nums">{formatCNY(card.value / 100)}</p>
+              <p className="mt-0.5 text-sm text-gray-500">{card.label}</p>
             </div>
-            <p className="mt-4 text-2xl font-semibold text-gray-900">{formatCNY(card.value / 100)}</p>
-            <p className="mt-1 text-sm text-gray-500">{card.label}</p>
           </div>
         ))}
       </div>
@@ -305,27 +345,30 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {featureCards.map((card) => (
           <a key={card.label} href={card.href}
-            className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.color} shadow-sm transition-all group-hover:scale-105 group-hover:shadow-md`}>
+            className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.color} shadow-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-md`}>
               <card.icon className="h-6 w-6 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-900">{card.label}</p>
+              <p className="text-sm font-semibold text-gray-900 group-hover:text-slate-700 transition-colors">{card.label}</p>
               <p className="text-xs text-gray-500 mt-0.5">{card.desc}</p>
             </div>
-            <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors shrink-0" />
+            <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors shrink-0 group-hover:translate-x-0.5 transition-transform" />
           </a>
         ))}
       </div>
 
       {/* Bottom section */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Category expense donut */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">分类支出占比</h3>
-              <p className="text-sm text-gray-500">当月支出按类别分布</p>
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-1 rounded-full bg-slate-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">分类支出占比</h3>
+                <p className="text-xs text-gray-500 mt-0.5">当月支出按类别分布</p>
+              </div>
             </div>
           </div>
           {donutData.length === 0 ? (
@@ -352,13 +395,60 @@ export default function DashboardPage() {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {donutData.map((d) => (
                   <div key={d.name} className="flex items-center gap-2.5 text-sm">
                     <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                    <span className="text-gray-700 min-w-[3rem]">{d.name}</span>
-                    <span className="text-gray-500">
-                      {totalExpenseAmt > 0 ? `${Math.round(d.value / totalExpenseAmt * 100)}%` : "0%"}
+                    <span className="text-gray-700 min-w-[3.5rem]">{d.name}</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${d.value / totalExpenseAmt * 100}%`, backgroundColor: d.color }} />
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 w-10 text-right tabular-nums">
+                      {Math.round(d.value / totalExpenseAmt * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Asset/Liability structure */}
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 hover:shadow-md transition-all duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-1 rounded-full bg-slate-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">资产与负债对比</h3>
+                <p className="text-xs text-gray-500 mt-0.5">当月资产与负债总额</p>
+              </div>
+            </div>
+          </div>
+          {bsDonutData.length === 0 ? (
+            <p className="text-sm text-gray-400 py-8 text-center">暂无数据</p>
+          ) : (
+            <div className="flex items-center gap-6">
+              <ResponsiveContainer width="60%" height={220}>
+                <PieChart>
+                  <Pie data={bsDonutData} cx="50%" cy="50%" isAnimationActive={false}
+                    innerRadius={55} outerRadius={85} paddingAngle={2} dataKey="value">
+                    {bsDonutData.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: any) => formatCNY(Number(value) / 100)} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-3">
+                {bsDonutData.map((d) => (
+                  <div key={d.name} className="flex items-center gap-2.5 text-sm">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                    <span className="text-gray-700 min-w-[3.5rem]">{d.name}</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${d.value / bsDonutTotal * 100}%`, backgroundColor: d.color }} />
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 w-10 text-right tabular-nums">
+                      {Math.round(d.value / bsDonutTotal * 100)}%
                     </span>
                   </div>
                 ))}
@@ -368,11 +458,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Total asset trend */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">总资产走势</h3>
-              <p className="text-sm text-gray-500">资产变化趋势</p>
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-1 rounded-full bg-slate-400" />
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">总资产走势</h3>
+                <p className="text-xs text-gray-500 mt-0.5">资产变化趋势</p>
+              </div>
             </div>
             <div className="text-right">
               <p className="text-lg font-semibold text-gray-900 tabular-nums">{formatCNY(latestTotal)}</p>
@@ -396,6 +489,7 @@ export default function DashboardPage() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
       </div>
     </>
     )}

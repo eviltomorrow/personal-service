@@ -90,12 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push("/login");
   }
 
-  const notifications = [
-    { icon: ShoppingCart, text: "订单 #3821 已完成", time: "2分钟前", color: "text-emerald-600" },
-    { icon: User, text: "新用户 Emma 已注册", time: "15分钟前", color: "text-slate-600" },
-    { icon: MessageCircle, text: "新的工单已提交", time: "1小时前", color: "text-amber-600" },
-    { icon: Clock, text: "会话超时警告", time: "2小时前", color: "text-red-600" },
-  ];
+  const notifications: { icon: any; text: string; time: string; color: string }[] = [];
 
   const userMenuItems = [
     { label: "个人信息", icon: User, href: "/dashboard/settings" },

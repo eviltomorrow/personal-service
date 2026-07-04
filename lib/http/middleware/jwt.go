@@ -78,6 +78,7 @@ func ServerJWTInterceptor(skipper func(c echo.Context) bool, refresher TokenRefr
 func doRefresh(c echo.Context, refresher TokenRefresher, refreshToken string, next echo.HandlerFunc) error {
 	newAccess, newRefresh, expiresIn, refreshErr := refresher.Refresh(c.Request().Context(), refreshToken)
 	if refreshErr != nil {
+		clearTokenCookies(c)
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 			"code":    http.StatusUnauthorized,
 			"message": "token expired",
@@ -148,7 +149,7 @@ func setContext(c echo.Context, claims *auth.JwtClaims, tokenStr string) {
 func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn int64) {
 	secure := c.Request().TLS != nil
 	httpOnly := true
-	sameSite := http.SameSiteStrictMode
+	sameSite := http.SameSiteLaxMode
 
 	c.SetCookie(&http.Cookie{
 		Name:     accessTokenCookieName,
@@ -160,6 +161,10 @@ func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn
 		MaxAge:   int(expiresIn),
 	})
 
+	refreshMaxAge := expiresIn * 6
+	if refreshMaxAge > 7*24*3600 {
+		refreshMaxAge = 7 * 24 * 3600
+	}
 	c.SetCookie(&http.Cookie{
 		Name:     refreshTokenCookieName,
 		Value:    refreshToken,
@@ -167,7 +172,7 @@ func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn
 		HttpOnly: httpOnly,
 		Secure:   secure,
 		SameSite: sameSite,
-		MaxAge:   7 * 24 * 3600,
+		MaxAge:   int(refreshMaxAge),
 	})
 }
 
@@ -179,7 +184,7 @@ func clearTokenCookies(c echo.Context) {
 		Path:     "/api",
 		HttpOnly: true,
 		Secure:   secure,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})
 	c.SetCookie(&http.Cookie{
@@ -188,7 +193,7 @@ func clearTokenCookies(c echo.Context) {
 		Path:     "/api",
 		HttpOnly: true,
 		Secure:   secure,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})
 }

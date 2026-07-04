@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -66,7 +67,13 @@ func (s *CashFlow) ListCategories(ctx context.Context, req *pb.ListCategoriesReq
 		return nil, err
 	}
 
-	cats, err := selectCategoriesByAcctID(ctx, selectDB(ctx), accountID)
+	var cats []*model.Category
+	if req.Year > 0 && req.Month > 0 {
+		date := fmt.Sprintf("%04d-%02d", req.Year, req.Month)
+		cats, err = selectCategoriesByAcctIDDate(ctx, selectDB(ctx), accountID, date)
+	} else {
+		cats, err = selectCategoriesByAcctID(ctx, selectDB(ctx), accountID)
+	}
 	if err != nil {
 		zlog.Error("list categories failure", zap.Error(err))
 		return nil, status.Error(codes.Internal, "internal server error")

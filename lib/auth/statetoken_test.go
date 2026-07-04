@@ -210,7 +210,7 @@ func TestRenew_NewTokenOnly(t *testing.T) {
 		return 1, nil
 	}
 
-	err := StateTokenWithRenew(context.Background(), "", "new_tok", "user_1", time.Hour)
+	err := StateTokenWithRenew(context.Background(), "", "new_tok", "user_1", "", time.Hour)
 	assert.Nil(t, err)
 	assert.Equal(t, "token_new_tok", setKey)
 	assert.Equal(t, "user_1", setVal)
@@ -269,7 +269,7 @@ func TestRenew_WithOldToken(t *testing.T) {
 		return 1, nil
 	}
 
-	err := StateTokenWithRenew(context.Background(), "old_tok", "new_tok", "user_1", time.Hour)
+	err := StateTokenWithRenew(context.Background(), "old_tok", "new_tok", "user_1", "", time.Hour)
 	assert.Nil(t, err)
 	assert.Contains(t, delKeys, "token_old_tok")
 	assert.Equal(t, "token_account_user_1", hdelKey)
@@ -284,18 +284,30 @@ func TestRenew_OldTokenNotFound(t *testing.T) {
 		return 0, nil
 	}
 
-	err := StateTokenWithRenew(context.Background(), "nonexistent", "new_tok", "user_1", time.Hour)
+	err := StateTokenWithRenew(context.Background(), "nonexistent", "new_tok", "user_1", "", time.Hour)
 	assert.ErrorIs(t, err, ErrorNoAuth)
 }
 
-func TestRenew_ExceedsLimit(t *testing.T) {
+func TestRenew_ExceedsLimitEvictsOldest(t *testing.T) {
 	origExists := redisExistsFn
 	origHLen := redisHLenFn
 	origHGetAll := redisHGetAllFn
+	origTTL := redisTTLFn
+	origGet := redisGetFn
+	origSet := redisSetFn
+	origHSet := redisHSetFn
+	origDel := redisDelFn
+	origHDel := redisHDelFn
 	t.Cleanup(func() {
 		redisExistsFn = origExists
 		redisHLenFn = origHLen
 		redisHGetAllFn = origHGetAll
+		redisTTLFn = origTTL
+		redisGetFn = origGet
+		redisSetFn = origSet
+		redisHSetFn = origHSet
+		redisDelFn = origDel
+		redisHDelFn = origHDel
 	})
 
 	redisExistsFn = func(_ context.Context, _ string) (int64, error) {
@@ -308,10 +320,27 @@ func TestRenew_ExceedsLimit(t *testing.T) {
 	redisHLenFn = func(_ context.Context, _ string) (int64, error) {
 		return 10, nil
 	}
+	redisTTLFn = func(_ context.Context, _ string) (time.Duration, error) {
+		return time.Minute, nil
+	}
+	redisSetFn = func(_ context.Context, _ string, _ interface{}, _ time.Duration) error {
+		return nil
+	}
+	redisHSetFn = func(_ context.Context, _ string, _ ...interface{}) (int64, error) {
+		return 1, nil
+	}
+	redisGetFn = func(_ context.Context, _ string) (string, error) {
+		return "user_1", nil
+	}
+	redisDelFn = func(_ context.Context, _ ...string) (int64, error) {
+		return 1, nil
+	}
+	redisHDelFn = func(_ context.Context, _ string, _ ...string) (int64, error) {
+		return 1, nil
+	}
 
-	err := StateTokenWithRenew(context.Background(), "old_tok", "new_tok", "user_1", time.Hour)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "maximum")
+	err := StateTokenWithRenew(context.Background(), "old_tok", "new_tok", "user_1", "", time.Hour)
+	assert.Nil(t, err)
 }
 
 func TestRenew_LoginAtCapacityEvictsOldest(t *testing.T) {
@@ -389,7 +418,7 @@ func TestRenew_LoginAtCapacityEvictsOldest(t *testing.T) {
 		return 1, nil
 	}
 
-	err := StateTokenWithRenew(context.Background(), "", "new_tok", "user_1", time.Hour)
+	err := StateTokenWithRenew(context.Background(), "", "new_tok", "user_1", "", time.Hour)
 	assert.Nil(t, err)
 	assert.Contains(t, revokeDelKeys, "token_t_old")
 	assert.Equal(t, "token_new_tok", setKey)
@@ -399,13 +428,13 @@ func TestRenew_LoginAtCapacityEvictsOldest(t *testing.T) {
 }
 
 func TestRenew_EmptyNewToken(t *testing.T) {
-	err := StateTokenWithRenew(context.Background(), "", "", "user_1", time.Hour)
+	err := StateTokenWithRenew(context.Background(), "", "", "user_1", "", time.Hour)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "nil")
 }
 
 func TestRenew_EmptyID(t *testing.T) {
-	err := StateTokenWithRenew(context.Background(), "", "new_tok", "", time.Hour)
+	err := StateTokenWithRenew(context.Background(), "", "new_tok", "", "", time.Hour)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "nil")
 }
