@@ -486,8 +486,8 @@ export default function BalanceSheetPage() {
 
       {/* Add/Edit Modal */}
       {(modal?.type === "add" || modal?.type === "edit") && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/5" onClick={() => setModal(null)}>
-          <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/5">
+          <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="text-base font-semibold text-gray-900">
                 {modal.type === "add" ? "添加项目" : "编辑项目"}
@@ -526,8 +526,8 @@ export default function BalanceSheetPage() {
 
       {/* Delete Modal */}
       {modal?.type === "delete" && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[18vh] bg-black/5" onClick={() => setModal(null)}>
-          <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[18vh] bg-black/5">
+          <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white shadow-xl anim-in anim-fade anim-down">
             <div className="p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 mx-auto">
                 <AlertTriangle className="h-6 w-6 text-red-500" />

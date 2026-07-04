@@ -9,7 +9,7 @@ import {
   DollarSign, TrendingUp, Percent, ArrowUpDown, GripVertical,
 } from "lucide-react";
 import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors, useDroppable,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
@@ -272,7 +272,7 @@ function SortablePositionItem({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: position.id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging ? "none" : "transform 80ms ease",
     position: "relative",
     zIndex: isDragging ? 10 : undefined,
   };
@@ -284,7 +284,7 @@ function SortablePositionItem({
       ref={setNodeRef}
       style={style}
       className={`flex items-center w-full text-left transition-colors ${
-        isDragging ? "shadow-lg rounded-lg border border-gray-200 bg-white" : ""
+        isDragging ? "opacity-60 scale-[1.02] shadow-lg rounded-lg border border-gray-200 bg-white z-10" : ""
       } ${isSelected ? "bg-slate-100" : "hover:bg-slate-50"}`}
     >
       <button
@@ -348,17 +348,36 @@ function SortablePositionItem({
   );
 }
 
+function DropZone({ id, children }: { id: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={`transition-colors ${isOver ? "bg-slate-100 border-2 border-dashed border-slate-400" : ""}`}>
+      {children}
+    </div>
+  );
+}
+
+function EmptyActiveDropZone() {
+  const { setNodeRef, isOver } = useDroppable({ id: "empty-active-zone" });
+  return (
+    <div ref={setNodeRef} className={`px-4 py-10 text-sm text-center transition-colors ${isOver ? "bg-slate-50 border-2 border-dashed border-slate-400 text-slate-600" : "text-gray-400"}`}>
+      {isOver ? "释放以移动到持仓列表" : "暂无持仓"}
+    </div>
+  );
+}
+
 function LeftPanel({
-  activePositions, archivedPositions, selectedId, onSelect, onAdd,
+  activePositions, archivedPositions, selectedId, isDragging, onSelect, onAdd,
 }: {
   activePositions: Position[];
   archivedPositions: Position[];
   selectedId: string | null;
+  isDragging?: boolean;
   onSelect: (id: string) => void;
   onAdd: () => void;
 }) {
   return (
-    <div className="w-[320px] shrink-0 self-start rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col overflow-hidden">
+    <div className={`w-[320px] shrink-0 self-start rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col ${isDragging ? "overflow-visible" : "overflow-hidden"}`}>
       {/* Active positions section */}
       <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-b border-gray-100">
         <div className="w-1 h-4 rounded-full bg-slate-500" />
@@ -370,35 +389,37 @@ function LeftPanel({
           新增品种
         </button>
       </div>
-      <div className="overflow-y-auto custom-scrollbar max-h-[300px]">
-        <SortableContext items={activePositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-          {activePositions.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无持仓</p>
-          ) : (
+      <div className={`${isDragging ? "overflow-visible" : "overflow-y-auto"} custom-scrollbar max-h-[300px]`}>
+        {activePositions.length === 0 ? (
+          <EmptyActiveDropZone />
+        ) : (
+          <SortableContext items={activePositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
             <div className="divide-y divide-gray-100">
               {activePositions.map((p) => (
                 <SortablePositionItem key={p.id} position={p} isSelected={p.id === selectedId} onSelect={onSelect} />
               ))}
             </div>
-          )}
-        </SortableContext>
+          </SortableContext>
+        )}
       </div>
 
-      {/* Long/short ratio */}
-      <div className="px-4 py-2 flex items-center gap-2 border-t border-gray-100 bg-white">
-        <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
-        <span className="text-xs text-gray-500">多空比</span>
-        <span className="text-xs font-semibold text-gray-700 ml-auto tabular-nums">
-          {activePositions.filter(p => p.direction === "做多").length} : {activePositions.filter(p => p.direction === "做空").length}
-        </span>
-      </div>
+      <DropZone id="drop-to-active">
+        <div className="px-4 py-2 flex items-center gap-2 border-t border-gray-100 bg-white">
+          <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
+          <span className="text-xs text-gray-500">多空比</span>
+          <span className="text-xs font-semibold text-gray-700 ml-auto tabular-nums">
+            {activePositions.filter(p => p.direction === "做多").length} : {activePositions.filter(p => p.direction === "做空").length}
+          </span>
+        </div>
+      </DropZone>
 
-      {/* Archived positions section */}
-      <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-t border-gray-100">
-        <div className="w-1 h-4 rounded-full bg-slate-400" />
-        <span className="text-sm font-semibold text-gray-800">🗄️ 归档列表 ({archivedPositions.length})</span>
-      </div>
-      <div className="overflow-y-auto custom-scrollbar max-h-[300px]">
+      <DropZone id="drop-to-archived">
+        <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-t border-gray-100">
+          <div className="w-1 h-4 rounded-full bg-slate-400" />
+          <span className="text-sm font-semibold text-gray-800">🗄️ 归档列表 ({archivedPositions.length})</span>
+        </div>
+      </DropZone>
+      <div className={`${isDragging ? "overflow-visible" : "overflow-y-auto"} custom-scrollbar max-h-[300px]`}>
         <SortableContext items={archivedPositions.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           {archivedPositions.length === 0 ? (
             <p className="px-4 py-6 text-sm text-gray-400 text-center">暂无归档</p>
@@ -1176,6 +1197,7 @@ function TrendChart({ snapshots }: { snapshots: ValueSnapshot[] }) {
 export default function PortfolioPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
   const [totalCapital, setTotalCapital] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -1360,8 +1382,50 @@ export default function PortfolioPage() {
 
     setPositions((prev) => {
       const movedItem = prev.find((p) => p.id === active.id);
+      if (!movedItem) return prev;
+
+      // Dropped on divider zone — move archived→active
+      if (over.id === "drop-to-active" && movedItem.archived) {
+        const sortOrder = prev.filter((x) => !x.archived).length;
+        const updated = prev.map((p) =>
+          p.id === active.id ? { ...p, archived: false, closedPnl: 0, sortOrder } : p
+        );
+        api(`/api/v1/cash-flow/portfolio/positions/${active.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...posToAPI(movedItem), archived: false, closed_pnl: 0, sort_order: sortOrder }),
+        }).then(r => r.json()).then(j => { if (j.code !== 0) console.warn("save failed", j); });
+        return updated;
+      }
+
+      // Dropped on archived header — move active→archived
+      if (over.id === "drop-to-archived" && !movedItem.archived) {
+        const sortOrder = prev.filter((x) => x.archived).length;
+        const updated = prev.map((p) =>
+          p.id === active.id ? { ...p, archived: true, closedPnl: calcDerived(p).profitAmount, sortOrder } : p
+        );
+        api(`/api/v1/cash-flow/portfolio/positions/${active.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...posToAPI(movedItem), archived: true, closed_pnl: Math.round(calcDerived(movedItem).profitAmount * 100), sort_order: sortOrder }),
+        }).then(r => r.json()).then(j => { if (j.code !== 0) console.warn("save failed", j); });
+        return updated;
+      }
+
+      // Dropped on empty active zone
+      if (over.id === "empty-active-zone") {
+        if (!movedItem.archived) return prev;
+        const sortOrder = prev.filter((x) => !x.archived).length;
+        const updated = prev.map((p) =>
+          p.id === active.id ? { ...p, archived: false, closedPnl: 0, sortOrder } : p
+        );
+        api(`/api/v1/cash-flow/portfolio/positions/${active.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...posToAPI(movedItem), archived: false, closed_pnl: 0, sort_order: sortOrder }),
+        }).then(r => r.json()).then(j => { if (j.code !== 0) console.warn("save failed", j); });
+        return updated;
+      }
+
       const overItem = prev.find((p) => p.id === over.id);
-      if (!movedItem || !overItem) return prev;
+      if (!overItem) return prev;
 
       const crossList = movedItem.archived !== overItem.archived;
       const targetArchived = crossList ? !movedItem.archived : movedItem.archived;
@@ -1399,7 +1463,7 @@ export default function PortfolioPage() {
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 2 } }),
   );
 
   return (
@@ -1442,11 +1506,15 @@ export default function PortfolioPage() {
       {/* Two-column layout */}
       <div className="flex flex-1 gap-6">
         {/* Left panel */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={(e) => { setIsDragging(false); handleDragEnd(e); }}
+          onDragCancel={() => setIsDragging(false)}>
           <LeftPanel
             activePositions={activePositions}
             archivedPositions={archivedPositions}
             selectedId={selectedId}
+            isDragging={isDragging}
             onSelect={setSelectedId}
             onAdd={() => setModal({ type: "addPosition" })}
           />
