@@ -387,7 +387,7 @@ export default function BalanceSheetPage() {
         {summaryMeta.map((meta, i) => {
           const c = summaryColors[meta.color];
           return (
-            <div key={meta.key} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div key={meta.key} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <div className={`h-1 ${meta.bar}`} />
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -418,7 +418,7 @@ export default function BalanceSheetPage() {
         })}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
         {data.map((group, gi) => {
           const si = sectionIndex(gi);
           const sec = sectionMeta[si];
@@ -433,7 +433,7 @@ export default function BalanceSheetPage() {
                 <button
                   type="button"
                   onClick={() => openAdd(gi)}
-                  className="ml-auto rounded p-1 text-gray-300 hover:text-slate-500 transition-colors"
+                  className="ml-auto rounded-lg p-1.5 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
@@ -445,7 +445,7 @@ export default function BalanceSheetPage() {
                 {group.items.map((item, ii) => (
                   <div
                     key={`${gi}-${ii}`}
-                    className="group flex items-center justify-between pl-10 pr-5 py-2.5 hover:bg-gray-50/50 transition-colors"
+                    className="group flex items-center justify-between pl-10 pr-5 py-2.5 hover:bg-gray-50/80 transition-colors"
                   >
                     <span className="text-sm text-gray-700">{item.name}</span>
                     <div className="flex items-center gap-3">
@@ -454,16 +454,16 @@ export default function BalanceSheetPage() {
                         <button
                           type="button"
                           onClick={() => openEdit(gi, ii)}
-                          className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors"
+                          className="rounded-lg p-1 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
                         >
-                          <Pencil className="h-3 w-3" />
+                          <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => setModal({ type: "delete", group: gi, item: ii })}
-                          className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors"
+                          className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
@@ -475,7 +475,7 @@ export default function BalanceSheetPage() {
                   <span className={`text-sm font-semibold ${sec.text}`}>{sec.label}</span>
                   <div className="flex items-center gap-3">
                     <span className={`text-sm font-semibold ${sec.text} tabular-nums`}>{formatCNY(sectionTotals[si] / 100)}</span>
-                    <div className="w-[34px]" />
+                    <div className="w-[36px]" />
                   </div>
                 </div>
               )}

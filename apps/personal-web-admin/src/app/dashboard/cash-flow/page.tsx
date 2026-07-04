@@ -435,7 +435,7 @@ export default function CashFlowPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
           <div className="h-1 bg-emerald-500" />
           <div className="p-5">
             <div className="flex items-center justify-between mb-3">
@@ -464,7 +464,7 @@ export default function CashFlowPage() {
             <p className="mt-0.5 text-sm text-gray-500">总收入</p>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
           <div className="h-1 bg-red-500" />
           <div className="p-5">
             <div className="flex items-center justify-between mb-3">
@@ -493,7 +493,7 @@ export default function CashFlowPage() {
             <p className="mt-0.5 text-sm text-gray-500">总支出</p>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
           <div className={`h-1 ${netBalance >= 0 ? "bg-blue-500" : "bg-red-500"}`} />
           <div className="p-5">
             <div className="flex items-center justify-between mb-3">
@@ -527,12 +527,12 @@ export default function CashFlowPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Income section */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
           <div className="px-5 py-3 flex items-center gap-3 bg-emerald-50/80">
             <div className="w-1 h-4 rounded-full bg-emerald-500" />
-            <span className="text-sm font-semibold text-gray-800">💰 收入</span>
+            <span className="text-sm font-semibold text-gray-800">收入</span>
             <button type="button" onClick={() => openAddCategory("income")}
-              className="ml-auto rounded p-1 text-gray-300 hover:text-slate-500 transition-colors">
+              className="ml-auto rounded-lg p-1.5 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
               <Plus className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -544,42 +544,40 @@ export default function CashFlowPage() {
               const catTotal = cat.items.reduce((s, i) => s + i.amount, 0);
               return (
                 <div key={`${cat.id}-${ci}`}>
-                  {/* Category header */}
                   <div className="group flex items-center justify-between px-5 py-2.5 bg-gray-50/50">
                     <span className="text-sm font-semibold text-gray-700">{cat.category}</span>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-emerald-600 tabular-nums w-24 text-right">{displayAmount(catTotal)}</span>
-                      <div className="w-[34px] flex items-center justify-center">
+                      <div className="w-[36px] flex items-center justify-center">
                         <button type="button" onClick={() => openAddItem("income", ci)}
-                          className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors">
+                          className="rounded-lg p-1 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                        <button type="button" onClick={() => openDeleteCategory("income", incomeCategories[ci].id)}
-                        className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 className="h-3 w-3" />
+                      <button type="button" onClick={() => openDeleteCategory("income", incomeCategories[ci].id)}
+                        className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
-                  {/* Items */}
                   {cat.items.length === 0 && (
                     <p className="px-8 py-2 text-xs text-gray-400">暂无记录</p>
                   )}
                   {cat.items.map((item, ii) => (
                     <div key={`${cat.id}-${item.id}`}
-                      className="group flex items-center justify-between pl-8 pr-5 py-2 hover:bg-gray-50/50 transition-colors">
+                      className="group flex items-center justify-between pl-8 pr-5 py-2 hover:bg-gray-50/80 transition-colors">
                       <span className="text-sm text-gray-600">{item.name}</span>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-emerald-600 tabular-nums w-24 text-right">{displayAmount(item.amount)}</span>
-                        <div className="w-[34px] flex items-center justify-center">
+                        <div className="w-[36px] flex items-center justify-center">
                           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button type="button" onClick={() => openEditItem("income", ci, ii)}
-                              className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors">
-                              <Pencil className="h-3 w-3" />
+                              className="rounded-lg p-1 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
+                              <Pencil className="h-3.5 w-3.5" />
                             </button>
                             <button type="button" onClick={() => { setModalItemId(incomeCategories[ci].items[ii].id); setModal({ type: "delete-item", section: "income", catIndex: ci, itemIndex: ii }); }}
-                              className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors">
-                              <Trash2 className="h-3 w-3" />
+                              className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         </div>
@@ -594,18 +592,18 @@ export default function CashFlowPage() {
             <span className="text-sm font-semibold text-emerald-700">小计</span>
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-emerald-700 tabular-nums w-24 text-right">{displayAmount(totalIncome)}</span>
-              <div className="w-[34px]" />
+              <div className="w-[36px]" />
             </div>
           </div>
         </div>
 
         {/* Expense section */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
           <div className="px-5 py-3 flex items-center gap-3 bg-red-50/80">
             <div className="w-1 h-4 rounded-full bg-red-500" />
-            <span className="text-sm font-semibold text-gray-800">💸 支出</span>
+            <span className="text-sm font-semibold text-gray-800">支出</span>
             <button type="button" onClick={() => openAddCategory("expense")}
-              className="ml-auto rounded p-1 text-gray-300 hover:text-slate-500 transition-colors">
+              className="ml-auto rounded-lg p-1.5 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
               <Plus className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -617,42 +615,40 @@ export default function CashFlowPage() {
               const catTotal = cat.items.reduce((s, i) => s + i.amount, 0);
               return (
                 <div key={`${cat.id}-${ci}`}>
-                  {/* Category header */}
                   <div className="group flex items-center justify-between px-5 py-2.5 bg-gray-50/50">
                     <span className="text-sm font-semibold text-gray-700">{cat.category}</span>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-red-600 tabular-nums w-24 text-right">{displayAmount(catTotal)}</span>
-                      <div className="w-[34px] flex items-center justify-center">
+                      <div className="w-[36px] flex items-center justify-center">
                         <button type="button" onClick={() => openAddItem("expense", ci)}
-                          className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors">
+                          className="rounded-lg p-1 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                        <button type="button" onClick={() => openDeleteCategory("expense", expenseCategories[ci].id)}
-                        className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 className="h-3 w-3" />
+                      <button type="button" onClick={() => openDeleteCategory("expense", expenseCategories[ci].id)}
+                        className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
-                  {/* Items */}
                   {cat.items.length === 0 && (
                     <p className="px-8 py-2 text-xs text-gray-400">暂无记录</p>
                   )}
                   {cat.items.map((item, ii) => (
                     <div key={`${cat.id}-${item.id}`}
-                      className="group flex items-center justify-between pl-8 pr-5 py-2 hover:bg-gray-50/50 transition-colors">
+                      className="group flex items-center justify-between pl-8 pr-5 py-2 hover:bg-gray-50/80 transition-colors">
                       <span className="text-sm text-gray-600">{item.name}</span>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-red-600 tabular-nums w-24 text-right">{displayAmount(item.amount)}</span>
-                        <div className="w-[34px] flex items-center justify-center">
+                        <div className="w-[36px] flex items-center justify-center">
                           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button type="button" onClick={() => openEditItem("expense", ci, ii)}
-                              className="rounded p-0.5 text-gray-300 hover:text-slate-500 transition-colors">
-                              <Pencil className="h-3 w-3" />
+                              className="rounded-lg p-1 text-gray-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
+                              <Pencil className="h-3.5 w-3.5" />
                             </button>
                             <button type="button" onClick={() => { setModalItemId(expenseCategories[ci].items[ii].id); setModal({ type: "delete-item", section: "expense", catIndex: ci, itemIndex: ii }); }}
-                              className="rounded p-0.5 text-gray-300 hover:text-red-400 transition-colors">
-                              <Trash2 className="h-3 w-3" />
+                              className="rounded-lg p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all">
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         </div>
@@ -667,7 +663,7 @@ export default function CashFlowPage() {
             <span className="text-sm font-semibold text-red-700">小计</span>
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-red-700 tabular-nums w-24 text-right">{displayAmount(totalExpense)}</span>
-              <div className="w-[34px]" />
+              <div className="w-[36px]" />
             </div>
           </div>
         </div>

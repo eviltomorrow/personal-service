@@ -217,7 +217,7 @@ function StatCards({ positions, totalCapital, realizedPnl, totalFees, onCapitalC
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {cards.map((card) => (
-        <div key={card.label} className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden ${card.editable ? "relative" : ""}`}>
+        <div key={card.label} className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${card.editable ? "relative" : ""}`}>
           <div className={`h-1 ${bar(card.bar)}`} />
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
@@ -1110,8 +1110,11 @@ function DeleteConfirm({
 function TrendChart({ snapshots }: { snapshots: ValueSnapshot[] }) {
   if (snapshots.length < 2) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">总市值趋势</h3>
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 hover:shadow-md transition-all duration-200">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="h-4 w-1 rounded-full bg-slate-400" />
+          <h3 className="text-sm font-semibold text-gray-900">总市值趋势</h3>
+        </div>
         <p className="text-xs text-gray-500">暂无足够数据绘制趋势图</p>
       </div>
     );
@@ -1141,10 +1144,11 @@ function TrendChart({ snapshots }: { snapshots: ValueSnapshot[] }) {
   const pathD = `M ${points.join(" L ")}`;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-      <div className="flex items-center justify-between mb-3">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6 hover:shadow-md transition-all duration-200">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="h-4 w-1 rounded-full bg-slate-400" />
         <h3 className="text-sm font-semibold text-gray-900">总市值趋势</h3>
-        <p className="text-xs text-gray-500 tabular-nums">
+        <p className="text-xs text-gray-500 tabular-nums ml-auto">
           {formatCNY(sorted[sorted.length - 1].totalValue)}
         </p>
       </div>
@@ -1534,7 +1538,7 @@ export default function PortfolioPage() {
             />
           )
         ) : (
-          <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6 flex items-center justify-center">
+          <div className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm p-6 flex items-center justify-center hover:shadow-md transition-all duration-200">
             <p className="text-sm text-gray-400">请从左侧选择一个品种</p>
           </div>
         )}
