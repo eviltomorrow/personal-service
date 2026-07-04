@@ -3,6 +3,8 @@ package netutil
 import (
 	"fmt"
 	"net"
+
+	"github.com/eviltomorrow/personal-service/lib/system"
 )
 
 type Config struct {
@@ -34,4 +36,24 @@ func (c *Config) VerifyConfig() error {
 	}
 
 	return nil
+}
+
+func (c *Config) ResetSystem() {
+	if c.BindIP != "" {
+		system.Network.SetBindIP(c.BindIP)
+	} else {
+		system.Network.SetBindIP("0.0.0.0")
+	}
+	if c.AccessIP != "" {
+		system.Network.SetAccessIP(c.AccessIP)
+	} else if system.Network.BindIP() == "0.0.0.0" {
+		ip, err := GetInterfaceIPv4First()
+		if err != nil {
+			system.Network.SetAccessIP("0.0.0.0")
+		} else {
+			system.Network.SetAccessIP(ip)
+		}
+	} else {
+		system.Network.SetAccessIP(system.Network.BindIP())
+	}
 }

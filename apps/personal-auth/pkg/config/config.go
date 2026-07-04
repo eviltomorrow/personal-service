@@ -146,26 +146,6 @@ func (c *Config) ApplyOpts(opts *flagsutil.Flags) {
 	c.Log.DisableStdlog = opts.DisableStdlog
 }
 
-func (c *Config) ResetSystem() {
-	if c.Network.BindIP != "" {
-		system.Network.SetBindIP(c.Network.BindIP)
-	} else {
-		system.Network.SetBindIP("0.0.0.0")
-	}
-	if c.Network.AccessIP != "" {
-		system.Network.SetAccessIP(c.Network.AccessIP)
-	} else if system.Network.BindIP() == "0.0.0.0" {
-		ip, err := netutil.GetInterfaceIPv4First()
-		if err != nil {
-			system.Network.SetAccessIP("0.0.0.0")
-		} else {
-			system.Network.SetAccessIP(ip)
-		}
-	} else {
-		system.Network.SetAccessIP(system.Network.BindIP())
-	}
-}
-
 func ReadConfigFromFile(opts *flagsutil.Flags) (*Config, error) {
 	findConfigFile := func(path string) (string, error) {
 		for _, p := range []string{
@@ -199,7 +179,7 @@ func ReadConfigFromFile(opts *flagsutil.Flags) (*Config, error) {
 	}
 
 	cfg.ApplyOpts(opts)
-	cfg.ResetSystem()
+	cfg.Network.ResetSystem()
 
 	return &cfg, nil
 }
