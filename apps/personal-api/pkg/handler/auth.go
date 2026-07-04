@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/eviltomorrow/personal-service/apps/personal-api/pkg/model"
+	"github.com/eviltomorrow/personal-service/lib/http/middleware"
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -41,7 +42,7 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
-	setTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
+	middleware.SetTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
 	return Respond(c, http.StatusOK, 0, "success", map[string]interface{}{
 		"expires_in": resp.ExpiresIn,
 	})
@@ -62,7 +63,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
-	setTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
+	middleware.SetTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
 	return Respond(c, http.StatusOK, 0, "success", map[string]interface{}{
 		"expires_in": resp.ExpiresIn,
 	})
@@ -82,12 +83,12 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	resp, err := h.client.RefreshToken(c.Request().Context(), &req)
 	if err != nil {
 		zlog.Error("auth refresh token failure", zap.Error(err))
-		clearTokenCookies(c)
+		middleware.ClearTokenCookies(c)
 		httpStatus, msg := GrpcStatusToHTTP(err)
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
-	setTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
+	middleware.SetTokenCookies(c, resp.AccessToken, resp.RefreshToken, resp.ExpiresIn)
 	return Respond(c, http.StatusOK, 0, "success", map[string]interface{}{
 		"expires_in": resp.ExpiresIn,
 	})
@@ -133,7 +134,7 @@ func (h *AuthHandler) RevokeToken(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
-	clearTokenCookies(c)
+	middleware.ClearTokenCookies(c)
 	return Respond(c, http.StatusOK, 0, "success", nil)
 }
 
@@ -156,7 +157,7 @@ func (h *AuthHandler) RevokeAllTokens(c echo.Context) error {
 		return Respond(c, httpStatus, httpStatus, msg, nil)
 	}
 
-	clearTokenCookies(c)
+	middleware.ClearTokenCookies(c)
 	return Respond(c, http.StatusOK, 0, "success", nil)
 }
 

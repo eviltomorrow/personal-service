@@ -78,14 +78,14 @@ func ServerJWTInterceptor(skipper func(c echo.Context) bool, refresher TokenRefr
 func doRefresh(c echo.Context, refresher TokenRefresher, refreshToken string, next echo.HandlerFunc) error {
 	newAccess, newRefresh, expiresIn, refreshErr := refresher.Refresh(c.Request().Context(), refreshToken)
 	if refreshErr != nil {
-		clearTokenCookies(c)
+		ClearTokenCookies(c)
 		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 			"code":    http.StatusUnauthorized,
 			"message": "token expired",
 		})
 	}
 
-	setTokenCookies(c, newAccess, newRefresh, expiresIn)
+	SetTokenCookies(c, newAccess, newRefresh, expiresIn)
 
 	newClaims, parseErr := auth.JwtWithParseToken(newAccess, nil)
 	if parseErr != nil {
@@ -146,7 +146,7 @@ func setContext(c echo.Context, claims *auth.JwtClaims, tokenStr string) {
 	c.Set(ContextKeyToken, tokenStr)
 }
 
-func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn int64) {
+func SetTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn int64) {
 	secure := c.Request().TLS != nil
 	httpOnly := true
 	sameSite := http.SameSiteLaxMode
@@ -176,7 +176,7 @@ func setTokenCookies(c echo.Context, accessToken, refreshToken string, expiresIn
 	})
 }
 
-func clearTokenCookies(c echo.Context) {
+func ClearTokenCookies(c echo.Context) {
 	secure := c.Request().TLS != nil
 	c.SetCookie(&http.Cookie{
 		Name:     accessTokenCookieName,
