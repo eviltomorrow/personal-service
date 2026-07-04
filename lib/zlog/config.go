@@ -15,6 +15,7 @@
 package zlog
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -84,10 +85,10 @@ type Config struct {
 func (c *Config) Validate() error {
 	for _, allowLevel := range []string{"debug", "info", "warn", "error"} {
 		if allowLevel == strings.ToLower(c.Level) {
-			break
+			return nil
 		}
 	}
-	return nil
+	return fmt.Errorf("invalid log level: %s, allowed: debug, info, warn, error", c.Level)
 }
 
 // ZapProperties records some information about zap.
