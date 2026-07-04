@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	SigningKey      = []byte("123")
+	SigningKey      []byte
 	ErrTokenExpired = errors.New("token is expired")
 	ErrTokenIllegal = errors.New("token is illegal")
 )
@@ -21,6 +21,10 @@ type JwtClaims struct {
 }
 
 func JwtWithCreateToken(accountId string, role string, expireIn time.Duration) (string, error) {
+	if len(SigningKey) == 0 {
+		panic("auth.SigningKey not initialized")
+	}
+
 	claims := JwtClaims{
 		AccountId: accountId,
 		Role:      role,
@@ -41,40 +45,30 @@ func JwtWithCreateToken(accountId string, role string, expireIn time.Duration) (
 
 func JwtWithParseToken(tokenStr string, f func(string) error) (*JwtClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return SigningKey, nil
 	})
-
-	if token == nil {
-		switch {
-		case errors.Is(err, jwt.ErrTokenExpired):
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
 			return nil, ErrTokenExpired
-		case errors.Is(err, jwt.ErrTokenNotValidYet):
-			return nil, ErrTokenIllegal
-		default:
+		}
+		if errors.Is(err, jwt.ErrTokenNotValidYet) {
 			return nil, ErrTokenIllegal
 		}
+		return nil, ErrTokenIllegal
 	}
 
-	switch {
-	case token.Valid:
-		claims, ok := token.Claims.(*JwtClaims)
-		if !ok {
-			return nil, fmt.Errorf("panic: invalid claims")
-		}
-		if f != nil {
-			if err := f(claims.AccountId); err != nil {
-				return nil, err
-			}
-		}
-		return claims, nil
-
-	case errors.Is(err, jwt.ErrTokenExpired):
-		return nil, ErrTokenExpired
-	case errors.Is(err, jwt.ErrTokenNotValidYet):
+	claims, ok := token.Claims.(*JwtClaims)
+	if !ok || !token.Valid {
 		return nil, ErrTokenIllegal
-
-	default:
-		return nil, ErrTokenIllegal
-
 	}
+
+	if f != nil {
+		if err := f(claims.AccountId); err != nil {
+			return nil, err
+		}
+	}
+	return claims, nil
 }

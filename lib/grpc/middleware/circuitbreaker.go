@@ -7,6 +7,8 @@ import (
 	"github.com/eviltomorrow/personal-service/lib/zlog"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func init() {
@@ -22,10 +24,8 @@ func UnaryClientCircuitbreakerInterceptor(ctx context.Context, method string, re
 	return hystrix.Do("grpc_client", func() error {
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}, func(err error) error {
-		if err != nil {
-			zlog.Error("circuitbreaker was wrong", zap.Error(err), zap.String("target", cc.Target()), zap.String("method", method))
-		}
-		return nil
+		zlog.Error("circuitbreaker was wrong", zap.Error(err), zap.String("target", cc.Target()), zap.String("method", method))
+		return status.Error(codes.Unavailable, "circuit breaker open: "+err.Error())
 	})
 }
 

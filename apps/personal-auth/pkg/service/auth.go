@@ -100,7 +100,11 @@ func (s *Auth) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.Regis
 		return nil, status.Error(codes.InvalidArgument, "password is required")
 	}
 
-	salt := encrypt.Salt()
+	salt, err := encrypt.Salt()
+	if err != nil {
+		zlog.Error("generate salt failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "register account failure")
+	}
 	passwordHash := encrypt.Key(salt, req.Password)
 	accountID := snowflake.GenerateID()
 	now := time.Now().Unix()
@@ -475,7 +479,11 @@ func (s *Auth) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordRequest
 		return nil, status.Error(codes.Unauthenticated, "invalid old password")
 	}
 
-	salt := encrypt.Salt()
+	salt, err := encrypt.Salt()
+	if err != nil {
+		zlog.Error("generate salt failure", zap.Error(err))
+		return nil, status.Error(codes.Internal, "update password failure")
+	}
 	passwordHash := encrypt.Key(salt, req.NewPassword)
 	if _, err := updateAccountPassword(ctx, dbmysql.DB, req.AccountId, passwordHash, salt); err != nil {
 		zlog.Error("update password failure", zap.Error(err))

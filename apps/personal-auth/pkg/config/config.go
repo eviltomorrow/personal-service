@@ -88,7 +88,7 @@ func (c *AuthConfig) String() string {
 	data := map[string]interface{}{
 		"access_token_expire":    c.AccessTokenExpire.String(),
 		"refresh_token_expire":   c.RefreshTokenExpire.String(),
-		"signing_key":            c.SigningKey,
+		"signing_key":            "***",
 		"max_login_attempts":     c.MaxLoginAttempts,
 		"login_lock_duration":    c.LoginLockDuration.String(),
 		"max_ip_login_attempts":  c.MaxIPLoginAttempts,

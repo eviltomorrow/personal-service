@@ -9,12 +9,12 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func Salt() string {
+func Salt() (string, error) {
 	b := make([]byte, 16)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
-		panic(err)
+		return "", err
 	}
-	return hex.EncodeToString(b)
+	return hex.EncodeToString(b), nil
 }
 
 func Key(salt, password string) string {

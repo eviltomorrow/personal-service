@@ -71,7 +71,7 @@ func (c *ServiceConfig) String() string {
 	data := map[string]interface{}{
 		"auth_service_target": c.AuthServiceTarget,
 		"core_service_target": c.CoreServiceTarget,
-		"signing_key":         c.SigningKey,
+		"signing_key":         "***",
 	}
 	buf, _ := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(data)
 	return string(buf)
