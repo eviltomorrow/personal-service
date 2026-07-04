@@ -8,15 +8,14 @@ import (
 )
 
 type Config struct {
-	AccessIP   string `json:"access_ip" toml:"access_ip" mapstructure:"access_ip"`
-	BindIP     string `json:"bind_ip" toml:"bind_ip" mapstructure:"bind_ip"`
-	BindPort   int    `json:"bind_port" toml:"bind_port" mapstructure:"bind_port"`
-	DisableTLS bool   `json:"disable_tls" toml:"disable_tls" mapstructure:"disable_tls"`
+	AccessIP string `json:"access_ip" toml:"access_ip" mapstructure:"access_ip"`
+	BindIP   string `json:"bind_ip" toml:"bind_ip" mapstructure:"bind_ip"`
+	BindPort int    `json:"bind_port" toml:"bind_port" mapstructure:"bind_port"`
 }
 
 func (c *Config) String() string {
-	return fmt.Sprintf("access_ip=%s, bind_ip=%s, bind_port=%d, disable_tls=%t",
-		c.AccessIP, c.BindIP, c.BindPort, c.DisableTLS)
+	return fmt.Sprintf("access_ip=%s, bind_ip=%s, bind_port=%d",
+		c.AccessIP, c.BindIP, c.BindPort)
 }
 
 func (c *Config) VerifyConfig() error {

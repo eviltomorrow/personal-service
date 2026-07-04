@@ -34,9 +34,8 @@ type ServiceConfig struct {
 
 var DefaultConfig = Config{
 	Network: netutil.Config{
-		BindIP:     "0.0.0.0",
-		BindPort:   8080,
-		DisableTLS: true,
+		BindIP:   "0.0.0.0",
+		BindPort: 8080,
 	},
 	Log: log.Config{
 		Level: "info",

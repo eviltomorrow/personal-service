@@ -29,9 +29,8 @@ type Config struct {
 
 var DefaultConfig = Config{
 	Network: netutil.Config{
-		BindIP:     "0.0.0.0",
-		BindPort:   50002,
-		DisableTLS: true,
+		BindIP:   "0.0.0.0",
+		BindPort: 50002,
 	},
 	Log: log.Config{
 		Level: "info",

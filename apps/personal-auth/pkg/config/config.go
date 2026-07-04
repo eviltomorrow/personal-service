@@ -40,9 +40,8 @@ type AuthConfig struct {
 
 var DefaultConfig = Config{
 	Network: netutil.Config{
-		BindIP:     "0.0.0.0",
-		BindPort:   50001,
-		DisableTLS: true,
+		BindIP:   "0.0.0.0",
+		BindPort: 50001,
 	},
 	Log: log.Config{
 		Level: "info",
