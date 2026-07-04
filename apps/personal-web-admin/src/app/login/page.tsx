@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Eye, EyeOff, Loader2, LogIn, Mail, Lock, Sparkles, Shield, X, Zap, Feather } from "lucide-react";
 import { setRefreshInterval } from "@/lib/api";
+import { useConfig } from "@/lib/config";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { enableRegister } = useConfig();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -220,7 +222,7 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {process.env.NEXT_PUBLIC_ENABLE_REGISTER !== "false" && (
+            {enableRegister && (
               <p className="mt-6 text-center text-sm text-gray-500">
                 还没有账户？{" "}
                 <button

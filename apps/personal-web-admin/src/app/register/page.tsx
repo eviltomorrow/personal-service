@@ -3,16 +3,18 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Mail, Lock, Sparkles, Shield, Zap, Feather, UserPlus, X } from "lucide-react";
+import { useConfig } from "@/lib/config";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { enableRegister } = useConfig();
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_ENABLE_REGISTER === "false") {
+    if (!enableRegister) {
       router.replace("/login");
     }
-  }, [router]);
+  }, [enableRegister, router]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

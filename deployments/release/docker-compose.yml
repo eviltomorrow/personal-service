@@ -163,7 +163,6 @@ services:
         MAINVERSION: ${personal_web_admin_version:-7.0.5}
         GITSHA: ${GITSHA:-unknown}
         BUILDTIME: ${BUILDTIME:-unknown}
-        NEXT_PUBLIC_ENABLE_REGISTER: ${NEXT_PUBLIC_ENABLE_REGISTER:-true}
         API_TARGET: http://personal-api:8080
     image: registry.cn-beijing.aliyuncs.com/eviltomorrow/personal-web-admin:${personal_web_admin_version:-7.0.5}
     container_name: personal-web-admin
@@ -171,7 +170,7 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       - API_TARGET=http://personal-api:8080
-      - NEXT_PUBLIC_ENABLE_REGISTER=${NEXT_PUBLIC_ENABLE_REGISTER:-true}
+      - NEXT_PUBLIC_ENABLE_REGISTER=${NEXT_PUBLIC_ENABLE_REGISTER:-false}
     depends_on:
       - personal-api
 
