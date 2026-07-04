@@ -1,7 +1,6 @@
 package netutil
 
 import (
-	"fmt"
 	"net"
 )
 
@@ -18,13 +17,4 @@ func GetAvailablePort() (int, error) {
 	defer listen.Close()
 
 	return listen.Addr().(*net.TCPAddr).Port, nil
-}
-
-func IsPortAvailable(port int) bool {
-	listen, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		return false
-	}
-	listen.Close()
-	return true
 }

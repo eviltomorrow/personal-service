@@ -21,8 +21,3 @@ func AccountIDFromContext(ctx context.Context) (string, bool) {
 func WithToken(ctx context.Context, token string) context.Context {
 	return context.WithValue(ctx, TokenKey, token)
 }
-
-func TokenFromContext(ctx context.Context) string {
-	v, _ := ctx.Value(TokenKey).(string)
-	return v
-}

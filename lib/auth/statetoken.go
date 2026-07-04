@@ -63,19 +63,6 @@ func StateTokenWithParseJwtToken(jwtToken string) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
-func StateTokenWithExists(ctx context.Context, jwtToken string) (bool, error) {
-	h := sha256.New()
-	if _, err := h.Write([]byte(jwtToken)); err != nil {
-		return false, fmt.Errorf("panic: write sha256 failure, nest error: %v", err)
-	}
-	key := fmt.Sprintf("%s%x", tokenPrefix, h.Sum(nil))
-	n, err := redisExistsFn(ctx, key)
-	if err != nil {
-		return false, err
-	}
-	return n > 0, nil
-}
-
 func stateTokenWithCleanExpires(ctx context.Context, id string) error {
 	key := fmt.Sprintf("%s%s", tokenAccountPrefix, id)
 	data, err := redisHGetAllFn(ctx, key)
