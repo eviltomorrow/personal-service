@@ -398,20 +398,17 @@ function LeftPanel({
               {activePositions.map((p) => (
                 <SortablePositionItem key={p.id} position={p} isSelected={p.id === selectedId} onSelect={onSelect} />
               ))}
+              <div className="px-4 py-2 flex items-center gap-2 bg-white">
+                <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
+                <span className="text-xs text-gray-500">多空比</span>
+                <span className="text-xs font-semibold text-gray-700 ml-auto tabular-nums">
+                  {activePositions.filter(p => p.direction === "做多").length} : {activePositions.filter(p => p.direction === "做空").length}
+                </span>
+              </div>
             </div>
           </SortableContext>
         )}
       </div>
-
-      <DropZone id="drop-to-active">
-        <div className="px-4 py-2 flex items-center gap-2 border-t border-gray-100 bg-white">
-          <ArrowUpDown className="h-3.5 w-3.5 text-gray-400" />
-          <span className="text-xs text-gray-500">多空比</span>
-          <span className="text-xs font-semibold text-gray-700 ml-auto tabular-nums">
-            {activePositions.filter(p => p.direction === "做多").length} : {activePositions.filter(p => p.direction === "做空").length}
-          </span>
-        </div>
-      </DropZone>
 
       <DropZone id="drop-to-archived">
         <div className="px-4 py-3 flex items-center gap-3 bg-slate-50/80 border-t border-gray-100">
@@ -915,8 +912,8 @@ function AddPositionForm({ initial, onSave, onClose }: {
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState<"股票" | "期货">(initial?.type ?? "股票");
   const [direction, setDirection] = useState<"做多" | "做空">(initial?.direction ?? "做多");
-  const [initialQty, setInitialQty] = useState(initial ? String(initial.initialQty) : "0");
-  const [price, setPrice] = useState(initial ? String(initial.currentPrice) : "0");
+  const [initialQty, setInitialQty] = useState(initial ? String(initial.quantity) : "");
+  const [price, setPrice] = useState(initial ? String(initial.currentPrice) : "");
   const [marginRatio, setMarginRatio] = useState(initial?.marginRatio ? String(initial.marginRatio * 100) : "10");
   const [error, setError] = useState("");
 
@@ -1016,7 +1013,7 @@ function TradeForm({
   const [date, setDate] = useState((initial?.date || "").slice(0, 10) || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10));
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
   const [quantity, setQuantity] = useState(initial ? String(initial.quantity) : "");
-  const [fee, setFee] = useState(initial ? String(initial.fee) : "0");
+  const [fee, setFee] = useState(initial && initial.fee ? String(initial.fee) : "");
   const [note, setNote] = useState(initial?.note ?? "");
   const [error, setError] = useState("");
 
