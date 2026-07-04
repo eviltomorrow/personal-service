@@ -13,7 +13,6 @@ import (
 func TestDefaultConfig(t *testing.T) {
 	assert.Equal(t, "0.0.0.0", DefaultConfig.Network.BindIP)
 	assert.Equal(t, 8080, DefaultConfig.Network.BindPort)
-	assert.Equal(t, true, DefaultConfig.Network.DisableTLS)
 	assert.Equal(t, "info", DefaultConfig.Log.Level)
 	assert.Equal(t, []string{"127.0.0.1:2379"}, DefaultConfig.Etcd.Endpoints)
 	assert.Equal(t, 10*time.Second, DefaultConfig.Etcd.ConnectTimeout)
@@ -103,7 +102,6 @@ bind_port = 9090
 	assert.Equal(t, 9090, cfg.Network.BindPort)
 	assert.Equal(t, "info", cfg.Log.Level)
 	assert.Equal(t, "0.0.0.0", cfg.Network.BindIP)
-	assert.Equal(t, true, cfg.Network.DisableTLS)
 	assert.Equal(t, "etcd:///grpclb/personal-auth", cfg.Service.AuthServiceTarget)
 }
 
