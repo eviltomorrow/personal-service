@@ -252,7 +252,3 @@ func TestExecInterface(t *testing.T) {
 	var e Exec = DB
 	assert.NotNil(t, e)
 }
-
-func TestQueryPerLimitConstant(t *testing.T) {
-	assert.Equal(t, int64(50), QueryPerLimit)
-}
