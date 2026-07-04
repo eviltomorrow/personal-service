@@ -11,12 +11,12 @@ services:
       - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
       - ETCD_INITIAL_CLUSTER=etcd=http://etcd:2380
       - ETCD_DATA_DIR=/etcd-data
+    ports:
+      - "127.0.0.1:2379:2379"
+      - "127.0.0.1:2380:2380"
     volumes:
       - ${DATA_HOME:-./data}/etcd/data:/etcd-data
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 127.0.0.1:2379:2379
-      - 127.0.0.1:2380:2380
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
       interval: 5s
@@ -30,27 +30,27 @@ services:
     container_name: personal-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "127.0.0.1:3306:3306"
     volumes:
       - ${DATA_HOME:-./data}/mysql/data:/var/lib/mysql
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 127.0.0.1:3306:3306
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
       start_period: 30s
 
   redis:
     restart: always
     image: redis:${redis_version:-7}
     container_name: personal-redis
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - ${DATA_HOME:-./data}/redis/data:/data
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 127.0.0.1:6379:6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -66,12 +66,12 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - ${DATA_HOME:-./data}/minio/data:/data
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 127.0.0.1:9000:9000
-      - 127.0.0.1:9001:9001
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
       interval: 5s
