@@ -1,5 +1,6 @@
 let refreshing: Promise<boolean> | null = null;
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
+let tokenExpiresIn = 0;
 
 async function doRefresh(): Promise<boolean> {
   if (refreshing) return refreshing;
@@ -8,6 +9,9 @@ async function doRefresh(): Promise<boolean> {
       const res = await fetch("/api/v1/auth/token/refresh", { method: "POST" });
       if (!res.ok) return false;
       const json = await res.json();
+      if (json.code === 0 && json.data?.expires_in) {
+        scheduleRefresh(json.data.expires_in);
+      }
       return json.code === 0;
     } catch {
       return false;
@@ -18,20 +22,25 @@ async function doRefresh(): Promise<boolean> {
   return result;
 }
 
-function startRefreshTimer() {
-  if (refreshTimer) return;
-  // Proactively refresh every 25 minutes (access token TTL is 1h)
+function scheduleRefresh(expiresIn: number) {
+  tokenExpiresIn = expiresIn;
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  const intervalMs = Math.max(expiresIn * 800, 60_000);
   refreshTimer = setInterval(async () => {
     const ok = await doRefresh();
     if (!ok) {
       if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
       window.location.href = "/login";
     }
-  }, 25 * 60 * 1000);
+  }, intervalMs);
+}
+
+export function setRefreshInterval(expiresIn: number) {
+  if (!refreshTimer) scheduleRefresh(expiresIn);
 }
 
 if (typeof window !== "undefined") {
-  startRefreshTimer();
+  scheduleRefresh(tokenExpiresIn || 300);
 }
 
 export async function api(url: string, options: RequestInit = {}): Promise<Response> {

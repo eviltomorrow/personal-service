@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Eye, EyeOff, Loader2, LogIn, Mail, Lock, Sparkles, Shield, X, Zap, Feather } from "lucide-react";
+import { setRefreshInterval } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function LoginPage() {
       });
       const json = await res.json();
       if (json.code !== 0) { setToast(json.message || "登录失败"); return; }
+      if (json.data?.expires_in) setRefreshInterval(json.data.expires_in);
       router.push("/dashboard");
     } catch {
       setToast("网络错误，请稍后重试");

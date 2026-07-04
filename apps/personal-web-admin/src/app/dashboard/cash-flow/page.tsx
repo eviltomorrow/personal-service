@@ -72,6 +72,7 @@ export default function CashFlowPage() {
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [prevTransactions, setPrevTransactions] = useState<Transaction[]>([]);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [formError, setFormError] = useState("");
   const monthPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -182,7 +183,7 @@ export default function CashFlowPage() {
   }
 
   function openAddItem(section: "income" | "expense", catIndex: number) {
-    const cat = section === "income" ? incomeCategories[catIndex] : expenseCategories[catIndex];
+    setFormError(""); const cat = section === "income" ? incomeCategories[catIndex] : expenseCategories[catIndex];
     setModalName("");
     setModalAmount("");
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -196,7 +197,7 @@ export default function CashFlowPage() {
   }
 
   function openEditItem(section: "income" | "expense", catIndex: number, itemIndex: number) {
-    const cat = section === "income" ? incomeCategories[catIndex] : expenseCategories[catIndex];
+    setFormError(""); const cat = section === "income" ? incomeCategories[catIndex] : expenseCategories[catIndex];
     const item = cat.items[itemIndex];
     setModalName(item.name);
     setModalAmount((item.amount / 100).toFixed(2));
@@ -208,7 +209,7 @@ export default function CashFlowPage() {
   }
 
   function openAddCategory(section: "income" | "expense") {
-    setModalName("");
+    setFormError(""); setModalName("");
     setModal({ type: "add-category", section });
     setModalAmount("");
   }
@@ -219,11 +220,12 @@ export default function CashFlowPage() {
   }
 
   async function handleSave() {
+    setFormError("");
     const name = modalName.trim();
     const amt = Math.round(parseFloat(modalAmount) * 100);
     if (modal?.type === "add-category") {
       if (!name) {
-        setToast({ type: "error", message: "请输入分类名称" });
+        setFormError("请输入分类名称");
         return;
       }
       const catDate = `${year}-${String(month).padStart(2, "0")}`;
@@ -247,8 +249,8 @@ export default function CashFlowPage() {
       return;
     }
     if (modal?.type === "add-item") {
-      if (!name) { setToast({ type: "error", message: "请输入项目名称" }); return; }
-      if (isNaN(amt) || amt <= 0) { setToast({ type: "error", message: "请输入有效的金额" }); return; }
+      if (!name) { setFormError("请输入项目名称"); return; }
+      if (isNaN(amt) || amt <= 0) { setFormError("请输入有效的金额"); return; }
       const maxSortOrder = transactions
         .filter((t) => t.category_id === modalCatId)
         .reduce((max, t) => Math.max(max, t.sort_order), 0);
@@ -280,8 +282,8 @@ export default function CashFlowPage() {
       return;
     }
     if (modal?.type === "edit-item") {
-      if (!name) { setToast({ type: "error", message: "请输入项目名称" }); return; }
-      if (isNaN(amt) || amt <= 0) { setToast({ type: "error", message: "请输入有效的金额" }); return; }
+      if (!name) { setFormError("请输入项目名称"); return; }
+      if (isNaN(amt) || amt <= 0) { setFormError("请输入有效的金额"); return; }
       const existingTx = transactions.find((t) => t.id === modalItemId);
       try {
         const res = await api(`/api/v1/cash-flow/transactions/${modalItemId}`, {
@@ -685,6 +687,15 @@ export default function CashFlowPage() {
               </button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-6 space-y-4">
+              {formError && (
+                <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 anim-in anim-fade anim-down">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
+                  <span className="flex-1">{formError}</span>
+                  <button type="button" onClick={() => setFormError("")} className="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100 transition-opacity">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">分类名称</label>
                 <input type="text" value={modalName} onChange={(e) => setModalName(e.target.value)} placeholder="请输入分类名称" autoFocus
@@ -716,6 +727,15 @@ export default function CashFlowPage() {
               </button>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-6 space-y-4">
+              {formError && (
+                <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 anim-in anim-fade anim-down">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
+                  <span className="flex-1">{formError}</span>
+                  <button type="button" onClick={() => setFormError("")} className="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100 transition-opacity">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               {modal?.type === "edit-item" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">分类</label>
