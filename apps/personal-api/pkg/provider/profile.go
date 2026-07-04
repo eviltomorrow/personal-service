@@ -1,22 +1,27 @@
 package provider
 
 import (
+	"fmt"
+
+	"github.com/eviltomorrow/personal-service/lib/finalizer"
 	grpcclient "github.com/eviltomorrow/personal-service/lib/grpc/client"
 
 	"github.com/eviltomorrow/personal-service/apps/personal-api/pkg/config"
 	"github.com/eviltomorrow/personal-service/apps/personal-api/pkg/model"
 	"github.com/eviltomorrow/personal-service/apps/personal-api/pkg/service"
-	"github.com/eviltomorrow/personal-service/lib/finalizer"
+	pb "github.com/eviltomorrow/personal-service/apps/personal-core/adapter/pb"
 )
 
 var profileCli model.ProfileClient
 
 func initProfile(cfg *config.Config) error {
-	pbClient, cleanup, err := grpcclient.NewProfileClient(cfg.Service.CoreServiceTarget)
+	conn, err := grpcclient.Dial(cfg.Service.CoreServiceTarget)
 	if err != nil {
-		return err
+		return fmt.Errorf("dial core service failure: %w", err)
 	}
-	finalizer.RegisterCleanupFuncs(cleanup)
+	finalizer.RegisterCleanupFuncs(conn.Close)
+
+	pbClient := pb.NewProfileClient(conn)
 	profileCli = service.NewProfileService(pbClient)
 	return nil
 }
